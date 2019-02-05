@@ -1,0 +1,11 @@
+[package]
+name = "hc"
+version = "0.1.0"
+authors = ["ipickedaname <ipickedaname@github.com>"]
+
+[dependencies]
+lazy_static = "1.2.0"
+chrono = "*"
+time = "*"
+enum_primitive = "*"
+num = "*"
