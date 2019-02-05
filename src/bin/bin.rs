@@ -1,7 +1,7 @@
-extern crate hc;
+extern crate heca;
 extern crate chrono; 
 extern crate time; 
-use hc::*;
+use heca::*;
 use chrono::prelude::*;
 
 fn main() {
