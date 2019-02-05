@@ -1,7 +1,13 @@
 [package]
 name = "hc"
-version = "0.1.0"
-authors = ["ipickedaname <ipickedaname@github.com>"]
+version = "0.0.1"
+authors = ["hebluach <hebluach@github.com>"]
+edition = '2018'
+repository = "https://github.com/hebluach/hc-rust"
+description = "Hebrew Calendar library."
+keywords = ["library", "calendar", "hebrew", "jewish"]
+categories = ["command-line-utilities", "date-and-time"]
+license = "MIT"
 
 [dependencies]
 lazy_static = "1.2.0"
