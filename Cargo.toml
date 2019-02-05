@@ -1,5 +1,5 @@
 [package]
-name = "hc"
+name = "heca"
 version = "0.0.1"
 authors = ["hebluach <hebluach@github.com>"]
 edition = '2018'
