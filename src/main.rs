@@ -100,9 +100,7 @@ fn convert_date_to_fuzzy_gregorian(
     use chrono::{DateTime, NaiveDateTime, Utc};
     use chrono_english::{parse_date_string, Dialect};
     use std::time::{SystemTime, UNIX_EPOCH};
-    parse_date_string(
-        date,
-        DateTime::<Utc>::from_utc(
+    let cur_dt = DateTime::<Utc>::from_utc(
             NaiveDateTime::from_timestamp(
                 {
                     let start = SystemTime::now();
@@ -112,9 +110,13 @@ fn convert_date_to_fuzzy_gregorian(
                 0,
             ),
             Utc,
-        ),
+        );
+    let res  = parse_date_string(
+        date,
+        Utc.ymd(cur_dt.year(), cur_dt.month(), cur_dt.day()).and_hms(1,0,0),
         Dialect::Us,
-    )
+    );
+    res
 }
 
 enum InputError {
