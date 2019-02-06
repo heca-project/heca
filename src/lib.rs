@@ -19,12 +19,11 @@ const LEAP_YEARS: [bool; 19] = [
     false, false, true, false, false, true, false, true, false, false, true, false, false, true,
     false, false, true, false, true,
 ];
-//var Epoch = time.Date(1, time.September, 30, 18, 0, 0, 0, time.UTC)
-// FirstMolad (of Tishrei 3672) was on Sunday, October 1st at 17:09:12 Chalakim
-const FIRST_MOLAD: i64 = 2 * 24 * 1080 + 20 * 1080 + (43 * 1080 / 60) - 11;
-const FIRST_YEAR: i64 = 3762;
+// FirstMolad (of Tishrei 3673) was on Monday, September 23rd at 12:16:6 Chalakim
+const FIRST_MOLAD: i64 = 1 * 24 * 1080 + 18 * 1080 + (16 * 1080 / 60) + 6;
+const FIRST_YEAR: i64 = 3763;
 lazy_static! {
-    static ref EPOCH: chrono::DateTime<Utc> = Utc.ymd(1, 9, 4).and_hms(18, 0, 0);
+    static ref EPOCH: chrono::DateTime<Utc> = Utc.ymd(2, 9, 21).and_hms(18, 0, 0);
 }
 
 lazy_static! {
@@ -81,6 +80,7 @@ fn months_per_year(year_in_cycle: i64) -> i64 {
 fn get_rosh_hashana(year: i64) -> i64 {
     let amnt_chalakim_since_first_molad = get_molad_for_year(year);
     let amnt_chalakim_since_epoch = amnt_chalakim_since_first_molad + FIRST_MOLAD;
+
     let mut amnt_days = amnt_chalakim_since_epoch / (CHALAKIM_PER_HOUR * 24);
     let amnt_chalakim = amnt_chalakim_since_epoch % (CHALAKIM_PER_HOUR * 24);
     let mut reg_postpone = false;
