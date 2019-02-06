@@ -1,0 +1,12 @@
+name: heca
+about: Hebrew calendar manipulator.
+
+subcommands:
+    - convert:
+        about: Converts Hebrew to Gregorian and back.
+        args:
+          - date:
+              required: true
+              help: Specify Hebrew or Gregorian date to convert. 
+
+              
