@@ -1,6 +1,3 @@
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
 extern crate chrono;
@@ -189,7 +186,7 @@ fn get_english_date(h: HebrewDate) -> Result<chrono::DateTime<Utc>, ConversionEr
     Ok(*EPOCH + Duration::days(amnt_days))
 }
 enum_from_primitive! {
-  #[derive(Debug, PartialEq, Copy, Clone, Deserialize, Serialize)]
+  #[derive(Debug, PartialEq, Copy, Clone)]
   pub enum HebrewMonth {
     Tishrei = 0,
     Cheshvan = 1,

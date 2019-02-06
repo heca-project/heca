@@ -18,3 +18,7 @@ num = "0.2.0"
 atoi = "0.3.1"
 chrono-english="0.1.4"
 clap = {version = "2.32.0", features = ["yaml"]}
+heca-lib = {path="lib/heca-lib"}
+
+[workspace]
+members = ["lib/heca-lib"]

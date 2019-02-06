@@ -1,7 +1,7 @@
 extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
-extern crate heca;
+extern crate heca_lib;
 extern crate time;
 
 #[macro_use]
@@ -10,7 +10,7 @@ use clap::App;
 
 use atoi::atoi;
 use chrono::prelude::*;
-use heca::*;
+use heca_lib::*;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
