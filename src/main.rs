@@ -79,6 +79,7 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
         return Err(InputError::TooManyMonths);
     }
     v.remove(hebrew_month[0].0);
+
     let int = v
         .iter()
         .filter_map(|x| atoi::<i64>(x.as_bytes()))

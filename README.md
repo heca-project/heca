@@ -21,17 +21,44 @@ The only command that currently works is convert, which takes a single argument 
   ```
 
   $ heca convert now
-
+  2019-02-07 01:00:00 UTC -> 2 Adar 1 5779
+  
   ```
   ```
 
   $ heca convert 5/4/2003
+  2003-05-04 00:00:00 UTC -> 2 Iyar 5763
+  
+  ```
+
+If you want to convert from Hebrew, you can input it in any format. The choice of month names is "Tishrei", "Cheshvan", "Kislev", Teves, Shvat, Adar, Adar1, Adar2, Nissan, Iyar, Sivan, Tammuz, Av, Elul.
+
+For example, to get the Gregorian date for the 24th of Teves, you can run:
+
+  ```
+  
+  $ heca convert "24/Teves/5779"
+  2018-12-31 18:00:00 UTC
 
   ```
 
-  **NOTE**
-  Unlike most calendars program, heca takes into account that the Hebrew day starts at nightfall and not midnight, but, as of now, it doesn't actually calculate nightfall. Rather, **it assumes that nightfall is at 6:00 PM**. So commands like `heca convert now` or `heca convert yesterday` may be off.
+or 
 
-* If you want to convert from Hebrew, you can input it in any format, 
+  ```
+  
+  $heca convert "Teves 24 5779"
+  2018-12-31 18:00:00 UTC
+
+  ```
+
+or even 
+
+  ```
+  
+  $heca convert "5779_24_Teves"
+  2018-12-31 18:00:00 UTC
+
+  ```
+
 
 Licensed under the MIT license.
