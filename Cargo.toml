@@ -19,7 +19,6 @@ atoi = "0.3.1"
 chrono-english="0.1.4"
 clap = {version = "2.32.0", features = ["yaml"]}
 heca-convert-lib = {path="lib/heca-convert-lib"}
-heca-yomtov-lib = {path="lib/heca-yomtov-lib"}
 
 [workspace]
-members = ["lib/heca-convert-lib", "lib/heca-yomtov-lib"]
+members = ["lib/heca-convert-lib"]

@@ -11,7 +11,6 @@ use clap::App;
 use atoi::atoi;
 use chrono::prelude::*;
 use heca_convert_lib::*;
-use heca_yomtov_lib::*;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
