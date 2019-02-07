@@ -1,7 +1,7 @@
 [package]
 name = "heca-convert-lib"
-version = "0.0.3"
-authors = ["hebluach <hebluach@github.com>"]
+version = "0.0.4"
+authors = ["picked name <ipickedaname@mail.com>"]
 edition = "2018"
 
 [dependencies]
