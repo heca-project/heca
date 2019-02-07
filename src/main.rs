@@ -37,7 +37,8 @@ fn convert(date_str: &str) -> Result<(), InputError> {
         let heb_date =
             HebrewDate::from_eng(eng_date).map_err(|x| InputError::ConversionError(x))?;
         println!(
-            "{} {} {}",
+            "{} -> {} {} {}",
+            eng_date,
             heb_date.day(),
             heb_date.month(),
             heb_date.year()
