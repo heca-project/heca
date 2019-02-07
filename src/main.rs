@@ -1,7 +1,7 @@
 extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
-extern crate heca_lib;
+extern crate heca_convert_lib;
 extern crate time;
 
 #[macro_use]
@@ -10,7 +10,8 @@ use clap::App;
 
 use atoi::atoi;
 use chrono::prelude::*;
-use heca_lib::*;
+use heca_convert_lib::*;
+use heca_yomtov_lib::*;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -55,7 +56,7 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
     if v.len() != 3 {
         return Err(InputError::WrongAmntHebDateOptions);
     }
-    let hebrew_month = v
+    let mut  hebrew_month = v
         .iter()
         .map(|x| String::from(*x))
         .enumerate()
@@ -87,6 +88,9 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
     } else {
         (int[0], int[1])
     };
+
+    (hebrew_month[0].1) = (hebrew_month[0].1).to_lowercase();
+    &(hebrew_month[0].1).get_mut(0..1).unwrap().make_ascii_uppercase();
     HebrewDate::from_ymd(
         years,
         HebrewMonth::try_from(&(hebrew_month[0].1)).unwrap(),
