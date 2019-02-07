@@ -27,14 +27,14 @@ lazy_static! {
 
 fn return_year_sched(days: i64) -> usize {
     match days {
-        354 => 0,
-        355 => 1,
-        356 => 2,
+        353 => 0,
+        354 => 1,
+        355 => 2,
 
         383 => 3,
         384 => 4,
         385 => 5,
-        _ => panic!(format!("Wrong amount of days {}",days))
+        _ => panic!(format!("Wrong amount of days {}", days)),
     }
 }
 const YEAR_SCHED: [[i8; 14]; 6] = [
@@ -92,7 +92,7 @@ fn get_rosh_hashana(year: i64) -> (i64, Day) {
     let amnt_chalakim = amnt_chalakim_since_epoch % (CHALAKIM_PER_HOUR * 24);
     let mut reg_postpone = false;
     //If the Molad is in the afternoon, postpone Rosh Hashana by a day
-    if amnt_chalakim >= 18 * CHALAKIM_PER_HOUR {
+    if amnt_chalakim > 18 * CHALAKIM_PER_HOUR {
         amnt_days += 1;
         reg_postpone = true;
     }
@@ -149,8 +149,7 @@ fn get_english_date(h: HebrewDate) -> Result<chrono::DateTime<Utc>, ConversionEr
             amnt_days_in_month += sched[i] as i16;
         }
     }
-    let amnt_days =
-        amnt_days_between_rh_and_epoch + amnt_days_in_month as i64 + h.day as i64 - 1 - 1;
+    let amnt_days = amnt_days_between_rh_and_epoch + amnt_days_in_month as i64 + h.day as i64 - 1;
     Ok(*EPOCH + Duration::days(amnt_days))
 }
 
@@ -187,20 +186,20 @@ impl HebrewDate {
             )));
         }
 
-        let amnt_days = get_rosh_hashana(year+1).0-get_rosh_hashana(year).0;
+        let amnt_days = get_rosh_hashana(year + 1).0 - get_rosh_hashana(year).0;
         let sched = &YEAR_SCHED[return_year_sched(amnt_days)];
 
         let mut molads_of_month = [0; 14];
         for i in 0..14 {
             molads_of_month[i] = 0;
         }
-            Ok(HebrewDate {
+        Ok(HebrewDate {
             year: year,
             month: month,
             day: day as i8,
             rosh_hashana_dow: get_rosh_hashana(year).1,
             months_length: sched,
-            molads_of_month:molads_of_month
+            molads_of_month: molads_of_month,
         })
     }
 
@@ -247,11 +246,11 @@ impl HebrewDate {
         let molads_of_month = [0; 14];
         Ok(HebrewDate {
             month: HebrewMonth::from_i32(month).unwrap(),
-            day: (day + remainder_chalakim / (CHALAKIM_PER_HOUR * 24) ) as i8,
+            day: (day + remainder_chalakim / (CHALAKIM_PER_HOUR * 24)) as i8,
             year: year,
             molads_of_month: molads_of_month,
             months_length: sched,
-            rosh_hashana_dow: current_rh.1
+            rosh_hashana_dow: current_rh.1,
         })
     }
     pub fn to_eng(self) -> Result<chrono::DateTime<Utc>, ConversionError> {
@@ -369,5 +368,92 @@ impl std::fmt::Display for ConversionError {
         MonthDoesntExist => write!(f, "This month doesn't exist. Please specify another one."),
         YearTooSmall(s) => write!(f, "{}",s)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn years_correct_sum() {
+        assert_eq!(
+            YEAR_SCHED[0].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            353
+        );
+        assert_eq!(
+            YEAR_SCHED[1].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            354
+        );
+        assert_eq!(
+            YEAR_SCHED[2].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            355
+        );
+        assert_eq!(
+            YEAR_SCHED[3].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            383
+        );
+        assert_eq!(
+            YEAR_SCHED[4].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            384
+        );
+        assert_eq!(
+            YEAR_SCHED[5].into_iter().map(|x| (*x) as i64).sum::<i64>(),
+            385
+        );
+    }
+
+    #[test]
+    fn years_have_rght_days() {
+        extern crate rayon;
+        use rayon::prelude::*;
+
+        ((FIRST_YEAR + 1)..1000000)
+            .into_par_iter()
+            .map(|i| {
+                let amnt_days_between_rh_and_epoch = get_rosh_hashana(i).0;
+                let amnt_days_in_year = get_rosh_hashana(i + 1).0 - amnt_days_between_rh_and_epoch;
+                return_year_sched(amnt_days_in_year);
+            })
+            .count();
+    }
+
+    #[test]
+    fn compare_my_rosh_hashana_to_known() {
+        extern crate rayon;
+        extern crate atoi;
+        use atoi::atoi;
+        use chrono::Utc;
+        use rayon::prelude::*;
+        use std::fs;
+        use std::path::PathBuf;
+
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testing/RoshHashanaList");
+        let err = format!(
+            "Can't find list of Rosh Hashanas in file {}",
+            d.to_str().unwrap()
+        );
+        let contents = fs::read_to_string(d).expect(&err);
+        contents
+            .split('\n')
+            .collect::<Vec<&str>>()
+            .into_par_iter()
+            .filter(|x| *x != "")
+            .map(|x| {
+                let split_v = x.split(' ').collect::<Vec<&str>>();
+                let n = atoi::<i64>(split_v[0].as_bytes()).unwrap();
+                let hd = HebrewDate::from_ymd(n, HebrewMonth::Tishrei, 1).unwrap();
+                let ed = hd.to_eng().unwrap();
+                let dc_rhd = NaiveDate::parse_from_str(split_v[1], "%m/%d/%Y")
+                    .unwrap()
+                    .and_hms(0, 0, 0);
+
+                assert_eq!(
+                    Utc.ymd(dc_rhd.year(), dc_rhd.month(), dc_rhd.day())
+                        .and_hms(0, 0, 0),
+                    (ed + Duration::hours(6))
+                );
+            })
+            .count();
     }
 }

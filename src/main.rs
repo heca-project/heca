@@ -56,7 +56,7 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
     if v.len() != 3 {
         return Err(InputError::WrongAmntHebDateOptions);
     }
-    let mut  hebrew_month = v
+    let mut hebrew_month = v
         .iter()
         .map(|x| String::from(*x))
         .enumerate()
@@ -91,7 +91,10 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
     };
 
     (hebrew_month[0].1) = (hebrew_month[0].1).to_lowercase();
-    &(hebrew_month[0].1).get_mut(0..1).unwrap().make_ascii_uppercase();
+    &(hebrew_month[0].1)
+        .get_mut(0..1)
+        .unwrap()
+        .make_ascii_uppercase();
     HebrewDate::from_ymd(
         years,
         HebrewMonth::try_from(&(hebrew_month[0].1)).unwrap(),
@@ -106,19 +109,20 @@ fn convert_date_to_fuzzy_gregorian(
     use chrono_english::{parse_date_string, Dialect};
     use std::time::{SystemTime, UNIX_EPOCH};
     let cur_dt = DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(
-                {
-                    let start = SystemTime::now();
-                    let time = start.duration_since(UNIX_EPOCH).unwrap();
-                    time.as_secs() as i64
-                },
-                0,
-            ),
-            Utc,
-        );
-    let res  = parse_date_string(
+        NaiveDateTime::from_timestamp(
+            {
+                let start = SystemTime::now();
+                let time = start.duration_since(UNIX_EPOCH).unwrap();
+                time.as_secs() as i64
+            },
+            0,
+        ),
+        Utc,
+    );
+    let res = parse_date_string(
         date,
-        Utc.ymd(cur_dt.year(), cur_dt.month(), cur_dt.day()).and_hms(1,0,0),
+        Utc.ymd(cur_dt.year(), cur_dt.month(), cur_dt.day())
+            .and_hms(1, 0, 0),
         Dialect::Us,
     );
     res
