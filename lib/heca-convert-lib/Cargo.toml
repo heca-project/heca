@@ -3,6 +3,10 @@ name = "heca-convert-lib"
 version = "0.0.4"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = "2018"
+description = "Hebrew Calendar library."
+keywords = ["library", "calendar", "hebrew", "jewish"]
+categories = ["date-and-time"]
+license = "MIT"
 
 [dependencies]
 lazy_static = "1.2.0"
