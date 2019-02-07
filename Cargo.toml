@@ -1,9 +1,9 @@
 [package]
 name = "heca"
 version = "0.0.3"
-authors = ["hebluach <hebluach@github.com>"]
+authors = ["picked name <ipickedaname@mail.com>"]
 edition = '2018'
-repository = "https://github.com/hebluach/hc-rust"
+repository = "https://gitlab.com/heca/heca"
 description = "Hebrew Calendar library."
 keywords = ["library", "calendar", "hebrew", "jewish"]
 categories = ["command-line-utilities", "date-and-time"]
