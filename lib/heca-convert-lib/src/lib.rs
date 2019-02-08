@@ -149,11 +149,11 @@ fn get_english_date(h: HebrewDate) -> Result<chrono::DateTime<Utc>, ConversionEr
             amnt_days_in_month += sched[i] as i16;
         }
     }
-    let amnt_days = amnt_days_between_rh_and_epoch + amnt_days_in_month as i64 + h.day as i64 - 1;
+    let amnt_days = amnt_days_between_rh_and_epoch + amnt_days_in_month as i64 + h.day as i64 - 1 -1 ;
     Ok(*EPOCH + Duration::days(amnt_days))
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct HebrewDate {
     day: i8,
     month: HebrewMonth,
@@ -450,10 +450,142 @@ mod tests {
 
                 assert_eq!(
                     Utc.ymd(dc_rhd.year(), dc_rhd.month(), dc_rhd.day())
-                        .and_hms(0, 0, 0),
-                    (ed + Duration::hours(6))
+                        .and_hms(0, 0, 0) - Duration::hours(24) - Duration::hours(6),
+                    (ed)
                 );
             })
             .count();
     }
+
+    #[test]
+    fn compare_rosh_chodesh_adar_known() {
+        extern crate rayon;
+        extern crate atoi;
+        use atoi::atoi;
+        use chrono::Utc;
+        use rayon::prelude::*;
+        use std::fs;
+        use std::path::PathBuf;
+
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testing/RoshChodeshRegularAdar");
+        let err = format!(
+            "Can't find list of Rosh Chodesh Adar in file {}",
+            d.to_str().unwrap()
+        );
+        let contents = fs::read_to_string(d).expect(&err);
+        contents
+            .split('\n')
+            .collect::<Vec<&str>>()
+            .into_par_iter()
+            .filter(|x| *x != "")
+            .map(|x| {
+                let split_v = x.split(' ').collect::<Vec<&str>>();
+                let n = atoi::<i64>(split_v[0].as_bytes()).unwrap();
+                let hd = HebrewDate::from_ymd(n, HebrewMonth::Adar, 1).unwrap();
+                let ed = hd.to_eng().unwrap();
+                let dc_rhd = NaiveDate::parse_from_str(split_v[1], "%m/%d/%Y")
+                    .unwrap()
+                    .and_hms(0, 0, 0);
+                assert_eq!(
+                    Utc.ymd(dc_rhd.year(), dc_rhd.month(), dc_rhd.day())
+                        .and_hms(0, 0, 0) - Duration::hours(6),
+                    (ed)
+                );
+ 
+                            })
+            .count();
+    }
+
+    #[test]
+    fn compare_rosh_chodesh_adar1_known() {
+        extern crate rayon;
+        extern crate atoi;
+        use atoi::atoi;
+        use chrono::Utc;
+        use rayon::prelude::*;
+        use std::fs;
+        use std::path::PathBuf;
+
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testing/RoshChodeshAdarI");
+        let err = format!(
+            "Can't find list of Rosh Chodesh AdarI in file {}",
+            d.to_str().unwrap()
+        );
+        let contents = fs::read_to_string(d).expect(&err);
+        contents
+            .split('\n')
+            .collect::<Vec<&str>>()
+            .iter()
+            .filter(|x| *x != &"")
+            .map(|x| {
+                let split_v = x.split(' ').collect::<Vec<&str>>();
+                let n = atoi::<i64>(split_v[0].as_bytes()).unwrap();
+                let hd = HebrewDate::from_ymd(n, HebrewMonth::Adar1, 1).unwrap();
+                let ed = hd.to_eng().unwrap();
+                let dc_rhd = NaiveDate::parse_from_str(split_v[1], "%m/%d/%Y")
+                    .unwrap()
+                    .and_hms(0, 0, 0);
+               assert_eq!(
+                    Utc.ymd(dc_rhd.year(), dc_rhd.month(), dc_rhd.day())
+                        .and_hms(0, 0, 0) - Duration::hours(6),
+                    (ed)
+                );
+
+               
+            })
+            .count();
+    }
+
+    #[test]
+    fn compare_random_rosh_chodesh_adar2() {
+                let hd = HebrewDate::from_ymd(5779, HebrewMonth::Adar1, 1).unwrap();
+                let ed = hd.to_eng().unwrap();
+                let real_val = Utc.ymd(2019,2,5).and_hms(18,0,0);
+                assert_eq!(ed,real_val);
+ 
+    }
+
+    #[test]
+    fn compare_rosh_chodesh_adar2_known() {
+        extern crate rayon;
+        extern crate atoi;
+        use atoi::atoi;
+        use chrono::Utc;
+        use rayon::prelude::*;
+        use std::fs;
+        use std::path::PathBuf;
+
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testing/RoshChodeshAdarII");
+        let err = format!(
+            "Can't find list of Rosh Chodesh Adar2 in file {}",
+            d.to_str().unwrap()
+        );
+        let contents = fs::read_to_string(d).expect(&err);
+        contents
+            .split('\n')
+            .collect::<Vec<&str>>()
+            .into_par_iter()
+            .filter(|x| *x != "")
+            .map(|x| {
+                let split_v = x.split(' ').collect::<Vec<&str>>();
+                let n = atoi::<i64>(split_v[0].as_bytes()).unwrap();
+                let hd = HebrewDate::from_ymd(n, HebrewMonth::Adar2, 1).unwrap();
+                let ed = hd.to_eng().unwrap();
+                let dc_rhd = NaiveDate::parse_from_str(split_v[1], "%m/%d/%Y")
+                    .unwrap()
+                    .and_hms(0, 0, 0);
+                assert_eq!(
+                    Utc.ymd(dc_rhd.year(), dc_rhd.month(), dc_rhd.day())
+                        .and_hms(0, 0, 0)  - Duration::hours(6),
+                    (ed)
+                );
+
+
+            })
+            .count();
+    }
+
 }
