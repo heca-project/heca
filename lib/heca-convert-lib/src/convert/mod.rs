@@ -7,9 +7,9 @@ use num::FromPrimitive;
 use std::fmt;
 use time::Duration;
 
-use crate::types::HebrewMonth;
 use crate::types::ConversionError;
 use crate::types::Day;
+use crate::types::HebrewMonth;
 
 /// The amount of Chalakim in an hour.
 pub const CHALAKIM_PER_HOUR: u64 = 1080;
@@ -159,21 +159,6 @@ impl std::fmt::Display for HebrewDate {
 }
 
 impl HebrewDate {
-    ///Get the Hebrew day of month.
-    pub fn day(&self) -> u8 {
-        self.day
-    }
-
-    ///Get the Hebrew month of year
-    pub fn month(&self) -> HebrewMonth {
-        self.month
-    }
-
-    ///Get the Hebrew year.
-    pub fn year(&self) -> u64 {
-        self.year
-    }
-
     /// Returns a HebrewDate on success, or a ConversionError on failure.
     ///
     /// # Arguments
@@ -198,12 +183,27 @@ impl HebrewDate {
         if year < FIRST_YEAR + 1 {
             return Err(ConversionError::YearTooSmall);
         }
-        if day <= 0 {
+        if day ==  0 {
             return Err(ConversionError::DayIsZero);
         }
+        let months_per_year = months_per_year(year);
+        if months_per_year == 12 && (month == HebrewMonth::Adar1 || month == HebrewMonth::Adar2) {
+            return Err(ConversionError::IsNotLeapYear);
+        }
+        if months_per_year == 13 && month == HebrewMonth::Adar {
+            return Err(ConversionError::IsLeapYear);
+        }
 
-        let amnt_days = get_rosh_hashana(year + 1).0 - get_rosh_hashana(year).0;
-        let sched = &YEAR_SCHED[return_year_sched(amnt_days)];
+        let amnt_days_between_rh_and_epoch = get_rosh_hashana(year).0;
+        let amnt_days_in_year =
+            get_rosh_hashana(year + 1).0 - amnt_days_between_rh_and_epoch;
+        let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
+
+        if day > sched[month as usize] {
+            return Err(ConversionError::TooManyDaysInMonth(
+                sched[month as usize],
+            ));
+        }
 
         let mut molads_of_month = [0; 14];
         for x in &mut molads_of_month {
@@ -228,7 +228,7 @@ impl HebrewDate {
             cur_year += 1;
         }
     }
-    
+
     /// Returns a HebrewDate on success, or a ConversionError on failure.
     ///
     /// # Arguments
@@ -236,10 +236,8 @@ impl HebrewDate {
     ///
     /// # Notes:
     /// Hebrew days start at sundown, not midnight, so there isn't a full 1:1 mapping between
-    /// Gregorian days and Hebrew. Most calendars assume you're trying to convert in the morning,
-    /// so when you look up the date of Rosh Hashana 5779, you'll get "Monday, 10th of September
-    /// 2018".
-    /// 
+    /// Gregorian days and Hebrew. So when you look up the date of Rosh Hashana 5779, you'll get "Monday, 10th of September 2018", while Rosh Hashana really started at sundown on the 9th of September.
+    ///
     /// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So for
     /// example:
     /// ```
@@ -248,7 +246,7 @@ impl HebrewDate {
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
     /// use heca_lib::{HebrewDate,HebrewMonth};
-    /// 
+    ///
     /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(17,59,59)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,1).unwrap());
     /// ```
     ///
@@ -260,12 +258,12 @@ impl HebrewDate {
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
     /// use heca_lib::{HebrewDate,HebrewMonth};
-    /// 
+    ///
     /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(18,0,0)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,2).unwrap());
     /// ```
     /// # Error Values:
     /// * YearTooSmall - This algorithm won't work if the year is before roughly year 4.
-    /// 
+    ///
     pub fn from_gregorian(date: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
         let days_since_first_rh = ((date - *FIRST_RH).num_days() + 2) as u64;
 
@@ -294,29 +292,12 @@ impl HebrewDate {
         })
     }
 
-
-
-    pub fn to_gregorian(&self) -> Result<chrono::DateTime<Utc>, ConversionError> {
-        let months_per_year = months_per_year(self.year);
-        if months_per_year == 12
-            && (self.month == HebrewMonth::Adar1 || self.month == HebrewMonth::Adar2)
-        {
-            return Err(ConversionError::IsNotLeapYear);
-        }
-        if months_per_year == 13 && self.month == HebrewMonth::Adar {
-            return Err(ConversionError::IsLeapYear);
-        }
-
+    pub fn to_gregorian(&self) -> chrono::DateTime<Utc> {
         let amnt_days_between_rh_and_epoch = get_rosh_hashana(self.year).0;
         let amnt_days_in_year =
-            u64::from(get_rosh_hashana(self.year + 1).0 - amnt_days_between_rh_and_epoch);
+            get_rosh_hashana(self.year + 1).0 - amnt_days_between_rh_and_epoch;
         let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
 
-        if self.day > sched[self.month as usize] {
-            return Err(ConversionError::TooManyDaysInMonth(
-                sched[self.month as usize],
-            ));
-        }
         let mut amnt_days_in_month: u16 = 0;
         if self.month != HebrewMonth::Tishrei {
             for item in sched.iter().take(self.month as usize) {
@@ -327,10 +308,23 @@ impl HebrewDate {
         let amnt_days =
             amnt_days_between_rh_and_epoch + u64::from(amnt_days_in_month) + u64::from(self.day)
                 - 1;
-        Ok(*EPOCH + Duration::days(amnt_days as i64))
+        *EPOCH + Duration::days(amnt_days as i64)
+    }
+    ///Get the Hebrew day of month.
+    pub fn day(&self) -> u8 {
+        self.day
+    }
+
+    ///Get the Hebrew month of year
+    pub fn month(&self) -> HebrewMonth {
+        self.month
+    }
+
+    ///Get the Hebrew year.
+    pub fn year(&self) -> u64 {
+        self.year
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -369,7 +363,7 @@ mod tests {
             let mut original_day = Utc.ymd(16 + j, 10, 4).and_hms(18, 0, 0);
             for i in 1..366 {
                 let h_day = HebrewDate::from_gregorian(original_day).unwrap();
-                let ne_day = h_day.to_gregorian().unwrap();
+                let ne_day = h_day.to_gregorian();
                 println!("{} {} {} {}", i, original_day, h_day, ne_day);
                 assert_eq!(original_day, ne_day);
                 original_day = original_day + Duration::days(1);
@@ -397,7 +391,7 @@ mod tests {
         let mut orig_date = Utc.ymd(1901, 8, 15).and_hms(18, 0, 0);
         for j in 1..=29 {
             let heb_day = HebrewDate::from_ymd(5661, HebrewMonth::Elul, j).unwrap();
-            let back = heb_day.to_gregorian().unwrap();
+            let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
             orig_date = orig_date + Duration::days(1);
@@ -409,7 +403,7 @@ mod tests {
         let mut orig_date = Utc.ymd(1900, 9, 23).and_hms(18, 0, 0);
         for j in 1..=30 {
             let heb_day = HebrewDate::from_ymd(5661, HebrewMonth::Tishrei, j).unwrap();
-            let back = heb_day.to_gregorian().unwrap();
+            let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
             orig_date = orig_date + Duration::days(1);
@@ -420,7 +414,7 @@ mod tests {
         let mut orig_date = Utc.ymd(1900, 1, 30).and_hms(18, 0, 0);
         for j in 1..=30 {
             let heb_day = HebrewDate::from_ymd(5660, HebrewMonth::Adar1, j).unwrap();
-            let back = heb_day.to_gregorian().unwrap();
+            let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
             orig_date = orig_date + Duration::days(1);
@@ -443,20 +437,18 @@ mod tests {
             .filter(|x| *x != "")
             .for_each(|x| {
                 let res = x.split(" ").collect::<Vec<&str>>();
-                if res.len() !=1  {
-
-                let eng_day =
-                    HebrewDate::from_ymd(res[0].parse::<u64>().unwrap(), month, day as u8)
-                        .unwrap()
-                        .to_gregorian()
-                        .unwrap()
-                        + Duration::days(1);
-                println!("{:?}", eng_day);
-                let sp = res[1].split("/").collect::<Vec<&str>>();
-                let (month, day, year) = (sp[0], sp[1], sp[2]);
-                assert_eq!(month.parse::<u64>().unwrap() as u32, eng_day.month());
-                assert_eq!(day.parse::<u64>().unwrap() as u32, eng_day.day());
-                assert_eq!(year.parse::<u64>().unwrap() as i32, eng_day.year());
+                if res.len() != 1 {
+                    let eng_day =
+                        HebrewDate::from_ymd(res[0].parse::<u64>().unwrap(), month, day as u8)
+                            .unwrap()
+                            .to_gregorian()
+                            + Duration::days(1);
+                    println!("{:?}", eng_day);
+                    let sp = res[1].split("/").collect::<Vec<&str>>();
+                    let (month, day, year) = (sp[0], sp[1], sp[2]);
+                    assert_eq!(month.parse::<u64>().unwrap() as u32, eng_day.month());
+                    assert_eq!(day.parse::<u64>().unwrap() as u32, eng_day.day());
+                    assert_eq!(year.parse::<u64>().unwrap() as i32, eng_day.year());
                 }
             });
     }
