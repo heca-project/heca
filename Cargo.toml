@@ -8,6 +8,8 @@ description = "Hebrew calendar utility"
 keywords = ["calendar", "hebrew", "jewish"]
 categories = ["command-line-utilities", "date-and-time"]
 license = "MIT"
+readme = "README.md"
+maintenance = { status = "actively-maintained" }
 
 [dependencies]
 lazy_static = "1.2.0"
@@ -18,7 +20,7 @@ num = "0.2.0"
 atoi = "0.3.1"
 chrono-english="0.1.4"
 clap = {version = "2.32.0", features = ["yaml"]}
-heca-lib = {version="0.0.5", path="lib/heca-lib"}
+heca-lib = {version="0.1.0", path="lib/heca-lib"}
 
 [workspace]
 members = ["lib/heca-lib"]
