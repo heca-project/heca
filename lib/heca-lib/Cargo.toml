@@ -1,6 +1,6 @@
 [package]
 name = "heca-lib"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = "2018"
 description = "Hebrew Calendar library."
@@ -11,7 +11,7 @@ repository = "https://gitlab.com/heca/heca"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "https://gitlab.com/heca/heca"}
+gitlab = { repository = "heca/heca"}
 maintenance = { status ="actively-developed"}
 
 [dependencies]
