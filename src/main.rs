@@ -97,7 +97,7 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
         .unwrap()
         .make_ascii_uppercase();
     if days > std::u8::MAX.into() {
-       return Err(InputError::DayOverflowError);
+        return Err(InputError::DayOverflowError);
     }
     HebrewDate::from_ymd(
         years,
