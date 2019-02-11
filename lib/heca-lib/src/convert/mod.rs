@@ -135,7 +135,7 @@ fn get_rosh_hashana(year: u64) -> (u64, Day) {
     (amnt_days, dow)
 }
 
-/// HebrewDate is a struct containing a Hebrew date. There are two ways to generate it. Either using HebrewDate::from_ymd() or using HebrewDate::from_gregorian().
+/// HebrewDate is a struct containing a Hebrew date. There are two ways to generate it: Either `HebrewDate::from_ymd()` or `HebrewDate::from_gregorian()`.
 
 #[derive(Debug, Copy, Clone)]
 pub struct HebrewDate {
