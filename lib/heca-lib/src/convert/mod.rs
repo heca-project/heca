@@ -291,7 +291,7 @@ impl HebrewDate {
 
     /// Gets the Grgorian date for the current Hebrew date.
     ///
-    /// #Notes
+    /// # Notes
     ///
     /// This function returns the DateTime of the given HebrewDate at nightfall.
     ///
