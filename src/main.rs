@@ -1,7 +1,7 @@
 extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
-extern crate heca_convert_lib;
+extern crate heca_lib;
 extern crate time;
 
 #[macro_use]
@@ -10,7 +10,7 @@ use clap::App;
 
 use atoi::atoi;
 use chrono::prelude::*;
-use heca_convert_lib::*;
+use heca_lib::*;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -23,6 +23,7 @@ fn main() {
                 InputError::NotEnoughMonths => println!("I need one hebrew month"),
                 InputError::WrongAmntHebDateOptions => println!("I need something looking like Month-Day-Year or Day-Month-Year (For example: 10 Shvat 5710)."),
                 InputError::ConversionError(s) => println!("{}",s),
+                InputError::DayOverflowError => println!("The day you selected is out of range"),
             }
         }
     }
@@ -30,12 +31,12 @@ fn main() {
 
 fn convert(date_str: &str) -> Result<(), InputError> {
     if let Ok(heb_date) = convert_date_to_fuzzy_hebrew(date_str) {
-        let eng_date = HebrewDate::to_eng(heb_date).map_err(|x| InputError::ConversionError(x))?;
+        let eng_date = heb_date.to_gregorian();
         println!("{}", eng_date);
         Ok(())
     } else if let Ok(eng_date) = convert_date_to_fuzzy_gregorian(&date_str) {
         let heb_date =
-            HebrewDate::from_eng(eng_date).map_err(|x| InputError::ConversionError(x))?;
+            HebrewDate::from_gregorian(eng_date).map_err(|x| InputError::ConversionError(x))?;
         println!(
             "{} -> {} {} {}",
             eng_date,
@@ -82,8 +83,8 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
 
     let int = v
         .iter()
-        .filter_map(|x| atoi::<i64>(x.as_bytes()))
-        .collect::<Vec<i64>>();
+        .filter_map(|x| atoi::<u64>(x.as_bytes()))
+        .collect::<Vec<u64>>();
     let (days, years) = if int[0] > 100 {
         (int[1], int[0])
     } else {
@@ -95,10 +96,13 @@ fn convert_date_to_fuzzy_hebrew(date: &str) -> Result<HebrewDate, InputError> {
         .get_mut(0..1)
         .unwrap()
         .make_ascii_uppercase();
+    if days > std::u8::MAX.into() {
+       return Err(InputError::DayOverflowError);
+    }
     HebrewDate::from_ymd(
         years,
         HebrewMonth::try_from(&(hebrew_month[0].1)).unwrap(),
-        days,
+        days as u8,
     )
     .map_err(|x| InputError::ConversionError(x))
 }
@@ -134,4 +138,5 @@ enum InputError {
     NotEnoughMonths,
     WrongAmntHebDateOptions,
     ConversionError(ConversionError),
+    DayOverflowError,
 }
