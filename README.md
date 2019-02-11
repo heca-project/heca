@@ -1,6 +1,6 @@
 # heca-lib
 
-heca-lib is a Hebrew <-> Gregorian converter library. It's the backend behind the heca program. 
+heca-lib is a Hebrew <-> Gregorian conversion library. It's the backend behind the heca program. 
 
 
 # Usage:
