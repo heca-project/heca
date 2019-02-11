@@ -5,8 +5,10 @@
 //!
 //! 1. Add to Cargo.toml:
 //!
-//! [dependencies]
-//! heca-lib = "*"
+//!```toml
+//!     [dependencies]
+//!     heca-lib = "*"
+//!```
 //!
 //! 2. Add the following to your crate root:
 //!
@@ -16,7 +18,9 @@
 //! ```
 //! 3. Import the types:
 //!
-//! use heca_lib::*;
+//!```
+//!use heca_lib::*;
+//!```
 //!
 //! # Overview:
 //!
