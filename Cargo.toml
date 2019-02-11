@@ -1,0 +1,21 @@
+[package]
+name = "heca-lib"
+version = "0.0.5"
+authors = ["picked name <ipickedaname@mail.com>"]
+edition = "2018"
+description = "Hebrew Calendar library."
+keywords = ["library", "calendar", "hebrew", "jewish"]
+categories = ["date-and-time"]
+license = "MIT"
+repository = "https://gitlab.com/heca/heca"
+
+[dependencies]
+lazy_static = "1.2.0"
+chrono = "0.4"
+time = "0.1.42"
+enum_primitive = "0.1.1"
+num = "0.2.0"
+
+[dev-dependencies]
+rayon = "1.0"
+atoi = "0.3.1"
