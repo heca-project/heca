@@ -183,7 +183,7 @@ impl HebrewDate {
         if year < FIRST_YEAR + 1 {
             return Err(ConversionError::YearTooSmall);
         }
-        if day ==  0 {
+        if day == 0 {
             return Err(ConversionError::DayIsZero);
         }
         let months_per_year = months_per_year(year);
@@ -195,14 +195,11 @@ impl HebrewDate {
         }
 
         let amnt_days_between_rh_and_epoch = get_rosh_hashana(year).0;
-        let amnt_days_in_year =
-            get_rosh_hashana(year + 1).0 - amnt_days_between_rh_and_epoch;
+        let amnt_days_in_year = get_rosh_hashana(year + 1).0 - amnt_days_between_rh_and_epoch;
         let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
 
         if day > sched[month as usize] {
-            return Err(ConversionError::TooManyDaysInMonth(
-                sched[month as usize],
-            ));
+            return Err(ConversionError::TooManyDaysInMonth(sched[month as usize]));
         }
 
         let mut molads_of_month = [0; 14];
@@ -292,10 +289,25 @@ impl HebrewDate {
         })
     }
 
+    /// Gets the Grgorian date for the current Hebrew date.
+    ///
+    /// #Notes
+    ///
+    /// This function returns the DateTime of the given HebrewDate at nightfall.
+    ///
+    /// For example, Yom Kippur 5779 started at sunset of September 18, 2018. So
+    /// ```
+    /// extern crate heca_lib;
+    ///
+    /// use chrono::Utc;
+    /// use chrono::offset::TimeZone;
+    /// use heca_lib::{HebrewDate,HebrewMonth};
+    ///
+    /// assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
+    /// ```
     pub fn to_gregorian(&self) -> chrono::DateTime<Utc> {
         let amnt_days_between_rh_and_epoch = get_rosh_hashana(self.year).0;
-        let amnt_days_in_year =
-            get_rosh_hashana(self.year + 1).0 - amnt_days_between_rh_and_epoch;
+        let amnt_days_in_year = get_rosh_hashana(self.year + 1).0 - amnt_days_between_rh_and_epoch;
         let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
 
         let mut amnt_days_in_month: u16 = 0;
