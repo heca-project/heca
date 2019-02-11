@@ -40,13 +40,13 @@ You can then get back a Gregorian date from this Hebrew Date.
     
     assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
     
-#Note:
+# Notes:
 
 1. This library won't work for years before 3764 (4).
 2. This library is still unstable and the API may change at any time.
 3. I tested this library against hebcal for all Rosh Hashanas between 3764 and 9999 (4-6239). I also checked it for all Rosh Chodesh Adars in those years. However, I take no resposibility if you accidently keep Yom Tov on the wrong day!
 4. While this library _works_, there are still a few inefficienciess that need to be taken care of. 
 
-#License:
+# License:
 
 MIT
