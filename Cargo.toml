@@ -1,6 +1,6 @@
 [package]
 name = "heca"
-version = "0.0.4"
+version = "0.1.0"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = '2018'
 repository = "https://gitlab.com/heca/heca"
