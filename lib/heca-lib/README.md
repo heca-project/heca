@@ -2,6 +2,8 @@
 
 heca-lib is a Hebrew <-> Gregorian converter library. It's the backend behind the heca program. 
 
+[![docs](https://docs.rs/heca-lib/badge.svg)](https://docs.rs/heca-lib/0.1.2/heca_lib/)
+[![crates.io](https://meritbadge.herokuapp.com/heca-lib)](https://crates.io/crates/heca-lib)
 
 # Usage:
 
