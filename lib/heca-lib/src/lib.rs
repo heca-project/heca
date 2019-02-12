@@ -61,5 +61,7 @@ extern crate enum_primitive;
 extern crate lazy_static;
 pub mod convert;
 pub mod types;
+#[doc(inline)]
 pub use convert::HebrewDate;
+#[doc(inline)]
 pub use types::{ConversionError, Day, HebrewMonth};

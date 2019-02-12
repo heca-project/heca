@@ -37,7 +37,6 @@ lazy_static! {
     static ref FIRST_RH: chrono::DateTime<Utc> = Utc.ymd(2, 9, 23).and_hms(18, 0, 0);
     static ref EPOCH: chrono::DateTime<Utc> = Utc.ymd(2, 9, 21).and_hms(18, 0, 0);
 }
-
 // Return the correct schedule for they year. There can be only six possible amount of days, so
 // short of a bug on my part, this should never panic.
 fn return_year_sched(days: u64) -> usize {
