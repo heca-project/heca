@@ -37,7 +37,6 @@ lazy_static! {
     static ref FIRST_RH: chrono::DateTime<Utc> = Utc.ymd(2, 9, 23).and_hms(18, 0, 0);
     static ref EPOCH: chrono::DateTime<Utc> = Utc.ymd(2, 9, 21).and_hms(18, 0, 0);
 }
-
 // Return the correct schedule for they year. There can be only six possible amount of days, so
 // short of a bug on my part, this should never panic.
 fn return_year_sched(days: u64) -> usize {
@@ -135,7 +134,7 @@ fn get_rosh_hashana(year: u64) -> (u64, Day) {
     (amnt_days, dow)
 }
 
-/// HebrewDate is a struct containing a Hebrew date. There are two ways to generate it. Either using HebrewDate::from_ymd() or using HebrewDate::from_gregorian().
+/// HebrewDate is a struct containing a Hebrew date. There are two ways to generate it: Either `HebrewDate::from_ymd()` or `HebrewDate::from_gregorian()`.
 
 #[derive(Debug, Copy, Clone)]
 pub struct HebrewDate {
@@ -147,9 +146,41 @@ pub struct HebrewDate {
     rosh_hashana_dow: Day,
 }
 
+impl Eq for HebrewDate {}
 impl PartialEq for HebrewDate {
     fn eq(&self, other: &HebrewDate) -> bool {
         self.day == other.day && self.month == other.month && self.year == other.year
+    }
+}
+
+use std::cmp::Ordering;
+impl Ord for HebrewDate {
+    fn cmp(&self, other: &HebrewDate) -> Ordering {
+        if self.year < other.year {
+            Ordering::Less
+        } else if self.year > other.year {
+            Ordering::Greater
+        } else {
+            if (self.month as i32) < (other.month as i32) {
+                Ordering::Less
+            } else if (self.month as i32) > (other.month as i32) {
+                Ordering::Greater
+            } else {
+                if self.day < other.day {
+                    Ordering::Less
+                } else if self.day > other.day {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                }
+            }
+        }
+    }
+}
+
+impl PartialOrd for HebrewDate {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 impl std::fmt::Display for HebrewDate {
