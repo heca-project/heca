@@ -248,7 +248,7 @@ impl HebrewDate {
     }
 
     fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
-        let mut cur_year = FIRST_YEAR + 1;
+        let mut cur_year = (FIRST_YEAR + 1) + days_since_first_rh / 400;
         loop {
             if get_rosh_hashana(cur_year + 1).0 > days_since_first_rh {
                 return cur_year;
@@ -299,8 +299,9 @@ impl HebrewDate {
             return Err(ConversionError::YearTooSmall);
         }
         let year = Self::day_of_last_rh(days_since_first_rh);
-        let mut remainder = (days_since_first_rh - get_rosh_hashana(year).0) as u64;
-        let amnt_days_in_year = get_rosh_hashana(year + 1).0 - get_rosh_hashana(year).0;
+        let cur_rh = get_rosh_hashana(year).0;
+        let mut remainder = (days_since_first_rh - cur_rh) as u64;
+        let amnt_days_in_year = get_rosh_hashana(year + 1).0 - cur_rh;
         let sched = YEAR_SCHED[return_year_sched(amnt_days_in_year)];
         let mut month: u64 = 0;
         for days_in_month in &sched {
