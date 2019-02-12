@@ -9,4 +9,10 @@ subcommands:
               required: true
               help: Specify Hebrew or Gregorian date to convert. 
 
+    - list:
+        about: List all special days in a given year (the current year is assumed if none is offered
+        args:
+          - year:
+              required: false
+              help: Specify the year. If the year is under 3000, it's assumed to be Gregorian. If it's above 3000, it's assumed to be Hebrew.
               

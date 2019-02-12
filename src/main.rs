@@ -10,6 +10,7 @@ use clap::App;
 
 use atoi::atoi;
 use chrono::prelude::*;
+use heca_lib::holidays::*;
 use heca_lib::*;
 
 fn main() {
@@ -26,7 +27,46 @@ fn main() {
                 InputError::DayOverflowError => println!("The day you selected is out of range"),
             }
         }
+    } else if let Some(command) = matches.subcommand_matches("list") {
+        if let Err(e) = list(command.value_of("year")) {
+            panic!(e);
+        }
     }
+}
+
+fn list(year: Option<&str>) -> Result<(), InputError> {
+    let year = if let Some(year) = year {
+        atoi::<u64>(year.as_bytes()).ok_or(InputError::DateFormatError)?
+    } else {
+        let utc: DateTime<Local> = Local::now();
+        utc.year() as u64
+    };
+
+    let final_list = if year < 3000 {
+        let jan_1_orig_year =
+            HebrewDate::from_gregorian(Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
+        let jan_1_next_year =
+            HebrewDate::from_gregorian(Utc.ymd((year + 1) as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
+        let mut yt_list = get_yt_list(jan_1_orig_year.year());
+        yt_list.append(&mut get_yt_list(jan_1_next_year.year()));
+        yt_list.append(&mut get_torah_reading_days_list(jan_1_orig_year.year()));
+        yt_list.append(&mut get_torah_reading_days_list(jan_1_next_year.year()));
+        yt_list.sort();
+
+        yt_list
+            .into_iter()
+            .filter(|x| (x).day() >= jan_1_orig_year && (x).day() < jan_1_next_year)
+            .collect()
+    } else {
+        let mut yt_list = get_yt_list(year);
+        yt_list.append(&mut get_torah_reading_days_list(year));
+        yt_list.sort();
+        yt_list
+    };
+    final_list
+        .iter()
+        .for_each(|x| println!("{} {}", x.day().to_gregorian(), x.name()));
+    Ok(())
 }
 
 fn convert(date_str: &str) -> Result<(), InputError> {
