@@ -2,128 +2,136 @@ use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
 use crate::types::HebrewMonth;
+use std::borrow::Cow;
 
 #[derive(Debug, Eq)]
 pub struct SpecialDay {
     day: HebrewDate,
-    name: String,
+    name: Cow<'static, str>,
 }
 
 impl SpecialDay {
+    #[inline]
     pub fn day(&self) -> HebrewDate {
         self.day
     }
+
+    #[inline]
     pub fn name(&self) -> &str {
         &(self.name)
     }
 }
 
 impl PartialOrd for SpecialDay {
+    #[inline]
     fn partial_cmp(&self, other: &SpecialDay) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for SpecialDay {
+    #[inline]
     fn cmp(&self, other: &SpecialDay) -> Ordering {
         self.day.cmp(&other.day)
     }
 }
 impl PartialEq for SpecialDay {
+    #[inline]
     fn eq(&self, other: &SpecialDay) -> bool {
         self.day == other.day
     }
 }
 
+#[inline]
 pub fn get_yt_list(year: u64) -> Vec<SpecialDay> {
     vec![
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 1).unwrap(),
-            name: String::from("Rosh Hashana 1"),
+            name: "Rosh Hashana 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 2).unwrap(),
-            name: String::from("Rosh Hashana 2"),
+            name: "Rosh Hashana 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 10).unwrap(),
-            name: String::from("Yom Kippur"),
+            name: "Yom Kippur".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 15).unwrap(),
-            name: String::from("Sukkos 1"),
+            name: "Sukkos 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 16).unwrap(),
-            name: String::from("Sukkos 2"),
+            name: "Sukkos 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 17).unwrap(),
-            name: String::from("Sukkos 3"),
+            name: "Sukkos 3".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 18).unwrap(),
-            name: String::from("Sukkos 4"),
+            name: "Sukkos 4".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 19).unwrap(),
-            name: String::from("Sukkos 5"),
+            name: "Sukkos 5".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 20).unwrap(),
-            name: String::from("Sukkos 6"),
+            name: "Sukkos 6".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 21).unwrap(),
-            name: String::from("Sukkos 7"),
+            name: "Sukkos 7".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 22).unwrap(),
-            name: String::from("Shmini Atzeres"),
+            name: "Shmini Atzeres".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 23).unwrap(),
-            name: String::from("Simchas Torah"),
+            name: "Simchas Torah".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 15).unwrap(),
-            name: String::from("Pesach 1"),
+            name: "Pesach 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 16).unwrap(),
-            name: String::from("Pesach 2"),
+            name: "Pesach 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 17).unwrap(),
-            name: String::from("Pesach 3"),
+            name: "Pesach 3".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 18).unwrap(),
-            name: String::from("Pesach 4"),
+            name: "Pesach 4".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 19).unwrap(),
-            name: String::from("Pesach 5"),
+            name: "Pesach 5".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 20).unwrap(),
-            name: String::from("Pesach 6"),
+            name: "Pesach 6".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 21).unwrap(),
-            name: String::from("Pesach 7"),
+            name: "Pesach 7".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 22).unwrap(),
-            name: String::from("Pesach 8"),
+            name: "Pesach 8".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Sivan, 6).unwrap(),
-            name: String::from("Shavuos 1"),
+            name: "Shavuos 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Sivan, 7).unwrap(),
-            name: String::from("Shavuos 2"),
+            name: "Shavuos 2".into(),
         },
     ]
 }
@@ -131,83 +139,83 @@ pub fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
     let mut special_days = vec![
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 30).unwrap(),
-            name: String::from("Rosh Chodesh Cheshvan 1"),
+            name: "Rosh Chodesh Cheshvan 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Cheshvan, 1).unwrap(),
-            name: String::from("Rosh Chodesh Cheshvan 2"),
+            name: "Rosh Chodesh Cheshvan 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 25).unwrap(),
-            name: String::from("Chanukah 1"),
+            name: "Chanukah 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 26).unwrap(),
-            name: String::from("Chanukah 2"),
+            name: "Chanukah 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 27).unwrap(),
-            name: String::from("Chanukah 3"),
+            name: "Chanukah 3".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 28).unwrap(),
-            name: String::from("Chanukah 4"),
+            name: "Chanukah 4".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 29).unwrap(),
-            name: String::from("Chanukah 5"),
+            name: "Chanukah 5".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Shvat, 1).unwrap(),
-            name: String::from("Rosh Chodesh Shvat"),
+            name: "Rosh Chodesh Shvat".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 10).unwrap(),
-            name: String::from("10th Of Teves"),
+            name: "10th Of Teves".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 1).unwrap(),
-            name: String::from("Rosh Chodesh Nissan"),
+            name: "Rosh Chodesh Nissan".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Nissan, 30).unwrap(),
-            name: String::from("Rosh Chodesh Iyar 1"),
+            name: "Rosh Chodesh Iyar 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Iyar, 1).unwrap(),
-            name: String::from("Rosh Chodesh Iyar 2"),
+            name: "Rosh Chodesh Iyar 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Sivan, 1).unwrap(),
-            name: String::from("Rosh Chodesh Sivan"),
+            name: "Rosh Chodesh Sivan".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Sivan, 30).unwrap(),
-            name: String::from("Rosh Chodesh Tammuz 1"),
+            name: "Rosh Chodesh Tammuz 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tammuz, 1).unwrap(),
-            name: String::from("Rosh Chodesh Tammuz 2"),
+            name: "Rosh Chodesh Tammuz 2".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tammuz, 17).unwrap(),
-            name: String::from("17th of Tammuz"),
+            name: "17th of Tammuz".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Av, 1).unwrap(),
-            name: String::from("Rosh Chodesh Av"),
+            name: "Rosh Chodesh Av".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Av, 9).unwrap(),
-            name: String::from("9th of Av"),
+            name: "9th of Av".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Av, 30).unwrap(),
-            name: String::from("Rosh Chodesh Elul 1"),
+            name: "Rosh Chodesh Elul 1".into(),
         },
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Elul, 1).unwrap(),
-            name: String::from("Rosh Chodesh Elul 2"),
+            name: "Rosh Chodesh Elul 2".into(),
         },
     ];
     let mut second_vector = {
@@ -215,56 +223,56 @@ pub fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
         if let Ok(first_day_rc) = HebrewDate::from_ymd(year, HebrewMonth::Cheshvan, 30) {
             in_vec.push(SpecialDay {
                 day: first_day_rc,
-                name: String::from("Rosh Chodesh Kislev 1"),
+                name: "Rosh Chodesh Kislev 1".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 1).unwrap(),
-                name: String::from("Rosh Chodesh Kislev 2"),
+                name: "Rosh Chodesh Kislev 2".into(),
             });
         } else {
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 1).unwrap(),
-                name: String::from("Rosh Chodesh Kislev"),
+                name: "Rosh Chodesh Kislev".into(),
             });
         }
 
         if let Ok(first_day_rc) = HebrewDate::from_ymd(year, HebrewMonth::Kislev, 30) {
             in_vec.push(SpecialDay {
                 day: first_day_rc,
-                name: String::from("Rosh Chodesh Teves 1"),
+                name: "Rosh Chodesh Teves 1".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 1).unwrap(),
-                name: String::from("Rosh Chodesh Teves 2"),
+                name: "Rosh Chodesh Teves 2".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Kislev, 30).unwrap(),
-                name: String::from("Chanukah 6"),
+                name: "Chanukah 6".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 1).unwrap(),
-                name: String::from("Chanukah 7"),
+                name: "Chanukah 7".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 2).unwrap(),
-                name: String::from("Chanukah 8"),
+                name: "Chanukah 8".into(),
             });
         } else {
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 1).unwrap(),
-                name: String::from("Rosh Chodesh Teves"),
+                name: "Rosh Chodesh Teves".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 1).unwrap(),
-                name: String::from("Chanukah 6"),
+                name: "Chanukah 6".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 2).unwrap(),
-                name: String::from("Chanukah 7"),
+                name: "Chanukah 7".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Teves, 3).unwrap(),
-                name: String::from("Chanukah 8"),
+                name: "Chanukah 8".into(),
             });
         }
 
@@ -272,47 +280,47 @@ pub fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
             //If this is a regular year
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Shvat, 30).unwrap(),
-                name: String::from("Rosh Chodesh Adar 1"),
+                name: "Rosh Chodesh Adar 1".into(),
             });
             in_vec.push(SpecialDay {
                 day: second_day_rc,
-                name: String::from("Rosh Chodesh Adar 2"),
+                name: "Rosh Chodesh Adar 2".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar, 14).unwrap(),
-                name: String::from("Purim"),
+                name: "Purim".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar, 15).unwrap(),
-                name: String::from("Shushan Purim"),
+                name: "Shushan Purim".into(),
             });
         } else {
             //If this is a leap year
 
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Shvat, 30).unwrap(),
-                name: String::from("Rosh Chodesh Adar I 1"),
+                name: "Rosh Chodesh Adar I 1".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar1, 1).unwrap(),
-                name: String::from("Rosh Chodesh Adar I 2"),
+                name: "Rosh Chodesh Adar I 2".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar1, 30).unwrap(),
-                name: String::from("Rosh Chodesh Adar II 1"),
+                name: "Rosh Chodesh Adar II 1".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar2, 1).unwrap(),
-                name: String::from("Rosh Chodesh Adar II 2"),
+                name: "Rosh Chodesh Adar II 2".into(),
             });
 
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar2, 14).unwrap(),
-                name: String::from("Purim"),
+                name: "Purim".into(),
             });
             in_vec.push(SpecialDay {
                 day: HebrewDate::from_ymd(year, HebrewMonth::Adar2, 15).unwrap(),
-                name: String::from("Shushan Purim"),
+                name: "Shushan Purim".into(),
             });
         }
 
