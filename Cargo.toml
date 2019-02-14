@@ -22,7 +22,12 @@ chrono-english="0.1.4"
 clap = {version = "2.32.0", features = ["yaml"]}
 heca-lib = {version="0.1.0", path="lib/heca-lib"}
 cpuprofiler = "0.0.3"
-
+itoa = "0.4"
 
 [workspace]
 members = ["lib/heca-lib"]
+
+
+[profile.release]
+lto = true
+

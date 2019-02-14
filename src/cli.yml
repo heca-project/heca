@@ -15,4 +15,9 @@ subcommands:
           - year:
               required: false
               help: Specify the year. If the year is under 3000, it's assumed to be Gregorian. If it's above 3000, it's assumed to be Hebrew.
+          - years:
+              required: false
+              help: Generate events for n years (default 1)
+              long: years
+              takes_value: true
               

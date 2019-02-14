@@ -355,16 +355,20 @@ impl HebrewDate {
         *EPOCH + Duration::days(amnt_days as i64)
     }
     ///Get the Hebrew day of month.
+    #[inline]
     pub fn day(&self) -> u8 {
         self.day
     }
 
     ///Get the Hebrew month of year
+    #[inline]
     pub fn month(&self) -> HebrewMonth {
         self.month
     }
 
     ///Get the Hebrew year.
+
+    #[inline]
     pub fn year(&self) -> u64 {
         self.year
     }

@@ -33,12 +33,14 @@ enum_from_primitive! {
 }
 
 impl HebrewMonth {
+    #[inline]
     pub fn month_list() -> Vec<&'static str> {
         vec![
             "Tishrei", "Cheshvan", "Kislev", "Teves", "Shvat", "Adar", "Adar1", "Adar2", "Nissan",
             "Iyar", "Sivan", "Tammuz", "Av", "Elul",
         ]
     }
+    #[inline]
     pub fn try_from(s: &str) -> Result<HebrewMonth, ConversionError> {
         match s {
             "Tishrei" => Ok(HebrewMonth::Tishrei),
@@ -63,6 +65,7 @@ impl HebrewMonth {
         }
     }
 
+    #[inline]
     pub fn as_str(&self) -> &str {
         match self {
             HebrewMonth::Tishrei => "Tishrei",

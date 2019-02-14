@@ -2,6 +2,7 @@ extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
 extern crate heca_lib;
+extern crate itoa;
 extern crate time;
 
 #[macro_use]
@@ -12,6 +13,8 @@ use atoi::atoi;
 use chrono::prelude::*;
 use heca_lib::holidays::*;
 use heca_lib::*;
+use std::io::BufWriter;
+use std::io::{self, Write};
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -28,44 +31,79 @@ fn main() {
             }
         }
     } else if let Some(command) = matches.subcommand_matches("list") {
-        if let Err(e) = list(command.value_of("year")) {
+      let year =  if let Some(year) = command.value_of("year"){
+        atoi::<u64>(year.as_bytes()).expect(&format!("I can't treat {} as a year",year))
+       } else {
+          Local::now().year() as u64
+       };
+
+      let n = if let Some(n) = command.value_of("years"){
+        atoi::<u64>(n.as_bytes()).expect(&format!("I can't treat {} as a number",n))
+       } else {
+          1
+       };
+        if let Err(e) = list(year,n, year < 4000) {
             panic!(e);
         }
     }
+
 }
 
-fn list(year: Option<&str>) -> Result<(), InputError> {
-    let year = if let Some(year) = year {
-        atoi::<u64>(year.as_bytes()).ok_or(InputError::DateFormatError)?
-    } else {
-        let utc: DateTime<Local> = Local::now();
-        utc.year() as u64
-    };
+fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
+    let mut year = year;
+    let mut stdout = io::stdout();
+    let mut lock = BufWriter::new(stdout.lock());
 
-    let final_list = if year < 3000 {
-        let jan_1_orig_year =
-            HebrewDate::from_gregorian(Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
-        let jan_1_next_year =
-            HebrewDate::from_gregorian(Utc.ymd((year + 1) as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
-        let mut yt_list = get_yt_list(jan_1_orig_year.year());
-        yt_list.append(&mut get_yt_list(jan_1_next_year.year()));
-        yt_list.append(&mut get_torah_reading_days_list(jan_1_orig_year.year()));
-        yt_list.append(&mut get_torah_reading_days_list(jan_1_next_year.year()));
-        yt_list.sort();
+    for _i in 0..n {
+        year += 1;
+        let final_list = if is_english {
+            let jan_1_orig_year =
+                HebrewDate::from_gregorian(Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
+            let jan_1_next_year =
+                HebrewDate::from_gregorian(Utc.ymd((year + 1) as i32, 1, 1).and_hms(0, 0, 0))
+                    .unwrap();
+            let mut yt_list = get_yt_list(jan_1_orig_year.year());
+            yt_list.append(&mut get_yt_list(jan_1_next_year.year()));
+            yt_list.append(&mut get_torah_reading_days_list(jan_1_orig_year.year()));
+            yt_list.append(&mut get_torah_reading_days_list(jan_1_next_year.year()));
+            yt_list.sort();
 
-        yt_list
-            .into_iter()
-            .filter(|x| (x).day() >= jan_1_orig_year && (x).day() < jan_1_next_year)
-            .collect()
-    } else {
-        let mut yt_list = get_yt_list(year);
-        yt_list.append(&mut get_torah_reading_days_list(year));
-        yt_list.sort();
-        yt_list
-    };
-    final_list
-        .iter()
-        .for_each(|x| println!("{} {}", x.day().to_gregorian(), x.name()));
+            yt_list
+                .into_iter()
+                .filter(|x| (x).day() >= jan_1_orig_year && (x).day() < jan_1_next_year)
+                .collect()
+        } else {
+            let mut yt_list = get_yt_list(year);
+            yt_list.append(&mut get_torah_reading_days_list(year));
+            yt_list.sort();
+            yt_list
+        };
+
+        final_list
+            .iter()
+            .map(|x| {
+                let ret = x.day().to_gregorian();
+                println!("ret={}",ret);
+                (ret.year(), ret.month(), ret.day(), x.name().as_bytes())
+                //        lock.write(format!("{} {}\n", x.day().to_gregorian(), x.name()).as_bytes());
+            })
+            .for_each(|(year, month, day, name)| {
+                let mut year_arr = [b'\0'; 16];
+                let mut month_arr = [b'\0'; 2];
+                let mut day_arr = [b'\0'; 2];
+                let count_y = itoa::write(&mut year_arr[..], year).unwrap();
+                let count_m = itoa::write(&mut month_arr[..], month).unwrap();
+                let count_d = itoa::write(&mut day_arr[..], day).unwrap();
+                lock.write(&year_arr[..count_y as usize]).unwrap();
+                lock.write(b"/").unwrap();
+                lock.write(&month_arr[..count_m as usize]).unwrap();
+                lock.write(b"/").unwrap();
+                lock.write(&day_arr[..count_d as usize]).unwrap();
+                lock.write(b" ").unwrap();
+                lock.write(name).unwrap();
+                lock.write(b"\n").unwrap();
+            });
+    }
     Ok(())
 }
 
