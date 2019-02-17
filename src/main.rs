@@ -1,6 +1,7 @@
 extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
+extern crate cpuprofiler;
 extern crate heca_lib;
 extern crate itoa;
 extern crate time;
@@ -17,6 +18,12 @@ use std::io::BufWriter;
 use std::io::{self, Write};
 
 fn main() {
+    cpuprofiler::PROFILER
+        .lock()
+        .unwrap()
+        .start("./my-prof.profile")
+        .unwrap();
+
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
     if let Some(command) = matches.subcommand_matches("convert") {
@@ -31,27 +38,28 @@ fn main() {
             }
         }
     } else if let Some(command) = matches.subcommand_matches("list") {
-      let year =  if let Some(year) = command.value_of("year"){
-        atoi::<u64>(year.as_bytes()).expect(&format!("I can't treat {} as a year",year))
-       } else {
-          Local::now().year() as u64
-       };
+        let year = if let Some(year) = command.value_of("year") {
+            atoi::<u64>(year.as_bytes()).expect(&format!("I can't treat {} as a year", year))
+        } else {
+            Local::now().year() as u64
+        };
 
-      let n = if let Some(n) = command.value_of("years"){
-        atoi::<u64>(n.as_bytes()).expect(&format!("I can't treat {} as a number",n))
-       } else {
-          1
-       };
-        if let Err(e) = list(year,n, year < 4000) {
+        let n = if let Some(n) = command.value_of("years") {
+            atoi::<u64>(n.as_bytes()).expect(&format!("I can't treat {} as a number", n))
+        } else {
+            1
+        };
+        if let Err(e) = list(year, n, year < 4000) {
             panic!(e);
         }
     }
 
+    cpuprofiler::PROFILER.lock().unwrap().stop().unwrap();
 }
 
-fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
+fn list(year: u64, n: u64, is_english: bool) -> Result<(), InputError> {
     let mut year = year;
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     let mut lock = BufWriter::new(stdout.lock());
 
     for _i in 0..n {
@@ -83,7 +91,6 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
             .iter()
             .map(|x| {
                 let ret = x.day().to_gregorian();
-                println!("ret={}",ret);
                 (ret.year(), ret.month(), ret.day(), x.name().as_bytes())
                 //        lock.write(format!("{} {}\n", x.day().to_gregorian(), x.name()).as_bytes());
             })

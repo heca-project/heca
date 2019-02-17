@@ -11,6 +11,7 @@ use crate::types::ConversionError;
 use crate::types::Day;
 use crate::types::HebrewMonth;
 
+pub mod calendar;
 /// The amount of Chalakim in an hour.
 pub const CHALAKIM_PER_HOUR: u64 = 1080;
 /// The amount of Chalakim between two Molads.
@@ -500,4 +501,34 @@ mod tests {
                 }
             });
     }
+    extern crate test;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_day_of_last_rh(b: &mut Bencher) {
+        b.iter(|| HebrewDate::day_of_last_rh(3650000));
+    }
+
+    #[bench]
+    fn bench_from_ymd(b: &mut Bencher) {
+        b.iter(|| HebrewDate::from_ymd(15751, HebrewMonth::Shvat, 1))
+    }
+    #[bench]
+    fn bench_get_from_rh(b: &mut Bencher) {
+        b.iter(|| get_rosh_hashana(9999))
+    }
+
+    #[bench]
+    fn bench_months_per_year(b: &mut Bencher) {
+        b.iter(|| months_per_year(9999))
+    }
+    #[bench]
+    fn bench_to_gregorian(b: &mut Bencher) {
+        b.iter(|| {
+            HebrewDate::from_ymd(15751, HebrewMonth::Shvat, 1)
+                .unwrap()
+                .to_gregorian()
+        })
+    }
+
 }
