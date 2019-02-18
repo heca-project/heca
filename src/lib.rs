@@ -65,4 +65,8 @@ pub mod types;
 #[doc(inline)]
 pub use convert::HebrewDate;
 #[doc(inline)]
+pub use convert::year;
+#[doc(inline)]
+pub use convert::year::*;
+#[doc(inline)]
 pub use types::{ConversionError, Day, HebrewMonth};
