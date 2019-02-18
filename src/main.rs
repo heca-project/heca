@@ -11,7 +11,7 @@ use clap::App;
 
 use atoi::atoi;
 use chrono::prelude::*;
-use heca_lib::holidays::*;
+use chrono::Duration;
 use heca_lib::*;
 use std::io::BufWriter;
 use std::io::{self, Write};
@@ -20,7 +20,20 @@ fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
     if let Some(command) = matches.subcommand_matches("convert") {
-        if let Err(e) = convert(command.value_of("date").unwrap()) {
+        let force_hebrew = command.is_present("hebrew");
+        let force_gregorian = command.is_present("gregorian");
+        if force_hebrew && force_gregorian {
+            println!("You can force either Hebrew or Gregorian, not both.");
+            std::process::exit(1);
+        }
+        let convert_type = if force_hebrew {
+            ConvertType::FromHebrew
+        } else if force_gregorian {
+            ConvertType::FromGregorian
+        } else {
+            ConvertType::FromFuzzy
+        };
+        if let Err(e) = convert(command.value_of("date").unwrap(), convert_type) {
             match e {
                 InputError::DateFormatError => println!("I can't parse the date you gave"),
                 InputError::TooManyMonths => println!("I need only one hebrew month"),
@@ -31,27 +44,26 @@ fn main() {
             }
         }
     } else if let Some(command) = matches.subcommand_matches("list") {
-      let year =  if let Some(year) = command.value_of("year"){
-        atoi::<u64>(year.as_bytes()).expect(&format!("I can't treat {} as a year",year))
-       } else {
-          Local::now().year() as u64
-       };
+        let year = if let Some(year) = command.value_of("year") {
+            atoi::<u64>(year.as_bytes()).expect(&format!("I can't treat {} as a year", year))
+        } else {
+            Local::now().year() as u64
+        };
 
-      let n = if let Some(n) = command.value_of("years"){
-        atoi::<u64>(n.as_bytes()).expect(&format!("I can't treat {} as a number",n))
-       } else {
-          1
-       };
-        if let Err(e) = list(year,n, year < 4000) {
+        let n = if let Some(n) = command.value_of("years") {
+            atoi::<u64>(n.as_bytes()).expect(&format!("I can't treat {} as a number", n))
+        } else {
+            1
+        };
+        if let Err(e) = list(year, n, year < 4000) {
             panic!(e);
         }
     }
-
 }
 
-fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
-    let mut stdout = io::stdout();
-    let mut lock = BufWriter::with_capacity(100_000,stdout.lock());
+fn list(year: u64, n: u64, is_english: bool) -> Result<(), InputError> {
+    let stdout = io::stdout();
+    let mut lock = BufWriter::with_capacity(100_000, stdout.lock());
     let mut year = year;
     for _i in 0..n {
         let final_list = if is_english {
@@ -74,9 +86,8 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
                 .filter(|x| (x).day() >= jan_1_orig_year && (x).day() < jan_1_next_year)
                 .collect()
         } else {
-
             let year = HebrewYear::new(year).unwrap();
-            let mut yt_list =year.get_holidays(YomTovType::YomTov);
+            let mut yt_list = year.get_holidays(YomTovType::YomTov);
             yt_list.append(&mut year.get_holidays(YomTovType::SpecialTorahReading));
             yt_list.sort();
             yt_list
@@ -104,29 +115,71 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
                 lock.write(name).unwrap();
                 lock.write(b"\n").unwrap();
             });
-            year += 1;
+        year += 1;
     }
     Ok(())
 }
 
-fn convert(date_str: &str) -> Result<(), InputError> {
-    if let Ok(heb_date) = convert_date_to_fuzzy_hebrew(date_str) {
-        let eng_date = heb_date.to_gregorian();
-        println!("{}", eng_date);
-        Ok(())
-    } else if let Ok(eng_date) = convert_date_to_fuzzy_gregorian(&date_str) {
-        let heb_date =
-            HebrewDate::from_gregorian(eng_date).map_err(|x| InputError::ConversionError(x))?;
-        println!(
-            "{} -> {} {} {}",
-            eng_date,
-            heb_date.day(),
-            heb_date.month(),
-            heb_date.year()
-        );
-        Ok(())
-    } else {
-        Err(InputError::DateFormatError)
+fn convert(date_str: &str, t: ConvertType) -> Result<(), InputError> {
+    match t {
+        ConvertType::FromHebrew => {
+            let heb_date = convert_date_to_fuzzy_hebrew(date_str)?;
+            let eng_date = heb_date.to_gregorian();
+            println!(
+                "{} => {} - {}",
+                heb_date,
+                eng_date.format("%m/%d/%y"),
+                (eng_date + Duration::days(1)).format("%m/%d/%y"),
+            );
+            Ok(())
+        }
+        ConvertType::FromGregorian => {
+            let vec = date_str.split("-").collect::<Vec<&str>>();
+            if vec.len() < 3 {
+                return Err(InputError::DateFormatError);
+            }
+
+            let v: Vec<u64> = vec
+                .iter()
+                .filter_map(|x| atoi::<u64>(x.as_bytes()))
+                .collect();
+            if v.len() < 3 {
+                return Err(InputError::DateFormatError);
+            }
+
+            let heb_date1 = HebrewDate::from_gregorian(
+                Utc.ymd(v[0] as i32, v[1] as u32, v[2] as u32)
+                    .and_hms(0, 0, 0),
+            )
+            .map_err(|x| InputError::ConversionError(x))?;
+            let heb_date2 = HebrewDate::from_gregorian(
+                Utc.ymd(v[0] as i32, v[1] as u32, v[2] as u32)
+                    .and_hms(23, 59, 59),
+            )
+            .map_err(|x| InputError::ConversionError(x))?;
+            println!("{}/{}/{} => {}-{}", v[0], v[1], v[2], heb_date1, heb_date2);
+            Ok(())
+        }
+        ConvertType::FromFuzzy => {
+            if let Ok(heb_date) = convert_date_to_fuzzy_hebrew(date_str) {
+                let eng_date = heb_date.to_gregorian();
+                println!("{}", eng_date);
+                Ok(())
+            } else if let Ok(eng_date) = convert_date_to_fuzzy_gregorian(&date_str) {
+                let heb_date = HebrewDate::from_gregorian(eng_date)
+                    .map_err(|x| InputError::ConversionError(x))?;
+                println!(
+                    "{} -> {} {} {}",
+                    eng_date,
+                    heb_date.day(),
+                    heb_date.month(),
+                    heb_date.year()
+                );
+                Ok(())
+            } else {
+                Err(InputError::DateFormatError)
+            }
+        }
     }
 }
 
@@ -219,4 +272,10 @@ enum InputError {
     WrongAmntHebDateOptions,
     ConversionError(ConversionError),
     DayOverflowError,
+}
+
+enum ConvertType {
+    FromGregorian,
+    FromHebrew,
+    FromFuzzy,
 }

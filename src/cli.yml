@@ -5,9 +5,22 @@ subcommands:
     - convert:
         about: Converts Hebrew to Gregorian and back.
         args:
+          - hebrew:
+               required: false
+               help: Force conversion from Hebrew to Gregorian. It takes dates formatted as "Shevat-15-5779"
+               short: H
+               long: hebrew
+               takes_value: false
+          - gregorian:
+               required: false
+               help: Force conversion from Gregorian to Hebrew. It takes dates formatted as RFC 3339 (1996-12-19)
+               short: G
+               long: gregorian 
+               takes_value: false
           - date:
               required: true
               help: Specify Hebrew or Gregorian date to convert. 
+
 
     - list:
         about: List all special days in a given year (the current year is assumed if none is offered
