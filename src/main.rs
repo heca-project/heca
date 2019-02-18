@@ -50,22 +50,23 @@ fn main() {
 }
 
 fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
-    let mut year = year;
     let mut stdout = io::stdout();
-    let mut lock = BufWriter::new(stdout.lock());
-
+    let mut lock = BufWriter::with_capacity(100_000,stdout.lock());
+    let mut year = year;
     for _i in 0..n {
-        year += 1;
         let final_list = if is_english {
             let jan_1_orig_year =
                 HebrewDate::from_gregorian(Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0)).unwrap();
             let jan_1_next_year =
                 HebrewDate::from_gregorian(Utc.ymd((year + 1) as i32, 1, 1).and_hms(0, 0, 0))
                     .unwrap();
-            let mut yt_list = get_yt_list(jan_1_orig_year.year());
-            yt_list.append(&mut get_yt_list(jan_1_next_year.year()));
-            yt_list.append(&mut get_torah_reading_days_list(jan_1_orig_year.year()));
-            yt_list.append(&mut get_torah_reading_days_list(jan_1_next_year.year()));
+
+            let this_year = HebrewYear::new(jan_1_orig_year.year()).unwrap();
+            let next_year = HebrewYear::new(jan_1_next_year.year()).unwrap();
+            let mut yt_list = this_year.get_holidays(YomTovType::YomTov);
+            yt_list.append(&mut this_year.get_holidays(YomTovType::SpecialTorahReading));
+            yt_list.append(&mut next_year.get_holidays(YomTovType::YomTov));
+            yt_list.append(&mut next_year.get_holidays(YomTovType::SpecialTorahReading));
             yt_list.sort();
 
             yt_list
@@ -73,8 +74,10 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
                 .filter(|x| (x).day() >= jan_1_orig_year && (x).day() < jan_1_next_year)
                 .collect()
         } else {
-            let mut yt_list = get_yt_list(year);
-            yt_list.append(&mut get_torah_reading_days_list(year));
+
+            let year = HebrewYear::new(year).unwrap();
+            let mut yt_list =year.get_holidays(YomTovType::YomTov);
+            yt_list.append(&mut year.get_holidays(YomTovType::SpecialTorahReading));
             yt_list.sort();
             yt_list
         };
@@ -83,9 +86,7 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
             .iter()
             .map(|x| {
                 let ret = x.day().to_gregorian();
-                println!("ret={}",ret);
                 (ret.year(), ret.month(), ret.day(), x.name().as_bytes())
-                //        lock.write(format!("{} {}\n", x.day().to_gregorian(), x.name()).as_bytes());
             })
             .for_each(|(year, month, day, name)| {
                 let mut year_arr = [b'\0'; 16];
@@ -103,6 +104,7 @@ fn list(year: u64,n: u64, is_english: bool) -> Result<(), InputError> {
                 lock.write(name).unwrap();
                 lock.write(b"\n").unwrap();
             });
+            year += 1;
     }
     Ok(())
 }
