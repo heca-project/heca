@@ -7,7 +7,6 @@ use num::FromPrimitive;
 use std::fmt;
 use time::Duration;
 
-
 use crate::types::ConversionError;
 use crate::types::Day;
 use crate::types::HebrewMonth;
@@ -415,7 +414,6 @@ mod tests {
             for i in 1..366 {
                 let h_day = HebrewDate::from_gregorian(original_day).unwrap();
                 let ne_day = h_day.to_gregorian();
-                println!("{} {} {} {}", i, original_day, h_day, ne_day);
                 assert_eq!(original_day, ne_day);
                 original_day = original_day + Duration::days(1);
             }

@@ -6,8 +6,8 @@ use std::borrow::Cow;
 
 #[derive(Debug, Eq)]
 pub struct SpecialDay {
-    pub (crate) day: HebrewDate,
-    pub (crate) name: Cow<'static, str>,
+    pub(crate) day: HebrewDate,
+    pub(crate) name: Cow<'static, str>,
 }
 
 impl SpecialDay {
@@ -135,7 +135,7 @@ pub(crate) fn get_yt_list(year: u64) -> Vec<SpecialDay> {
         },
     ]
 }
-pub (crate) fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
+pub(crate) fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
     let mut special_days = vec![
         SpecialDay {
             day: HebrewDate::from_ymd(year, HebrewMonth::Tishrei, 30).unwrap(),
