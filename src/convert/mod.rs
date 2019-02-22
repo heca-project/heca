@@ -90,7 +90,7 @@ fn months_per_year(year: u64) -> u64 {
 
 //Calculate how many Chalakim between Epoch and Rosh Hashana, and which day of the week does it
 //fall out on.
-fn get_rosh_hashana(year: u64) -> (u64, Day) {
+pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day) {
     let amnt_chalakim_since_first_molad = get_molad_for_year(year);
     let amnt_chalakim_since_epoch = amnt_chalakim_since_first_molad + FIRST_MOLAD;
 
@@ -112,9 +112,6 @@ fn get_rosh_hashana(year: u64) -> (u64, Day) {
         reg_postpone = true;
     }
 
-    //This shouldn't panic, as there are seven options in Day (seven days in week).
-    dow = Day::from_u64((amnt_days) % 7).unwrap();
-
     // See Hilchos Kiddush HaChodesh Halacha 4
 
     if !reg_postpone
@@ -133,6 +130,9 @@ fn get_rosh_hashana(year: u64) -> (u64, Day) {
         amnt_days += 1;
     }
 
+    //This shouldn't panic, as there are seven options in Day (seven days in week).
+    dow = Day::from_u64((amnt_days) % 7).unwrap();
+
     (amnt_days, dow)
 }
 
@@ -143,9 +143,6 @@ pub struct HebrewDate {
     day: u8,
     month: HebrewMonth,
     year: u64,
-    molads_of_month: [u64; 14],
-    months_length: &'static [u8; 14],
-    rosh_hashana_dow: Day,
 }
 
 impl Eq for HebrewDate {}
@@ -235,22 +232,18 @@ impl HebrewDate {
             return Err(ConversionError::TooManyDaysInMonth(sched[month as usize]));
         }
 
-        let mut molads_of_month = [0; 14];
-        for x in &mut molads_of_month {
-            *x = 0;
-        }
         Ok(HebrewDate {
             year,
             month,
             day: day as u8,
-            rosh_hashana_dow: get_rosh_hashana(year).1,
-            months_length: sched,
-            molads_of_month,
         })
     }
 
     fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
-        let mut cur_year = (FIRST_YEAR + 1) + days_since_first_rh / 400;
+        let mut cur_year = (FIRST_YEAR) + 19 * days_since_first_rh / 6956;
+        if get_rosh_hashana(cur_year).0 > days_since_first_rh {
+            panic!("get_rosh_hashana(cur_year).0 < days_since_first_rh ");
+        }
         loop {
             if get_rosh_hashana(cur_year + 1).0 > days_since_first_rh {
                 return cur_year;
@@ -302,6 +295,17 @@ impl HebrewDate {
         }
         let year = Self::day_of_last_rh(days_since_first_rh);
         let cur_rh = get_rosh_hashana(year).0;
+        Ok(Self::get_hebrewdate_from_days_after_rh(
+            year,
+            days_since_first_rh,
+            cur_rh,
+        ))
+    }
+    pub(crate) fn get_hebrewdate_from_days_after_rh(
+        year: u64,
+        days_since_first_rh: u64,
+        cur_rh: u64,
+    ) -> HebrewDate {
         let mut remainder = (days_since_first_rh - cur_rh) as u64;
         let amnt_days_in_year = get_rosh_hashana(year + 1).0 - cur_rh;
         let sched = YEAR_SCHED[return_year_sched(amnt_days_in_year)];
@@ -313,14 +317,11 @@ impl HebrewDate {
             month += 1;
             remainder -= u64::from(*days_in_month);
         }
-        Ok(HebrewDate {
+        HebrewDate {
             year,
             month: HebrewMonth::from_u64(month).unwrap(),
             day: remainder as u8 + 1,
-            months_length: &YEAR_SCHED[return_year_sched(amnt_days_in_year)],
-            rosh_hashana_dow: Day::Monday,
-            molads_of_month: [0; 14],
-        })
+        }
     }
 
     /// Gets the Grgorian date for the current Hebrew date.
@@ -501,4 +502,5 @@ mod tests {
                 }
             });
     }
+
 }
