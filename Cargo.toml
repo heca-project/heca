@@ -30,7 +30,3 @@ criterion = "0.2"
 [profile.release]
 debug = true
 lto = true
-
-[[bench]]
-name = "my_benchmark"
-harness = false
