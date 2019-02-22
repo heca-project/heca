@@ -1,9 +1,11 @@
 extern crate atoi;
 extern crate chrono;
 extern crate chrono_english;
+extern crate cpuprofiler;
 extern crate heca_lib;
 extern crate itoa;
 extern crate time;
+use cpuprofiler::PROFILER;
 
 #[macro_use]
 extern crate clap;
@@ -17,6 +19,7 @@ use std::io::BufWriter;
 use std::io::{self, Write};
 
 fn main() {
+    PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
     if let Some(command) = matches.subcommand_matches("convert") {
@@ -59,6 +62,7 @@ fn main() {
             panic!(e);
         }
     }
+    PROFILER.lock().unwrap().stop().unwrap();
 }
 
 fn list(year: u64, n: u64, is_english: bool) -> Result<(), InputError> {

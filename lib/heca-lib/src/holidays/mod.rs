@@ -1,8 +1,11 @@
 use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
+use crate::types::Day;
 use crate::types::HebrewMonth;
+use chrono::prelude::*;
 use std::borrow::Cow;
+use time::Duration;
 
 #[derive(Debug, Eq)]
 pub struct SpecialDay {
@@ -332,6 +335,59 @@ pub(crate) fn get_torah_reading_days_list(year: u64) -> Vec<SpecialDay> {
     special_days
 }
 
+/// This is based on the Biyur Halacha to Orach Chaim 428:4:3
+pub(crate) fn get_torah_readings(year: u64) -> Vec<SpecialDay> {
+    use crate::convert::get_rosh_hashana;
+    let (rh_day, rh_dow) = get_rosh_hashana(year);
+    let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
+
+    //Tazriya/Metzorah Acharei-Mos/Kedoshim and Behar/Bechukosai are always split on a leap year
+    //and connected on a regular year.
+    let (split_tazriya, split_acharei, split_behar) = if rh_day_next - rh_day > 365 {
+        (true, true, true)
+    } else {
+        (false, false, false)
+    };
+    //Vayakhel/Pekudei is split if the year is a leap year or if it's a full year and Rosh Hashana
+    //starts on Thursday.
+    let split_vayakhel =
+        rh_day_next - rh_day > 365 || (rh_day_next - rh_day == 355 && rh_dow == Day::Thursday);
+
+    //Behar/Bechukosai is split only if Shavuos starts on Shabbos.
+    //Mattos/Maasei is split only if it's a leap year and Rosh Hashana starts on a Thursday, and
+    //the year is full, or empty.
+    //TODO: In Israel, It's also split in a leap year which starts on a Monday and is full, or a
+    //leap year starting on a Tuesday, and the year is an ordered year.
+    //See this for more information: https://he.wikipedia.org/wiki/%D7%A4%D7%A8%D7%A9%D7%AA_%D7%9E%D7%98%D7%95%D7%AA
+    //
+    //Nitzavim/Vayelech is split only if Rosh Hashana starts on a Monday or Tuesday
+    vec![SpecialDay {
+        name: "A".into(),
+        day: HebrewDate::from_ymd(year, HebrewMonth::Adar2, 15).unwrap(),
+    }]
+}
+
+fn get_shabbosim(year: u64) -> Vec<HebrewDate> {
+    use crate::convert::get_rosh_hashana;
+    let (day_of_rh, rosh_hashana_dow) = get_rosh_hashana(year);
+    let (day_of_next_rh, _) = get_rosh_hashana(year + 1);
+    let amnt_days_to_shabbos = Day::Shabbos as u64 - (rosh_hashana_dow as u64) + 1;
+    let mut cur_day = day_of_rh + amnt_days_to_shabbos;
+    let mut return_vec: Vec<HebrewDate> = Vec::new();
+    println!(
+        "{} {} {} {}",
+        year, cur_day, day_of_rh, amnt_days_to_shabbos
+    );
+    while cur_day < day_of_next_rh {
+        return_vec.push(HebrewDate::get_hebrewdate_from_days_after_rh(
+            year, cur_day, day_of_rh,
+        ));
+
+        cur_day += 7;
+    }
+    return_vec
+}
+
 #[cfg(test)]
 #[test]
 fn check_fns_work_without_panic() {
@@ -339,5 +395,14 @@ fn check_fns_work_without_panic() {
         println!("{}", i);
         get_yt_list(i);
         get_torah_reading_days_list(i);
+    }
+}
+
+#[test]
+fn weeks_in_a_year() {
+    for i in 5764..9999 {
+        get_shabbosim(i)
+            .iter()
+            .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Sat));
     }
 }
