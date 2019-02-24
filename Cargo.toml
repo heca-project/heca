@@ -7,7 +7,7 @@ description = "Hebrew Calendar library."
 keywords = ["library", "calendar", "hebrew", "jewish"]
 categories = ["date-and-time"]
 license = "MIT"
-repository = "https://gitlab.com/heca/heca"
+repository = "https://github.com/heca-project/heca"
 readme = "README.md"
 
 [badges]
