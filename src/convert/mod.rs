@@ -79,7 +79,7 @@ fn get_molad_for_year(year: u64) -> u64 {
 }
 
 //Does short calculation if this year is a leap year.
-fn months_per_year(year: u64) -> u64 {
+pub(crate) fn months_per_year(year: u64) -> u64 {
     let year_in_cycle = ((year - FIRST_YEAR) % 19) as usize;
     if LEAP_YEARS[year_in_cycle] {
         13
