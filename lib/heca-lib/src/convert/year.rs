@@ -3,6 +3,7 @@ use crate::convert::*;
 use crate::holidays::get_torah_reading_days_list;
 use crate::holidays::*;
 use crate::types::*;
+use std::borrow::Cow;
 
 pub struct HebrewYear {
     year: u64,
@@ -34,14 +35,15 @@ impl HebrewYear {
         HebrewDate::from_ymd(self.year, month, day)
     }
 
-    pub fn get_holidays(&self, yt_type: YomTovType) -> Vec<SpecialDay> {
+    pub fn get_holidays(&self, yt_type: YomTovType) -> Cow<'static, [SpecialDay]> {
         match yt_type {
             YomTovType::YomTov => get_yt_list(self.year),
             YomTovType::SpecialTorahReading => get_torah_reading_days_list(self.year),
             YomTovType::RegularTorahReading => vec![SpecialDay {
                 day: HebrewDate::from_ymd(self.year, HebrewMonth::Tishrei, 30).unwrap(),
-                name: "Rosh Chodesh Cheshvan 1".into(),
-            }],
+                name: TorahReading::Shabbos(Parsha::YomTov),
+            }]
+            .into(),
         }
     }
 }
