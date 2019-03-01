@@ -159,20 +159,16 @@ impl Ord for HebrewDate {
             Ordering::Less
         } else if self.year > other.year {
             Ordering::Greater
+        } else if (self.month as i32) < (other.month as i32) {
+            Ordering::Less
+        } else if (self.month as i32) > (other.month as i32) {
+            Ordering::Greater
+        } else if self.day < other.day {
+            Ordering::Less
+        } else if self.day > other.day {
+            Ordering::Greater
         } else {
-            if (self.month as i32) < (other.month as i32) {
-                Ordering::Less
-            } else if (self.month as i32) > (other.month as i32) {
-                Ordering::Greater
-            } else {
-                if self.day < other.day {
-                    Ordering::Less
-                } else if self.day > other.day {
-                    Ordering::Greater
-                } else {
-                    Ordering::Equal
-                }
-            }
+            Ordering::Equal
         }
     }
 }
@@ -180,11 +176,6 @@ impl Ord for HebrewDate {
 impl PartialOrd for HebrewDate {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
-    }
-}
-impl std::fmt::Display for HebrewDate {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {}", self.day, self.month, self.year)
     }
 }
 
@@ -244,12 +235,10 @@ impl HebrewDate {
         if get_rosh_hashana(cur_year).0 > days_since_first_rh {
             panic!("get_rosh_hashana(cur_year).0 < days_since_first_rh ");
         }
-        loop {
-            if get_rosh_hashana(cur_year + 1).0 > days_since_first_rh {
-                return cur_year;
-            }
+        while get_rosh_hashana(cur_year + 1).0 <= days_since_first_rh {
             cur_year += 1;
         }
+        return cur_year;
     }
 
     /// Returns a HebrewDate on success, or a ConversionError on failure.
