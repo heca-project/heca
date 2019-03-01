@@ -535,7 +535,7 @@ pub(crate) fn get_torah_readings(year: u64) -> Cow<'static, [SpecialDay]> {
     }
 
     //Every Shabbos should have a Parsha, and every Parsha should have a Shabbos
-    assert_eq!(parsha_list.len(),regular_shabbosim_list.len());
+    assert_eq!(parsha_list.len(), regular_shabbosim_list.len());
     let mut return_val = regular_shabbosim_list
         .iter()
         .enumerate()
