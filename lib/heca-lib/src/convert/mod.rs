@@ -230,6 +230,16 @@ impl HebrewDate {
         })
     }
 
+    // Use this carefully, as it can result in code panicing. It assumes that the dates are known
+    // to be valid.
+    pub(crate) fn from_ymd_unsafe(year: u64, month: HebrewMonth, day: u8) -> HebrewDate {
+        HebrewDate {
+            year,
+            month,
+            day: day as u8,
+        }
+    }
+
     fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
         let mut cur_year = (FIRST_YEAR) + 19 * days_since_first_rh / 6956;
         if get_rosh_hashana(cur_year).0 > days_since_first_rh {
@@ -490,6 +500,17 @@ mod tests {
                     assert_eq!(year.parse::<u64>().unwrap() as i32, eng_day.year());
                 }
             });
+    }
+
+    extern crate test;
+    use test::Bencher;
+    #[bench]
+    fn time_from_ymd(b: &mut Bencher) {
+        b.iter(|| test::black_box(HebrewDate::from_ymd(9999, HebrewMonth::Tishrei, 1)));
+    }
+    #[bench]
+    fn time_from_ymd_unsafe(b: &mut Bencher) {
+        b.iter(|| test::black_box(HebrewDate::from_ymd_unsafe(9999, HebrewMonth::Tishrei, 1)));
     }
 
 }
