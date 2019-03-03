@@ -37,7 +37,7 @@ impl HebrewYear {
 
     pub fn get_holidays(&self, yt_type: YomTovType) -> Cow<'static, [SpecialDay]> {
         match yt_type {
-            YomTovType::YomTov => get_yt_list(self.year),
+            YomTovType::YomTov => get_yt_list(self.year, ScheduleLocation::Chul),
             YomTovType::SpecialTorahReading => get_torah_reading_days_list(self.year),
             YomTovType::RegularTorahReading => vec![SpecialDay {
                 day: HebrewDate::from_ymd(self.year, HebrewMonth::Tishrei, 30).unwrap(),
