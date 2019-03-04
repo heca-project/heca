@@ -3,7 +3,6 @@ use std::cmp::Ordering;
 use crate::convert::HebrewDate;
 use crate::types::Day;
 use crate::types::HebrewMonth;
-use chrono::prelude::*;
 use std::borrow::Cow;
 
 #[derive(Debug, Eq, Clone)]
@@ -86,12 +85,12 @@ pub enum YomTov {
 }
 
 #[derive(PartialEq)]
-pub enum ScheduleLocation {
+pub enum Location {
     Israel,
     Chul,
 }
 #[inline]
-pub(crate) fn get_yt_list(year: u64, location: ScheduleLocation) -> Cow<'static, [SpecialDay]> {
+pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [SpecialDay]> {
     let mut v1 = vec![
         SpecialDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 1),
@@ -138,7 +137,7 @@ pub(crate) fn get_yt_list(year: u64, location: ScheduleLocation) -> Cow<'static,
             name: TorahReading::YomTov(YomTov::ShminiAtzeres),
         },
     ];
-    if location == ScheduleLocation::Chul {
+    if location == Location::Chul {
         v1.push(SpecialDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 23),
             name: TorahReading::YomTov(YomTov::SimchasTorah),
@@ -175,7 +174,7 @@ pub(crate) fn get_yt_list(year: u64, location: ScheduleLocation) -> Cow<'static,
         },
     ]);
 
-    if location == ScheduleLocation::Chul {
+    if location == Location::Chul {
         v1.push(SpecialDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Nissan, 22),
             name: TorahReading::YomTov(YomTov::Pesach8),
@@ -186,7 +185,7 @@ pub(crate) fn get_yt_list(year: u64, location: ScheduleLocation) -> Cow<'static,
         name: TorahReading::YomTov(YomTov::Shavuos1),
     });
 
-    if location == ScheduleLocation::Chul {
+    if location == Location::Chul {
         v1.push(SpecialDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Sivan, 7),
             name: TorahReading::YomTov(YomTov::Shavuos2),
@@ -496,14 +495,11 @@ pub(crate) fn get_torah_reading_days_list(year: u64) -> Cow<'static, [SpecialDay
 }
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
-pub(crate) fn get_torah_readings(
-    year: u64,
-    location: ScheduleLocation,
-) -> Cow<'static, [SpecialDay]> {
+pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, [SpecialDay]> {
     use crate::convert::get_rosh_hashana;
     let (rh_day, rh_dow) = get_rosh_hashana(year);
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
-    let year_len = rh_day_next-rh_day;
+    let year_len = rh_day_next - rh_day;
 
     //Tazriya/Metzorah Acharei-Mos/Kedoshim and Behar/Bechukosai are always split on a leap year
     //and connected on a regular year. The only exception is (in Israel) that Behar is split when the year is a non-leap year, is regular ordered and Rosh Hashana is on Thursday
@@ -512,8 +508,8 @@ pub(crate) fn get_torah_readings(
     } else {
         (false, false, false)
     };
-    if location == ScheduleLocation::Israel {
-    split_behar = split_behar ||  rh_day_next - rh_day  == 354 && rh_dow == Day::Thursday; 
+    if location == Location::Israel {
+        split_behar = split_behar || rh_day_next - rh_day == 354 && rh_dow == Day::Thursday;
     }
 
     //Vayakhel/Pekudei is split if the year is a leap year or if it's a full year and Rosh Hashana
@@ -523,15 +519,18 @@ pub(crate) fn get_torah_readings(
 
     //Chukas Balak is split when the second day of Shavuos doesn't fall on Shabbos (The first day can't fall out on Shabbos, as then the next Rosh Hashana would start on Friday, which it can't). Shavuos falls on Shabbos (5783, for example) when the first day of the next Rosh Hashana is on a Shabbos.
     //Obviously, in Israel it's never split (as they don't have the second day of Shavuos).
-    let split_chukas = location == ScheduleLocation::Israel || rh_dow_next != Day::Shabbos;
+    let split_chukas = location == Location::Israel || rh_dow_next != Day::Shabbos;
     //Mattos/Maasei is split only if it's a leap year and Rosh Hashana starts on a Thursday, and
     //the year is full, or empty.
     //In Israel, It's also split in a leap year which starts on a Monday and is full, or a
     //leap year starting on a Tuesday, and the year is an ordered year.
     //See this for more information: https://he.wikipedia.org/wiki/%D7%A4%D7%A8%D7%A9%D7%AA_%D7%9E%D7%98%D7%95%D7%AA
- 
-    let split_mattos = rh_dow == Day::Thursday && (len_of_year == 383 || len_of_year == 385) || (location == ScheduleLocation::Israel && (rh_dow == Day::Monday && year_len == 385 || rh_dow == Day::Tuesday && year_len == 384));
-   //
+
+    let split_mattos = rh_dow == Day::Thursday && (len_of_year == 383 || len_of_year == 385)
+        || (location == Location::Israel
+            && (rh_dow == Day::Monday && year_len == 385
+                || rh_dow == Day::Tuesday && year_len == 384));
+    //
     //Nitzavim/Vayelech is split only if Rosh Hashana starts on a Monday or Tuesday
     let split_nitzavim = rh_dow == Day::Monday || rh_dow == Day::Tuesday;
     let split_nitzavim_next_year = rh_dow_next == Day::Monday || rh_dow_next == Day::Tuesday;
@@ -591,7 +590,7 @@ pub(crate) fn get_torah_readings(
         parsha_list.push(Parsha::NitzavimVayelech);
     }
 
-    println!("{:?}",parsha_list);
+    println!("{:?}", parsha_list);
     //Every Shabbos should have a Parsha, and every Parsha should have a Shabbos
     assert_eq!(parsha_list.len(), regular_shabbosim_list.len());
     let mut return_val = regular_shabbosim_list
@@ -773,6 +772,7 @@ const DEVARIM_KISAVO: [Parsha; 7] = [
 #[cfg(test)]
 mod test {
     use crate::holidays::*;
+    use chrono::prelude::*;
     #[test]
     fn fasts_should_never_start_on_friday_night() {
         for i in 3764..9999 {
@@ -796,11 +796,11 @@ mod test {
     fn check_fns_work_without_panic() {
         for i in 5764..9999 {
             println!("{}", i);
-            get_yt_list(i, ScheduleLocation::Chul);
-//            get_yt_list(i, ScheduleLocation::Israel);
+            get_yt_list(i, Location::Chul);
+            get_yt_list(i, Location::Israel);
             get_torah_reading_days_list(i);
-            get_torah_readings(i, ScheduleLocation::Chul);
-            get_torah_readings(i, ScheduleLocation::Israel);
+            get_torah_readings(i, Location::Chul);
+            get_torah_readings(i, Location::Israel);
         }
     }
 
@@ -809,8 +809,8 @@ mod test {
 
     #[bench]
     fn time_get_yt_list(b: &mut Bencher) {
-        b.iter(|| test::black_box(get_yt_list(9999, ScheduleLocation::Chul)));
-        b.iter(|| test::black_box(get_yt_list(9999, ScheduleLocation::Israel)));
+        b.iter(|| test::black_box(get_yt_list(9999, Location::Chul)));
+        b.iter(|| test::black_box(get_yt_list(9999, Location::Israel)));
     }
     #[bench]
     fn time_box_new(b: &mut Bencher) {
@@ -823,8 +823,8 @@ mod test {
     }
     #[bench]
     fn time_get_torah_readings(b: &mut Bencher) {
-        b.iter(|| test::black_box(get_torah_readings(9999, ScheduleLocation::Chul)));
-        b.iter(|| test::black_box(get_torah_readings(9999, ScheduleLocation::Israel)));
+        b.iter(|| test::black_box(get_torah_readings(9999, Location::Chul)));
+        b.iter(|| test::black_box(get_torah_readings(9999, Location::Israel)));
     }
 
     #[test]
