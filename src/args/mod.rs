@@ -1,0 +1,87 @@
+use clap::{App, Arg, ArgMatches, SubCommand};
+
+use crate::types;
+pub fn build_args<'a>() -> ArgMatches<'a> {
+    App::new("Hebrew Calendar Manipulator")
+        .version("0.2.0")
+        .about(
+            "This program is a fast utility to convert and analyze dates in the Hebrew Calendar.",
+        )
+        .arg(
+            Arg::with_name("file")
+                .long("config")
+                .help("Sets a custom config file (default: $XDG_CONFIG_HOME)")
+                .takes_value(true)
+                .required(false),
+        )
+.arg(
+            Arg::with_name("type")
+                .long("output")
+                .help("Set output type")
+                .possible_values(&["regular", "pretty", "json"])
+                .takes_value(true)
+                .default_value("pretty")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("language")
+                .long("language")
+                .help("Set language")
+                .possible_values(&["en_US", "he_IL"])
+                .takes_value(true)
+                .required(false),
+        )
+        .subcommand(
+            SubCommand::with_name("convert")
+                .about("Converts Hebrew to Gregorian and back")
+                .arg(
+                    Arg::with_name("DateFormat")
+                        .long("datefmt")
+                        .help("Set date format: US or M for mm/dd/yyyy, UK or L for dd/mm/yyyy, ISO or B for yyyy/mm/dd, or fuzzy")
+                        .possible_values(&["US","M","UK","L","ISO","B", "fuzzy"])
+                        .takes_value(true)
+                        .required(false)
+                        .default_value("fuzzy")
+                )
+                .arg(Arg::with_name("T")
+                     .long("type")
+                    .long_help("Force conversion from type T, where T is either \"hebrew\" (then date must be written as '5-אדרא-5779'), as \"gregorian\" (where the date must be written as '1996-12-19'), or as \"fuzzy\" (default, where we'll try to figure it out for you, but don't blame us when it breaks!!).")
+                    .possible_values(&["hebrew", "gregorian", "fuzzy"])
+                    .takes_value(true)
+                    .required(false)
+                    .default_value("fuzzy")
+        )
+                .arg(Arg::with_name("Date")
+                     .required(true)
+                     .takes_value(true))
+
+         ).subcommand(SubCommand::with_name("list")
+                      .arg(Arg::with_name("YearType")
+                           .long("type")
+                           .help("Specify if the year is a Hebrew or a Gregorian year.")
+                           .possible_values(&["hebrew", "gregorian", "fuzzy"])
+                           .default_value("fuzzy")
+                           .takes_value(true)
+                           .required(false)
+                      )
+                      .arg(Arg::with_name("Location")
+                           .long("location")
+                           .help("Are you looking for an Israeli calendar or a Chutz La'aretz calendar?")
+                           .takes_value(true)
+                           .required(false)
+                           .possible_values(&["Chul","Israel"]))
+                      .arg(Arg::with_name("Events")
+                           .long("show")
+                           .help("What events to list")
+                           .takes_value(true)
+                           .multiple(true)
+                           .required(false)
+                           .use_delimiter(true)
+                           .possible_values(&["yomtov","parsha","special-parshas","holidays"])
+                           .default_value("hebcal"))
+                      .arg(Arg::with_name("Year")
+.required(true)
+                     .takes_value(true))
+                           )
+        .get_matches()
+}
