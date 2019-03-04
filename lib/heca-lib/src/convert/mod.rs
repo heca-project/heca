@@ -4,7 +4,6 @@ extern crate time;
 
 use chrono::prelude::*;
 use num::FromPrimitive;
-use std::fmt;
 use time::Duration;
 
 use crate::types::ConversionError;
@@ -248,7 +247,7 @@ impl HebrewDate {
         while get_rosh_hashana(cur_year + 1).0 <= days_since_first_rh {
             cur_year += 1;
         }
-        return cur_year;
+        cur_year
     }
 
     /// Returns a HebrewDate on success, or a ConversionError on failure.
