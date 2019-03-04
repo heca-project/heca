@@ -6,9 +6,7 @@ use chrono::prelude::*;
 use num::FromPrimitive;
 use time::Duration;
 
-use crate::types::ConversionError;
-use crate::types::Day;
-use crate::types::HebrewMonth;
+use crate::prelude::*;
 
 pub mod year;
 
@@ -266,7 +264,8 @@ impl HebrewDate {
     ///
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
-    /// use heca_lib::{HebrewDate,HebrewMonth};
+    /// use heca_lib::prelude::*;
+    /// use heca_lib::HebrewDate;
     ///
     /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(17,59,59)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,1).unwrap());
     /// ```
@@ -278,7 +277,8 @@ impl HebrewDate {
     ///
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
-    /// use heca_lib::{HebrewDate,HebrewMonth};
+    /// use heca_lib::prelude::*;
+    /// use heca_lib::HebrewDate;
     ///
     /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(18,0,0)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,2).unwrap());
     /// ```
@@ -334,7 +334,8 @@ impl HebrewDate {
     ///
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
-    /// use heca_lib::{HebrewDate,HebrewMonth};
+    /// use heca_lib::prelude::*;
+    /// use heca_lib::HebrewDate;
     ///
     /// assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
     /// ```

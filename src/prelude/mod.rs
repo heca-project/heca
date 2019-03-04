@@ -1,3 +1,5 @@
+pub mod location;
+pub use location::*;
 enum_from_primitive! {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Day{

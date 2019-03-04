@@ -32,7 +32,8 @@
 //!
 //! use chrono::Utc;
 //! use chrono::offset::TimeZone;
-//! use heca_lib::{HebrewDate,HebrewMonth};
+//! use heca_lib::prelude::*;
+//! use heca_lib::HebrewDate;
 //!
 //!assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(17,59,59)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,1).unwrap());
 //!
@@ -62,12 +63,10 @@ extern crate enum_primitive;
 extern crate lazy_static;
 pub mod convert;
 pub mod holidays;
-pub mod types;
+pub mod prelude;
 #[doc(inline)]
 pub use convert::year;
 #[doc(inline)]
 pub use convert::year::*;
 #[doc(inline)]
 pub use convert::HebrewDate;
-#[doc(inline)]
-pub use types::{ConversionError, Day, HebrewMonth};
