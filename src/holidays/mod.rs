@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
+use crate::convert::get_rosh_hashana;
 use crate::prelude::*;
 use std::borrow::Cow;
 
@@ -111,7 +112,7 @@ pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [TorahR
     v1.into()
 }
 
-pub(crate) fn get_torah_reading_days_list(year: u64) -> Cow<'static, [TorahReadingDay]> {
+pub(crate) fn get_chol_list(year: u64) -> Cow<'static, [TorahReadingDay]> {
     use crate::convert::get_rosh_hashana;
     let mut special_days = vec![
         TorahReadingDay {
@@ -369,7 +370,7 @@ pub(crate) fn get_torah_reading_days_list(year: u64) -> Cow<'static, [TorahReadi
 }
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
-pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, [TorahReadingDay]> {
+pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [TorahReadingDay]> {
     use crate::convert::get_rosh_hashana;
     let (rh_day, rh_dow) = get_rosh_hashana(year);
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
@@ -410,18 +411,20 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
     let split_nitzavim_next_year = rh_dow_next == Day::Monday || rh_dow_next == Day::Tuesday;
     let (regular_shabbosim_list, special_shabbos_list) =
         get_shabbosim(year, &get_yt_list(year, location));
-    let mut parsha_list = HAAZINU_KI_SISA.to_vec();
+    let mut parsha_list = if split_nitzavim {
+         vec![Parsha::Vayelach]
+    } else {
+         vec![]
+    };
+    parsha_list.extend_from_slice(&HAAZINU_KI_SISA);
 
-    if split_nitzavim {
-        parsha_list.push(Parsha::Vayelach);
-    }
     if split_vayakhel {
         parsha_list.push(Parsha::Vayakhel);
         parsha_list.push(Parsha::Pikudei);
     } else {
         parsha_list.push(Parsha::VayakhelPikudei);
     }
-    parsha_list.append(&mut VAYIKRA_SHMINI.to_vec());
+    parsha_list.extend_from_slice(&VAYIKRA_SHMINI);
     if split_tazriya {
         parsha_list.push(Parsha::Tazriya);
         parsha_list.push(Parsha::Metzorah);
@@ -434,14 +437,14 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
     } else {
         parsha_list.push(Parsha::AchareiMosKedoshim);
     }
-    parsha_list.append(&mut EMOR.to_vec());
+    parsha_list.extend_from_slice(&EMOR);
     if split_behar {
         parsha_list.push(Parsha::Behar);
         parsha_list.push(Parsha::Bechukosai);
     } else {
         parsha_list.push(Parsha::BeharBechukosai);
     }
-    parsha_list.append(&mut BAMIDBAR_KORACH.to_vec());
+    parsha_list.extend_from_slice(&BAMIDBAR_KORACH);
     if split_chukas {
         parsha_list.push(Parsha::Chukas);
         parsha_list.push(Parsha::Balak);
@@ -449,7 +452,7 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
         parsha_list.push(Parsha::ChukasBalak);
     }
 
-    parsha_list.append(&mut PINCHAS.to_vec());
+    parsha_list.extend_from_slice(&PINCHAS);
     if split_mattos {
         parsha_list.push(Parsha::Matos);
         parsha_list.push(Parsha::Maasei);
@@ -457,7 +460,7 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
         parsha_list.push(Parsha::MatosMaasei);
     }
 
-    parsha_list.append(&mut DEVARIM_KISAVO.to_vec());
+    parsha_list.extend_from_slice(&DEVARIM_KISAVO);
     if split_nitzavim_next_year {
         parsha_list.push(Parsha::Nitzavim);
     } else {
@@ -475,6 +478,24 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
             day: v,
         })
         .collect::<Vec<TorahReadingDay>>();
+    return_val.append(
+        &mut special_shabbos_list
+            .iter()
+            .map(|v| TorahReadingDay {
+                name: TorahReading::Shabbos(Parsha::YomTov),
+                day: *v,
+            })
+            .collect(),
+    );
+    return_val.into()
+}
+
+pub (crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4]{
+    let (rh_day, rh_dow) = get_rosh_hashana(year);
+    let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
+    let len_of_year = rh_day_next - rh_day;
+
+
     let shekalim = TorahReadingDay {
         //Parshas Shekalim is the Shabbos before, or the Shabbos of the second day of Rosh Chodesh Adar (or the second day of Rosh Chodesh Adar Beis).
         // The first day of Rosh Chodesh Adar II can never be on Shabbos, as Purim would then
@@ -573,18 +594,8 @@ pub(crate) fn get_torah_readings(year: u64, location: Location) -> Cow<'static, 
         name: TorahReading::SpecialParsha(SpecialParsha::Hachodesh),
     };
 
-    let mut special_parshas: Vec<TorahReadingDay> = vec![shekalim, zachor, parah, hachodesh];
-    return_val.append(&mut special_parshas);
-    return_val.append(
-        &mut special_shabbos_list
-            .iter()
-            .map(|v| TorahReadingDay {
-                name: TorahReading::Shabbos(Parsha::YomTov),
-                day: *v,
-            })
-            .collect(),
-    );
-    return_val.into()
+    [shekalim, zachor, parah, hachodesh]
+
 }
 
 pub (crate) fn get_shabbosim(
@@ -663,7 +674,7 @@ mod test {
     #[test]
     fn fasts_should_never_start_on_friday_night() {
         for i in 3764..9999 {
-            for day in get_torah_reading_days_list(i).iter() {
+            for day in get_chol_list(i).iter() {
                 if day.name == TorahReading::Chol(Chol::TzomGedalya)
                     || day.name == TorahReading::Chol(Chol::TenTeves)
                     || day.name == TorahReading::Chol(Chol::SeventeenTammuz)
@@ -691,7 +702,7 @@ mod test {
                 }
                 .to_gregorian();
                 assert_eq!(
-                    get_torah_readings(i, *loc)
+                    get_shabbos_list(i, *loc)
                         .iter()
                         .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Shekalim))
                         .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
@@ -710,7 +721,7 @@ mod test {
                     .unwrap()
                     .to_gregorian();
                 assert_eq!(
-                    get_torah_readings(i, *loc)
+                    get_shabbos_list(i, *loc)
                         .iter()
                         .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Hachodesh))
                         .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
@@ -733,7 +744,7 @@ mod test {
                 }
                 .to_gregorian();
                 assert_eq!(
-                    get_torah_readings(i, *loc)
+                    get_shabbos_list(i, *loc)
                         .iter()
                         .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Zachor))
                         .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
@@ -747,14 +758,14 @@ mod test {
     fn check_all_shabbosim_and_torah_readings_are_on_shabbos() {
         for i in 5764..9999 {
             assert_eq!(
-                get_torah_readings(i, Location::Chul)
+                get_shabbos_list(i, Location::Chul)
                     .iter()
                     .filter(|&x| (*x).day.to_gregorian().weekday() != Weekday::Fri)
                     .count(),
                 0
             );
             assert_eq!(
-                get_torah_readings(i, Location::Israel)
+                get_shabbos_list(i, Location::Israel)
                     .iter()
                     .filter(|&x| (*x).day.to_gregorian().weekday() != Weekday::Fri)
                     .count(),
@@ -769,31 +780,8 @@ mod test {
             println!("{}", i);
             get_yt_list(i, Location::Chul);
             get_yt_list(i, Location::Israel);
-            get_torah_reading_days_list(i);
+            get_chol_list(i);
         }
-    }
-
-    extern crate test;
-    use test::Bencher;
-
-    #[bench]
-    fn time_get_yt_list(b: &mut Bencher) {
-        b.iter(|| test::black_box(get_yt_list(9999, Location::Chul)));
-        b.iter(|| test::black_box(get_yt_list(9999, Location::Israel)));
-    }
-    #[bench]
-    fn time_box_new(b: &mut Bencher) {
-        b.iter(|| test::black_box(vec![1, 2, 3, 4, 5, 6, 7, 8, 9]));
-    }
-
-    #[bench]
-    fn time_get_get_torah_reading_days_list(b: &mut Bencher) {
-        b.iter(|| test::black_box(get_torah_reading_days_list(9999)));
-    }
-    #[bench]
-    fn time_get_torah_readings(b: &mut Bencher) {
-        b.iter(|| test::black_box(get_torah_readings(9999, Location::Chul)));
-        b.iter(|| test::black_box(get_torah_readings(9999, Location::Israel)));
     }
 
     #[test]

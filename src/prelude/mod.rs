@@ -1,4 +1,5 @@
-pub mod location;
+mod location;
+#[doc(inline)]
 pub use location::*;
 enum_from_primitive! {
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -32,7 +33,7 @@ enum_from_primitive! {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ConversionError {
     IsNotLeapYear,
     TooManyDaysInMonth(u8),
@@ -40,4 +41,13 @@ pub enum ConversionError {
     MonthDoesntExist,
     YearTooSmall,
     DayIsZero,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+pub enum TorahReadingType {
+    YomTov,
+    Chol,
+    Shabbos,
+    SpecialParsha,
 }

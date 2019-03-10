@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
 
-#[derive(Debug, Eq, Clone)]
+#[derive(Debug, Eq, Clone, Copy)]
 pub struct TorahReadingDay {
     pub(crate) day: HebrewDate,
     pub(crate) name: TorahReading,
@@ -10,12 +10,12 @@ pub struct TorahReadingDay {
 
 impl TorahReadingDay {
     #[inline]
-    fn day(&self) -> HebrewDate {
+    pub fn day(&self) -> HebrewDate {
         self.day
     }
 
     #[inline]
-    fn name(&self) -> TorahReading {
+    pub fn name(&self) -> TorahReading {
         self.name.clone()
     }
 }
@@ -47,7 +47,7 @@ pub enum Location {
     Chul,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum YomTov {
     RoshHashana1,
     RoshHashana2,
@@ -73,7 +73,7 @@ pub enum YomTov {
     Shavuos2,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum TorahReading {
     YomTov(YomTov),
     Chol(Chol),
@@ -81,7 +81,7 @@ pub enum TorahReading {
     SpecialParsha(SpecialParsha),
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum SpecialParsha {
     Shekalim,
     Zachor,
@@ -89,7 +89,7 @@ pub enum SpecialParsha {
     Hachodesh,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum Chol {
     TzomGedalya,
     RoshChodeshCheshvan1,
@@ -134,7 +134,7 @@ pub enum Chol {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Copy)]
 pub enum Parsha {
     Vayelach,
     Haazinu,
