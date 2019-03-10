@@ -467,7 +467,6 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
         parsha_list.push(Parsha::NitzavimVayelech);
     }
 
-    println!("{:?}", parsha_list);
     //Every Shabbos should have a Parsha, and every Parsha should have a Shabbos
     assert_eq!(parsha_list.len(), regular_shabbosim_list.len());
     let mut return_val = regular_shabbosim_list
