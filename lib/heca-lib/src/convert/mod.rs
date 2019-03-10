@@ -8,13 +8,15 @@ use time::Duration;
 
 use crate::prelude::*;
 
-pub mod year;
+mod year;
+#[doc(inline)]
+pub use year::*;
 
 /// The amount of Chalakim in an hour.
-pub const CHALAKIM_PER_HOUR: u64 = 1080;
+const CHALAKIM_PER_HOUR: u64 = 1080;
 /// The amount of Chalakim between two Molads.
 // See https://www.chabad.org/library/article_cdo/aid/947923/jewish/Kiddush-HaChodesh-Chapter-Six.htm#footnoteRef8a947923
-pub const CHALAKIM_BETWEEN_MOLAD: u64 = 29 * 24 * CHALAKIM_PER_HOUR + 12 * CHALAKIM_PER_HOUR + 793;
+const CHALAKIM_BETWEEN_MOLAD: u64 = 29 * 24 * CHALAKIM_PER_HOUR + 12 * CHALAKIM_PER_HOUR + 793;
 
 //An array documenting which years are leap years. The Hebrew calendar has a 19 year cycle of leap
 //years.
@@ -133,8 +135,6 @@ pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day) {
     (amnt_days, dow)
 }
 
-/// HebrewDate is a struct containing a Hebrew date. There are two ways to generate it: Either `HebrewDate::from_ymd()` or `HebrewDate::from_gregorian()`.
-
 #[derive(Debug, Copy, Clone)]
 pub struct HebrewDate {
     day: u8,
@@ -185,14 +185,14 @@ impl HebrewDate {
     /// * `day` - The Hebrew day of month.
     ///
     /// # Error Values
-    /// * YearTooSmall - This algorithm won't work if the year is before 3764.
-    /// * DayIsZero - Months start with day 1, not zero. So 0 Adar won't work.
-    /// * IsLeapYear - I treat Adar, Adar 1 and Adar 2 as three seperate months, so if you want to
+    /// * `YearTooSmall` - This algorithm won't work if the year is before 3764.
+    /// * `DayIsZero` - Months start with day 1, not zero. So 0 Adar won't work.
+    /// * `IsLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so if you want to
     /// convert a day in Adar 1 or Adar 2 of a leap year, specify which one.
-    ///  * IsNotLeapYear - I treat Adar, Adar 1 and Adar 2 as three seperate months, so it won't
+    ///  * `IsNotLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so it won't
     ///  make sense to get the English date of the first of Adar 1 or Adar 2 if the year isn't a
     ///  leap year.
-    ///  * TooManyDaysInMonth - There are either 29 or 30 days in a month, so it doesn't make sense
+    ///  * `TooManyDaysInMonth` - There are either 29 or 30 days in a month, so it doesn't make sense
     ///  to find the 50th day of Nissan.
     pub fn from_ymd(year: u64, month: HebrewMonth, day: u8) -> Result<HebrewDate, ConversionError> {
         //Get a HebrewDate object from the Hebrew Year, Month, and Day. Can fail if the year is too
@@ -322,7 +322,7 @@ impl HebrewDate {
         }
     }
 
-    /// Gets the Grgorian date for the current Hebrew date.
+    /// Gets the Gregorian date for the current Hebrew date.
     ///
     /// # Notes
     ///
@@ -339,6 +339,46 @@ impl HebrewDate {
     ///
     /// assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
     /// ```
+    /// ## Algorithm:
+/// The conversion is done (at the moment) according to the calculation of the Rambam (Maimonidies), as is documented in [Hilchos Kiddush Ha'chodesh](https://www.sefaria.org/Mishneh_Torah%2C_Sanctification_of_the_New_Month.6.1?lang=bi&with=all&lang2=en).
+///
+/// The algorithm is as follows:
+///
+/// 1. There are exactly 1080 Chalakim (parts) in an hour.
+/// 2. There are exactly (well, not really. But it's close enough that we use that number as exact.) 29 days, 12 hours, and 793 Chalakim between new moons.
+///
+///  So that's the basic numbers. Regarding the calendar itself:
+///
+/// 3. All months are either 29 or 30 days long.
+/// 4. There are either 12 or 13 months in the Hebrew calendar, depending if it's a leap year. When it's a leap year, Adar (which generally is in the late winter or early spring) is doubled into a "first Adar" (Adar1) and a "second Adar" (Adar2).
+/// 5. There is a 19 year cycle of leap years. So the first two years of the cycle are regular years, the one after that's a leap year. Then another two are regular, then a leap year. Then it's regular, leap, regular, regular, leap, regular, regular, leap.
+/// 6. Year 3763 was the first year of its 19 year cycle.
+/// 7. Now you can calculate when's the New Moon before a given Rosh Hashana.
+///
+///  So how to calculate Rosh Hashana:
+///
+/// 8. If the New Moon is in the afternoon, Rosh Hashana is postponed to the next day.
+/// 9. If Rosh Hashana's starting on a Sunday (Saturday night), Wednesday (Tuesday night), or Friday (Thursday night) - postpone it by a day.
+///
+///  If any of the above two conditions were fulfilled. Good. You just found Rosh Hashana. If not:
+///
+/// 10. If the New Moon is on a Tuesday after 3am+204 Chalakim and the coming year is not a leap year, Rosh Hashana is postponed to that upcoming Thursday instead.
+/// 11. If the New Moon is on a Monday after 9am+589 Chalakim, and the previous year was a leap year, then Rosh Hashana is postponed to Tuesday.
+///
+///
+///  Now you have all the Rosh Hashanas.
+///
+/// 12. In general, Months alternate between “Full” (30 days long) and “Empty” (29 days long) months. So Tishrei is full, Teves is empty, Shvat is full, Adar is empty, Nissan is full.
+/// 13. When the year is a leap year, Adar 1 is full and Adar 2 is empty. (So a full Shvat is followed by a full Adar1).
+///
+///  Knowing this, you can calculate any other date of the year.
+///
+///  But wait! We're playing with the date when Rosh Hashana will start, so not every year will be the same length! How do we make up these days?
+///
+///  So there's a last little bit:
+///
+/// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
+
     pub fn to_gregorian(&self) -> chrono::DateTime<Utc> {
         let amnt_days_between_rh_and_epoch = get_rosh_hashana(self.year).0;
         let amnt_days_in_year = get_rosh_hashana(self.year + 1).0 - amnt_days_between_rh_and_epoch;
@@ -500,17 +540,6 @@ mod tests {
                     assert_eq!(year.parse::<u64>().unwrap() as i32, eng_day.year());
                 }
             });
-    }
-
-    extern crate test;
-    use test::Bencher;
-    #[bench]
-    fn time_from_ymd(b: &mut Bencher) {
-        b.iter(|| test::black_box(HebrewDate::from_ymd(9999, HebrewMonth::Tishrei, 1)));
-    }
-    #[bench]
-    fn time_from_ymd_unsafe(b: &mut Bencher) {
-        b.iter(|| test::black_box(HebrewDate::from_ymd_unsafe(9999, HebrewMonth::Tishrei, 1)));
     }
 
 }
