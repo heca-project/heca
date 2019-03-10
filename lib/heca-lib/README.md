@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.org/heca-project/heca.svg?branch=master)](https://travis-ci.org/heca-project/heca)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Percentage of issues still open")
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 # heca-lib
