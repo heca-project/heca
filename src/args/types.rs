@@ -34,6 +34,7 @@ struct ListArgs{
     year: YearType,
     location: ScheduleLocation,
     events: Vec<Events>,
+    shuffle: bool,
 }
 enum YearType {
     Gregorian(u64),
