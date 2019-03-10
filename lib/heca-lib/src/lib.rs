@@ -20,6 +20,7 @@
 //!
 //!```
 //!use heca_lib::prelude::*;
+//!use heca_lib::*;
 //!```
 //!
 //! # Overview:

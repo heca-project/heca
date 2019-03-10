@@ -11,8 +11,13 @@ repository = "https://github.com/heca-project/heca"
 readme = "README.md"
 
 [badges]
-gitlab = { repository = "heca/heca"}
+travis-ci = { repository = "heca-project/heca", branch = "master" }
 maintenance = { status ="actively-developed"}
+is-it-maintained-issue-resolution = {repository = "heca-project/heca"}
+is-it-maintained-open-issues = { repository = "heca-project/heca"}
+
+
+
 
 [dependencies]
 lazy_static = "1.2.0"
