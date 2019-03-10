@@ -43,7 +43,6 @@ pub enum ConversionError {
     DayIsZero,
 }
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum TorahReadingType {
     YomTov,

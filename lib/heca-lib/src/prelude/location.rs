@@ -132,8 +132,6 @@ pub enum Chol {
     NineAv,
 }
 
-
-
 #[derive(Clone, Debug, Eq, PartialEq, Copy)]
 pub enum Parsha {
     Vayelach,
@@ -143,7 +141,7 @@ pub enum Parsha {
     LechLecha,
     Vayeira,
     ChayeiSara,
-        Toldos,
+    Toldos,
     Vayetzei,
     Vayishlach,
     Veayeshev,
@@ -181,7 +179,7 @@ pub enum Parsha {
     Shlach,
     Korach,
     ChukasBalak,
-        Chukas,
+    Chukas,
     Balak,
     Pinchas,
     MatosMaasei,
