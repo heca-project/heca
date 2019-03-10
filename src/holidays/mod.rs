@@ -476,15 +476,6 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
             day: v,
         })
         .collect::<Vec<TorahReadingDay>>();
-    return_val.append(
-        &mut special_shabbos_list
-            .iter()
-            .map(|v| TorahReadingDay {
-                name: TorahReading::Shabbos(Parsha::YomTov),
-                day: *v,
-            })
-            .collect(),
-    );
     return_val.into()
 }
 
