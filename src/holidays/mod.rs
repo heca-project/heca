@@ -1,10 +1,9 @@
 use std::cmp::Ordering;
 
-use crate::convert::HebrewDate;
 use crate::convert::get_rosh_hashana;
+use crate::convert::HebrewDate;
 use crate::prelude::*;
 use std::borrow::Cow;
-
 
 #[inline]
 pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [TorahReadingDay]> {
@@ -412,9 +411,9 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
     let (regular_shabbosim_list, special_shabbos_list) =
         get_shabbosim(year, &get_yt_list(year, location));
     let mut parsha_list = if split_nitzavim {
-         vec![Parsha::Vayelach]
+        vec![Parsha::Vayelach]
     } else {
-         vec![]
+        vec![]
     };
     parsha_list.extend_from_slice(&HAAZINU_KI_SISA);
 
@@ -489,11 +488,10 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
     return_val.into()
 }
 
-pub (crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4]{
+pub(crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4] {
     let (rh_day, rh_dow) = get_rosh_hashana(year);
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
     let len_of_year = rh_day_next - rh_day;
-
 
     let shekalim = TorahReadingDay {
         //Parshas Shekalim is the Shabbos before, or the Shabbos of the second day of Rosh Chodesh Adar (or the second day of Rosh Chodesh Adar Beis).
@@ -594,10 +592,9 @@ pub (crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4]{
     };
 
     [shekalim, zachor, parah, hachodesh]
-
 }
 
-pub (crate) fn get_shabbosim(
+pub(crate) fn get_shabbosim(
     year: u64,
     ignore_dates: &[TorahReadingDay],
 ) -> (Vec<HebrewDate>, Vec<HebrewDate>) {
@@ -620,7 +617,6 @@ pub (crate) fn get_shabbosim(
     }
     (return_regular_shabbosim, return_special_shabbosim)
 }
-
 
 const HAAZINU_KI_SISA: [Parsha; 22] = [
     Parsha::Haazinu,

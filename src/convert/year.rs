@@ -1,9 +1,9 @@
 use crate::convert;
 use crate::convert::*;
-use crate::holidays::get_yt_list;
 use crate::holidays::get_chol_list;
-use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_shabbos_list;
+use crate::holidays::get_special_parsha_list;
+use crate::holidays::get_yt_list;
 use crate::prelude::*;
 use std::borrow::Cow;
 
@@ -100,15 +100,23 @@ impl HebrewYear {
     /// }
     /// assert_eq!(count,4);
     /// ```
-    pub fn get_holidays(&self, location: Location, yt_types: &[TorahReadingType]) -> Cow<'static, [TorahReadingDay]> {
+    pub fn get_holidays(
+        &self,
+        location: Location,
+        yt_types: &[TorahReadingType],
+    ) -> Cow<'static, [TorahReadingDay]> {
         let mut return_vec = Vec::new();
-        yt_types.iter().map(|yt_type| {
-        match yt_type {
-            TorahReadingType::YomTov => get_yt_list(self.year, location),
-            TorahReadingType::Chol => get_chol_list(self.year),
-            TorahReadingType::Shabbos => get_shabbos_list(self.year, location),
-            TorahReadingType::SpecialParsha => Cow::from(get_special_parsha_list(self.year).to_vec()),
-        }}).for_each(|r| return_vec.extend_from_slice(&r));
+        yt_types
+            .iter()
+            .map(|yt_type| match yt_type {
+                TorahReadingType::YomTov => get_yt_list(self.year, location),
+                TorahReadingType::Chol => get_chol_list(self.year),
+                TorahReadingType::Shabbos => get_shabbos_list(self.year, location),
+                TorahReadingType::SpecialParsha => {
+                    Cow::from(get_special_parsha_list(self.year).to_vec())
+                }
+            })
+            .for_each(|r| return_vec.extend_from_slice(&r));
         return_vec.into()
     }
 }

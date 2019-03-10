@@ -340,44 +340,44 @@ impl HebrewDate {
     /// assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
     /// ```
     /// ## Algorithm:
-/// The conversion is done (at the moment) according to the calculation of the Rambam (Maimonidies), as is documented in [Hilchos Kiddush Ha'chodesh](https://www.sefaria.org/Mishneh_Torah%2C_Sanctification_of_the_New_Month.6.1?lang=bi&with=all&lang2=en).
-///
-/// The algorithm is as follows:
-///
-/// 1. There are exactly 1080 Chalakim (parts) in an hour.
-/// 2. There are exactly (well, not really. But it's close enough that we use that number as exact.) 29 days, 12 hours, and 793 Chalakim between new moons.
-///
-///  So that's the basic numbers. Regarding the calendar itself:
-///
-/// 3. All months are either 29 or 30 days long.
-/// 4. There are either 12 or 13 months in the Hebrew calendar, depending if it's a leap year. When it's a leap year, Adar (which generally is in the late winter or early spring) is doubled into a "first Adar" (Adar1) and a "second Adar" (Adar2).
-/// 5. There is a 19 year cycle of leap years. So the first two years of the cycle are regular years, the one after that's a leap year. Then another two are regular, then a leap year. Then it's regular, leap, regular, regular, leap, regular, regular, leap.
-/// 6. Year 3763 was the first year of its 19 year cycle.
-/// 7. Now you can calculate when's the New Moon before a given Rosh Hashana.
-///
-///  So how to calculate Rosh Hashana:
-///
-/// 8. If the New Moon is in the afternoon, Rosh Hashana is postponed to the next day.
-/// 9. If Rosh Hashana's starting on a Sunday (Saturday night), Wednesday (Tuesday night), or Friday (Thursday night) - postpone it by a day.
-///
-///  If any of the above two conditions were fulfilled. Good. You just found Rosh Hashana. If not:
-///
-/// 10. If the New Moon is on a Tuesday after 3am+204 Chalakim and the coming year is not a leap year, Rosh Hashana is postponed to that upcoming Thursday instead.
-/// 11. If the New Moon is on a Monday after 9am+589 Chalakim, and the previous year was a leap year, then Rosh Hashana is postponed to Tuesday.
-///
-///
-///  Now you have all the Rosh Hashanas.
-///
-/// 12. In general, Months alternate between “Full” (30 days long) and “Empty” (29 days long) months. So Tishrei is full, Teves is empty, Shvat is full, Adar is empty, Nissan is full.
-/// 13. When the year is a leap year, Adar 1 is full and Adar 2 is empty. (So a full Shvat is followed by a full Adar1).
-///
-///  Knowing this, you can calculate any other date of the year.
-///
-///  But wait! We're playing with the date when Rosh Hashana will start, so not every year will be the same length! How do we make up these days?
-///
-///  So there's a last little bit:
-///
-/// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
+    /// The conversion is done (at the moment) according to the calculation of the Rambam (Maimonidies), as is documented in [Hilchos Kiddush Ha'chodesh](https://www.sefaria.org/Mishneh_Torah%2C_Sanctification_of_the_New_Month.6.1?lang=bi&with=all&lang2=en).
+    ///
+    /// The algorithm is as follows:
+    ///
+    /// 1. There are exactly 1080 Chalakim (parts) in an hour.
+    /// 2. There are exactly (well, not really. But it's close enough that we use that number as exact.) 29 days, 12 hours, and 793 Chalakim between new moons.
+    ///
+    ///  So that's the basic numbers. Regarding the calendar itself:
+    ///
+    /// 3. All months are either 29 or 30 days long.
+    /// 4. There are either 12 or 13 months in the Hebrew calendar, depending if it's a leap year. When it's a leap year, Adar (which generally is in the late winter or early spring) is doubled into a "first Adar" (Adar1) and a "second Adar" (Adar2).
+    /// 5. There is a 19 year cycle of leap years. So the first two years of the cycle are regular years, the one after that's a leap year. Then another two are regular, then a leap year. Then it's regular, leap, regular, regular, leap, regular, regular, leap.
+    /// 6. Year 3763 was the first year of its 19 year cycle.
+    /// 7. Now you can calculate when's the New Moon before a given Rosh Hashana.
+    ///
+    ///  So how to calculate Rosh Hashana:
+    ///
+    /// 8. If the New Moon is in the afternoon, Rosh Hashana is postponed to the next day.
+    /// 9. If Rosh Hashana's starting on a Sunday (Saturday night), Wednesday (Tuesday night), or Friday (Thursday night) - postpone it by a day.
+    ///
+    ///  If any of the above two conditions were fulfilled. Good. You just found Rosh Hashana. If not:
+    ///
+    /// 10. If the New Moon is on a Tuesday after 3am+204 Chalakim and the coming year is not a leap year, Rosh Hashana is postponed to that upcoming Thursday instead.
+    /// 11. If the New Moon is on a Monday after 9am+589 Chalakim, and the previous year was a leap year, then Rosh Hashana is postponed to Tuesday.
+    ///
+    ///
+    ///  Now you have all the Rosh Hashanas.
+    ///
+    /// 12. In general, Months alternate between “Full” (30 days long) and “Empty” (29 days long) months. So Tishrei is full, Teves is empty, Shvat is full, Adar is empty, Nissan is full.
+    /// 13. When the year is a leap year, Adar 1 is full and Adar 2 is empty. (So a full Shvat is followed by a full Adar1).
+    ///
+    ///  Knowing this, you can calculate any other date of the year.
+    ///
+    ///  But wait! We're playing with the date when Rosh Hashana will start, so not every year will be the same length! How do we make up these days?
+    ///
+    ///  So there's a last little bit:
+    ///
+    /// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
 
     pub fn to_gregorian(&self) -> chrono::DateTime<Utc> {
         let amnt_days_between_rh_and_epoch = get_rosh_hashana(self.year).0;
