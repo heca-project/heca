@@ -1,5 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/heca_lib.svg)](https://crates.io/crates/heca_lib)
-[![Documentation](https://docs.rs/heca_lib/badge.svg)](https://docs.rs/heca_lib)
+[![Documentation](https://docs.rs/heca-lib/badge.svg)](https://docs.rs/heca-lib)
 [![Build Status](https://travis-ci.org/heca-project/heca.svg?branch=master)](https://travis-ci.org/heca-project/heca)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Percentage of issues still open")
