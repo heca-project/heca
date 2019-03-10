@@ -1,4 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/heca_lib.svg)](https://crates.io/crates/heca_lib)
+[![Documentation](https://docs.rs/heca_lib/badge.svg)](https://docs.rs/heca_lib)
 [![Build Status](https://travis-ci.org/heca-project/heca.svg?branch=master)](https://travis-ci.org/heca-project/heca)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Percentage of issues still open")
@@ -79,7 +80,7 @@ use heca_lib::{HebrewYear,HebrewDate};
 use heca_lib::prelude::*;
 
 assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::Shabbos])[0].name(), TorahReading::Shabbos(Parsha::Vayelach));
-assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::SpecialParsha]).iter().filter(|x| x.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor)).map(|x|*x).collect::<Vec<TorahReadingDay>>()[0].day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,9).unwrap());
+assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::SpecialParsha]).iter().find(|x| x.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,9).unwrap());
 
 ```
 
