@@ -1,13 +1,13 @@
+use smallvec::*;
 use std::cmp::Ordering;
 
 use crate::convert::get_rosh_hashana;
 use crate::convert::HebrewDate;
 use crate::prelude::*;
-use std::borrow::Cow;
 
 #[inline]
-pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [TorahReadingDay]> {
-    let mut v1 = vec![
+pub(crate) fn get_yt_list(year: u64, location: Location) -> SmallVec<[TorahReadingDay; 256]> {
+    let mut v1 = smallvec![
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 1),
             name: TorahReading::YomTov(YomTov::RoshHashana1),
@@ -59,7 +59,7 @@ pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [TorahR
             name: TorahReading::YomTov(YomTov::SimchasTorah),
         });
     }
-    v1.append(&mut vec![
+    v1.extend_from_slice(&[
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Nissan, 15),
             name: TorahReading::YomTov(YomTov::Pesach1),
@@ -111,9 +111,9 @@ pub(crate) fn get_yt_list(year: u64, location: Location) -> Cow<'static, [TorahR
     v1.into()
 }
 
-pub(crate) fn get_chol_list(year: u64) -> Cow<'static, [TorahReadingDay]> {
+pub(crate) fn get_chol_list(year: u64) -> SmallVec<[TorahReadingDay; 256]> {
     use crate::convert::get_rosh_hashana;
-    let mut special_days = vec![
+    let mut special_days = smallvec![
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 30),
             name: TorahReading::Chol(Chol::RoshChodeshCheshvan1),
@@ -188,7 +188,7 @@ pub(crate) fn get_chol_list(year: u64) -> Cow<'static, [TorahReadingDay]> {
         },
     ];
     let mut second_vector = {
-        let mut in_vec: Vec<TorahReadingDay> = Vec::new();
+        let mut in_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
         if let Ok(first_day_rc) = HebrewDate::from_ymd(year, HebrewMonth::Cheshvan, 30) {
             in_vec.push(TorahReadingDay {
                 day: first_day_rc,
@@ -361,15 +361,15 @@ pub(crate) fn get_chol_list(year: u64) -> Cow<'static, [TorahReadingDay]> {
         }
     };
 
-    special_days.append(&mut second_vector);
+    special_days.extend_from_slice(&mut second_vector);
     special_days.push(tzom_gedalya);
-    special_days.append(&mut third_vector);
+    special_days.extend_from_slice(&mut third_vector);
 
-    special_days.into()
+    special_days
 }
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
-pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [TorahReadingDay]> {
+pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[TorahReadingDay; 256]> {
     use crate::convert::get_rosh_hashana;
     let (rh_day, rh_dow) = get_rosh_hashana(year);
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
@@ -411,9 +411,11 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
     let (regular_shabbosim_list, special_shabbos_list) =
         get_shabbosim(year, &get_yt_list(year, location));
     let mut parsha_list = if split_nitzavim {
-        vec![Parsha::Vayelach]
+        let mut v: SmallVec<[Parsha; 256]> = SmallVec::new();
+        v.push(Parsha::Vayelach);
+        v
     } else {
-        vec![]
+        SmallVec::new()
     };
     parsha_list.extend_from_slice(&HAAZINU_KI_SISA);
 
@@ -475,11 +477,11 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> Cow<'static, [T
             name: TorahReading::Shabbos(parsha_list[i].clone()),
             day: v,
         })
-        .collect::<Vec<TorahReadingDay>>();
-    return_val.into()
+        .collect::<SmallVec<[TorahReadingDay; 256]>>();
+    return_val
 }
 
-pub(crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4] {
+pub(crate) fn get_special_parsha_list(year: u64) -> SmallVec<[TorahReadingDay; 256]> {
     let (rh_day, rh_dow) = get_rosh_hashana(year);
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
     let len_of_year = rh_day_next - rh_day;
@@ -582,7 +584,7 @@ pub(crate) fn get_special_parsha_list(year: u64) -> [TorahReadingDay; 4] {
         name: TorahReading::SpecialParsha(SpecialParsha::Hachodesh),
     };
 
-    [shekalim, zachor, parah, hachodesh]
+    smallvec![shekalim, zachor, parah, hachodesh]
 }
 
 pub(crate) fn get_shabbosim(
@@ -773,12 +775,12 @@ mod test {
     #[test]
     fn get_shabbosim_fall_on_shabbos() {
         for i in 3764..9999 {
-            get_shabbosim(i, &vec![])
+            get_shabbosim(i, &[])
                 .0
                 .iter()
                 //Shabbos starts on _Friday_ night
                 .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Fri));
-            get_shabbosim(i, &vec![])
+            get_shabbosim(i, &[])
                 .1
                 .iter()
                 //Shabbos starts on _Friday_ night
