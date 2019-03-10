@@ -20,6 +20,7 @@ chrono = "0.4"
 time = "0.1.42"
 enum_primitive = "0.1.1"
 num = "0.2.0"
+smallvec = "0.6.8"
 
 [dev-dependencies]
 rayon = "1.0"

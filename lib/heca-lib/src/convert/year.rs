@@ -1,3 +1,5 @@
+use smallvec::*;
+
 use crate::convert;
 use crate::convert::*;
 use crate::holidays::get_chol_list;
@@ -5,7 +7,6 @@ use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
 use crate::prelude::*;
-use std::borrow::Cow;
 
 /// HebrewYear holds data on a given year. Hypothetically, it's faster to get multiple HebrewDates from
 /// an existing HebrewYear rather than generating each one on its own.
@@ -80,7 +81,7 @@ impl HebrewYear {
     /// let year = HebrewYear::new(5779).unwrap();
     /// let shabbosim = year.get_holidays(Location::Chul, &[TorahReadingType::Shabbos, TorahReadingType::SpecialParsha, TorahReadingType::Chol, TorahReadingType::YomTov]);
     /// let mut count = 0;
-    /// for &s in shabbosim.into_iter() {
+    /// for s in shabbosim.into_iter() {
     ///   if s.name() == TorahReading::Shabbos(Parsha::Bereishis) {
     ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, 27).unwrap());
     ///     count += 1;
@@ -104,19 +105,17 @@ impl HebrewYear {
         &self,
         location: Location,
         yt_types: &[TorahReadingType],
-    ) -> Cow<'static, [TorahReadingDay]> {
-        let mut return_vec = Vec::new();
+    ) -> SmallVec<[TorahReadingDay; 256]> {
+        let mut return_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
         yt_types
             .iter()
             .map(|yt_type| match yt_type {
                 TorahReadingType::YomTov => get_yt_list(self.year, location),
                 TorahReadingType::Chol => get_chol_list(self.year),
                 TorahReadingType::Shabbos => get_shabbos_list(self.year, location),
-                TorahReadingType::SpecialParsha => {
-                    Cow::from(get_special_parsha_list(self.year).to_vec())
-                }
+                TorahReadingType::SpecialParsha => get_special_parsha_list(self.year),
             })
             .for_each(|r| return_vec.extend_from_slice(&r));
-        return_vec.into()
+        return_vec
     }
 }
