@@ -70,7 +70,7 @@
 //!use heca_lib::prelude::*;
 //!
 //!assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::Shabbos])[0].name(), TorahReading::Shabbos(Parsha::Vayelach));
-//!assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::SpecialParsha]).iter().filter(|x| x.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor)).map(|x|*x).collect::<Vec<TorahReadingDay>>()[0].day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,9).unwrap());
+//!assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahReadingType::SpecialParsha]).iter().find(|x| x.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,9).unwrap());
 //!
 //!```
 //!
