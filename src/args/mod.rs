@@ -1,16 +1,20 @@
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use crate::types;
-pub fn build_args<'a>() -> ArgMatches<'a> {
-    App::new("Hebrew Calendar Manipulator")
+pub mod types;
+use crate::args::types::*;
+use heca_lib::prelude::*;
+use std::env;
+
+pub fn build_args<'a>() -> MainArgs {
+    parse_args(App::new("Hebrew Calendar Manipulator")
         .version("0.2.0")
         .about(
             "This program is a fast utility to convert and analyze dates in the Hebrew Calendar.",
         )
         .arg(
-            Arg::with_name("file")
+            Arg::with_name("configfile")
                 .long("config")
-                .help("Sets a custom config file (default: $XDG_CONFIG_HOME)")
+                .help("Sets a custom config file (default: $XDG_CONFIG_HOME/heca/config.yaml)")
                 .takes_value(true)
                 .required(false),
         )
@@ -74,6 +78,12 @@ pub fn build_args<'a>() -> ArgMatches<'a> {
                            .takes_value(true)
                            .required(false)
                            .possible_values(&["Chul","Israel"]))
+                      .arg(Arg::with_name("AmountYears")
+                           .long("years")
+                           .help("Generate events for n years")
+                           .takes_value(true)
+                           .required(false)
+                           .default_value("1"))
                       .arg(Arg::with_name("Events")
                            .long("show")
                            .help("What events to list")
@@ -81,11 +91,123 @@ pub fn build_args<'a>() -> ArgMatches<'a> {
                            .multiple(true)
                            .required(false)
                            .use_delimiter(true)
-                           .possible_values(&["yomtov","parsha","special-parshas","holidays"])
-                           .default_value("hebcal"))
+                           .possible_values(&["yom-tov","shabbos","special-parshas","chol"])
+                           .default_value("yom-tov"))
                       .arg(Arg::with_name("Year")
 .required(true)
                      .takes_value(true))
                            )
-        .get_matches()
+        .get_matches())
+}
+
+fn parse_args(matches: ArgMatches) -> MainArgs {
+    let config = {
+        if let Some(v) = matches.value_of("configfile") {
+            Some(String::from(v))
+        } else {
+            if let Ok(base_dir) = xdg::BaseDirectories::with_prefix("heca") {
+                if let Some(path) = base_dir.find_config_file("config.yaml") {
+                    Some(String::from(path.to_string_lossy()))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+    };
+
+    let output_type = match matches.value_of("type").unwrap() {
+        "regular" => OutputType::Regular,
+        "pretty" => OutputType::Pretty,
+        "json" => OutputType::JSON,
+        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+    };
+
+    let language = match matches.value_of("language").unwrap_or("") {
+        "en_US" => Language::English,
+        "he_IL" => Language::Hebrew,
+        "" => {
+            let lang = env::vars().into_iter().find(|x| x.0 == "LANG");
+            match lang {
+                None => Language::English,
+                Some(x) => {
+                    if x.1 == "he_IL.UTF-8" {
+                        Language::Hebrew
+                    } else {
+                        Language::English
+                    }
+                }
+            }
+        }
+        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+    };
+
+    let command = if let Some(matches) = matches.subcommand_matches("list") {
+        parse_list(matches, language == Language::Hebrew)
+    } else {
+        panic!("not implemented");
+    };
+
+    MainArgs {
+        config,
+        output_type,
+        language,
+        command,
+    }
+}
+
+fn parse_list(matches: &ArgMatches, hebrew: bool) -> Command {
+    use atoi::atoi;
+    let year_num = atoi::<u64>(matches.value_of("Year").unwrap().as_bytes())
+        .expect("The supplied year must be a number");
+    let amnt_years = atoi::<u64>(matches.value_of("AmountYears").unwrap().as_bytes())
+        .expect("The supplied year must be a number");
+
+    let year = match matches.value_of("YearType").unwrap() {
+        "hebrew" => YearType::Hebrew(year_num),
+        "gregorian" => YearType::Gregorian(year_num),
+        "fuzzy" => {
+            if year_num > 3000 {
+                YearType::Hebrew(year_num)
+            } else {
+                YearType::Gregorian(year_num)
+            }
+        }
+        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+    };
+
+    let shuffle = matches.is_present("nosort");
+    let location = match matches.value_of("Location").unwrap_or("") {
+        "Chul" => Location::Chul,
+        "Israel" => Location::Israel,
+        "" => {
+            if hebrew {
+                Location::Israel
+            } else {
+                Location::Chul
+            }
+        }
+        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+    };
+
+    let events = matches
+        .values_of("Events")
+        .unwrap()
+        .into_iter()
+        .map(|x| match x {
+            "yom-tov" => TorahReadingType::YomTov,
+            "chol" => TorahReadingType::Chol,
+            "shabbos" => TorahReadingType::Shabbos,
+            "special-parshas" => TorahReadingType::SpecialParsha,
+            x => panic!(format!("Assertion Error! How did {} get here?", x)),
+        })
+        .collect::<Vec<TorahReadingType>>();
+    Command::List(ListArgs {
+        year,
+        location,
+        events,
+        shuffle,
+        amnt_years,
+    })
 }

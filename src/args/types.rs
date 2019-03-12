@@ -1,50 +1,51 @@
-use heca_lib::HebrewDate;
-use heca_lib::holidays::ScheduleLocation;
 use chrono::prelude::*;
-struct MainArgs{
-    config: String,
-    output_type: OutputType,
-    language: Language,
-    command: Command
+use heca_lib::prelude::*;
+use heca_lib::HebrewDate;
+
+pub struct MainArgs {
+    pub config: Option<String>,
+    pub output_type: OutputType,
+    pub language: Language,
+    pub command: Command,
 }
-enum Language {
+
+#[derive(Eq, PartialEq)]
+pub enum Language {
     English,
     Hebrew,
 }
 
-enum Command {
+pub enum Command {
     Convert(ConvertArgs),
     List(ListArgs),
 }
-enum OutputType {
+
+#[derive(Eq, PartialEq)]
+pub enum OutputType {
     Regular,
     Pretty,
     JSON,
 }
-struct ConvertArgs {
-   date: ConvertType,
+
+pub struct ConvertArgs {
+    date: ConvertType,
 }
 
-enum ConvertType{
+pub enum ConvertType {
     Gregorian(chrono::DateTime<Utc>),
     Hebrew(HebrewDate),
 }
 
-struct ListArgs{
-    year: YearType,
-    location: ScheduleLocation,
-    events: Vec<Events>,
-    shuffle: bool,
+pub struct ListArgs {
+    pub year: YearType,
+    pub location: Location,
+    pub events: Vec<TorahReadingType>,
+    pub shuffle: bool,
+    pub amnt_years: u64,
 }
-enum YearType {
+
+#[derive(Eq, PartialEq)]
+pub enum YearType {
     Gregorian(u64),
     Hebrew(u64),
 }
-
-enum Events {
-    YomTov,
-    Parsha,
-    SpecialParshas,
-    Holidays,
-}
-
