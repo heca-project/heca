@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
 
-#[derive(Debug, Eq, Clone, Copy, Serialize)]
+#[derive(Debug, Eq, Copy, Clone, Serialize)]
 pub struct TorahReadingDay {
     pub(crate) day: HebrewDate,
     pub(crate) name: TorahReading,
@@ -74,7 +74,7 @@ pub enum YomTov {
     Shavuos2,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum TorahReading {
     YomTov(YomTov),
     Chol(Chol),
@@ -145,7 +145,7 @@ pub enum Parsha {
     Toldos,
     Vayetzei,
     Vayishlach,
-    Veayeshev,
+    Vayeshev,
     Miketz,
     Vayigash,
     Vayechi,

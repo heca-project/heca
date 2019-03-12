@@ -11,6 +11,7 @@ use crate::holidays::get_yt_list;
 /// an existing HebrewYear rather than generating each one on its own.
 pub struct HebrewYear {
     year: u64,
+    leap_year: bool,
 }
 
 impl HebrewYear {
@@ -25,10 +26,17 @@ impl HebrewYear {
         if year < convert::FIRST_YEAR {
             Err(ConversionError::YearTooSmall)
         } else {
-            Ok(HebrewYear { year })
+            Ok(HebrewYear {
+                year,
+                leap_year: months_per_year(year) == 13,
+            })
         }
     }
 
+    #[inline]
+    pub fn is_leap_year(&self) -> bool {
+        self.leap_year
+    }
     #[inline]
     pub fn year(&self) -> u64 {
         self.year
