@@ -1,8 +1,9 @@
+use serde::*;
 use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
 
-#[derive(Debug, Eq, Clone, Copy)]
+#[derive(Debug, Eq, Clone, Copy, Serialize)]
 pub struct TorahReadingDay {
     pub(crate) day: HebrewDate,
     pub(crate) name: TorahReading,
@@ -41,13 +42,13 @@ impl PartialEq for TorahReadingDay {
     }
 }
 
-#[derive(Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum Location {
     Israel,
     Chul,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum YomTov {
     RoshHashana1,
     RoshHashana2,
@@ -73,7 +74,7 @@ pub enum YomTov {
     Shavuos2,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum TorahReading {
     YomTov(YomTov),
     Chol(Chol),
@@ -81,7 +82,7 @@ pub enum TorahReading {
     SpecialParsha(SpecialParsha),
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum SpecialParsha {
     Shekalim,
     Zachor,
@@ -89,7 +90,7 @@ pub enum SpecialParsha {
     Hachodesh,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Chol {
     TzomGedalya,
     RoshChodeshCheshvan1,
@@ -132,7 +133,7 @@ pub enum Chol {
     NineAv,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Copy)]
+#[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub enum Parsha {
     Vayelach,
     Haazinu,
@@ -194,6 +195,4 @@ pub enum Parsha {
     KiSavoh,
     NitzavimVayelech,
     Nitzavim,
-
-    YomTov,
 }

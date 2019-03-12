@@ -1,5 +1,4 @@
 use smallvec::*;
-use std::cmp::Ordering;
 
 use crate::convert::get_rosh_hashana;
 use crate::convert::HebrewDate;
@@ -408,8 +407,7 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[Torah
     //Nitzavim/Vayelech is split only if Rosh Hashana starts on a Monday or Tuesday
     let split_nitzavim = rh_dow == Day::Monday || rh_dow == Day::Tuesday;
     let split_nitzavim_next_year = rh_dow_next == Day::Monday || rh_dow_next == Day::Tuesday;
-    let (regular_shabbosim_list, special_shabbos_list) =
-        get_shabbosim(year, &get_yt_list(year, location));
+    let regular_shabbosim_list = get_shabbosim(year, &get_yt_list(year, location)).0;
     let mut parsha_list = if split_nitzavim {
         let mut v: SmallVec<[Parsha; 256]> = SmallVec::new();
         v.push(Parsha::Vayelach);
@@ -470,7 +468,7 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[Torah
 
     //Every Shabbos should have a Parsha, and every Parsha should have a Shabbos
     assert_eq!(parsha_list.len(), regular_shabbosim_list.len());
-    let mut return_val = regular_shabbosim_list
+    let return_val = regular_shabbosim_list
         .iter()
         .enumerate()
         .map(|(i, &v)| TorahReadingDay {
@@ -482,7 +480,7 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[Torah
 }
 
 pub(crate) fn get_special_parsha_list(year: u64) -> SmallVec<[TorahReadingDay; 256]> {
-    let (rh_day, rh_dow) = get_rosh_hashana(year);
+    let rh_day = get_rosh_hashana(year).0;
     let (rh_day_next, rh_dow_next) = get_rosh_hashana(year + 1);
     let len_of_year = rh_day_next - rh_day;
 

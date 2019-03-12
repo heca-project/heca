@@ -7,6 +7,7 @@ use num::FromPrimitive;
 use time::Duration;
 
 use crate::prelude::*;
+use serde::Serialize;
 
 mod year;
 #[doc(inline)]
@@ -135,7 +136,7 @@ pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day) {
     (amnt_days, dow)
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub struct HebrewDate {
     day: u8,
     month: HebrewMonth,
@@ -451,7 +452,7 @@ mod tests {
     fn get_year() {
         for j in 0..100 {
             let mut original_day = Utc.ymd(16 + j, 10, 4).and_hms(18, 0, 0);
-            for i in 1..366 {
+            for _i in 1..366 {
                 let h_day = HebrewDate::from_gregorian(original_day).unwrap();
                 let ne_day = h_day.to_gregorian();
                 assert_eq!(original_day, ne_day);

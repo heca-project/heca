@@ -1,8 +1,9 @@
 mod location;
 #[doc(inline)]
 pub use location::*;
+use serde::{Deserialize, Serialize};
 enum_from_primitive! {
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum Day{
     Sunday,
     Monday,
@@ -14,7 +15,7 @@ pub enum Day{
 }
 }
 enum_from_primitive! {
-  #[derive(Debug, PartialEq, Copy, Clone)]
+  #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
   pub enum HebrewMonth {
     Tishrei = 0,
     Cheshvan = 1,
@@ -33,7 +34,7 @@ enum_from_primitive! {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum ConversionError {
     IsNotLeapYear,
     TooManyDaysInMonth(u8),
@@ -43,7 +44,7 @@ pub enum ConversionError {
     DayIsZero,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum TorahReadingType {
     YomTov,
     Chol,
