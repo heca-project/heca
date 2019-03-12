@@ -619,7 +619,7 @@ const HAAZINU_KI_SISA: [Parsha; 22] = [
     Parsha::Toldos,
     Parsha::Vayetzei,
     Parsha::Vayishlach,
-    Parsha::Veayeshev,
+    Parsha::Vayeshev,
     Parsha::Miketz,
     Parsha::Vayigash,
     Parsha::Vayechi,
