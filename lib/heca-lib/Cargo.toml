@@ -1,9 +1,9 @@
 [package]
 name = "heca-lib"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = "2018"
-description = "Hebrew Calendar library."
+description = "Hebrew Calendar library"
 keywords = ["library", "calendar", "hebrew", "jewish"]
 categories = ["date-and-time"]
 license = "MIT"
