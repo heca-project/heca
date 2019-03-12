@@ -9,11 +9,11 @@ pub(crate) fn get_yt_list(year: u64, location: Location) -> SmallVec<[TorahReadi
     let mut v1 = smallvec![
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 1),
-            name: TorahReading::YomTov(YomTov::RoshHashana1),
+            name: TorahReading::YomTov(YomTov::RoshHashanah1),
         },
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 2),
-            name: TorahReading::YomTov(YomTov::RoshHashana2),
+            name: TorahReading::YomTov(YomTov::RoshHashanah2),
         },
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 10),
@@ -351,12 +351,12 @@ pub(crate) fn get_chol_list(year: u64) -> SmallVec<[TorahReadingDay; 256]> {
     let tzom_gedalya = if get_rosh_hashana(year).1 == Day::Thursday {
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 4),
-            name: TorahReading::Chol(Chol::TzomGedalya),
+            name: TorahReading::Chol(Chol::TzomGedalia),
         }
     } else {
         TorahReadingDay {
             day: HebrewDate::from_ymd_unsafe(year, HebrewMonth::Tishrei, 3),
-            name: TorahReading::Chol(Chol::TzomGedalya),
+            name: TorahReading::Chol(Chol::TzomGedalia),
         }
     };
 
@@ -410,7 +410,7 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[Torah
     let regular_shabbosim_list = get_shabbosim(year, &get_yt_list(year, location)).0;
     let mut parsha_list = if split_nitzavim {
         let mut v: SmallVec<[Parsha; 256]> = SmallVec::new();
-        v.push(Parsha::Vayelach);
+        v.push(Parsha::Vayelech);
         v
     } else {
         SmallVec::new()
@@ -579,7 +579,7 @@ pub(crate) fn get_special_parsha_list(year: u64) -> SmallVec<[TorahReadingDay; 2
                 HebrewDate::from_ymd_unsafe(year, month, day)
             }
         },
-        name: TorahReading::SpecialParsha(SpecialParsha::Hachodesh),
+        name: TorahReading::SpecialParsha(SpecialParsha::HaChodesh),
     };
 
     smallvec![shekalim, zachor, parah, hachodesh]
@@ -661,7 +661,7 @@ mod test {
     fn fasts_should_never_start_on_friday_night() {
         for i in 3764..9999 {
             for day in get_chol_list(i).iter() {
-                if day.name == TorahReading::Chol(Chol::TzomGedalya)
+                if day.name == TorahReading::Chol(Chol::TzomGedalia)
                     || day.name == TorahReading::Chol(Chol::TenTeves)
                     || day.name == TorahReading::Chol(Chol::SeventeenTammuz)
                     || day.name == TorahReading::Chol(Chol::NineAv)
@@ -709,7 +709,7 @@ mod test {
                 assert_eq!(
                     get_shabbos_list(i, *loc)
                         .iter()
-                        .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Hachodesh))
+                        .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::HaChodesh))
                         .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
                         .count(),
                     0

@@ -50,8 +50,8 @@ pub enum Location {
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum YomTov {
-    RoshHashana1,
-    RoshHashana2,
+    RoshHashanah1,
+    RoshHashanah2,
     YomKippur,
     Sukkos1,
     Sukkos2,
@@ -87,12 +87,12 @@ pub enum SpecialParsha {
     Shekalim,
     Zachor,
     Parah,
-    Hachodesh,
+    HaChodesh,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Chol {
-    TzomGedalya,
+    TzomGedalia,
     RoshChodeshCheshvan1,
     RoshChodeshCheshvan2,
     Chanukah1,
@@ -135,7 +135,7 @@ pub enum Chol {
 
 #[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub enum Parsha {
-    Vayelach,
+    Vayelech,
     Haazinu,
     Bereishis,
     Noach,
