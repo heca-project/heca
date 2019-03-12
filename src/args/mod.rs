@@ -20,7 +20,7 @@ pub fn build_args<'a>() -> MainArgs {
         )
 .arg(
             Arg::with_name("type")
-                .long("output")
+                .long("print")
                 .help("Set output type")
                 .possible_values(&["regular", "pretty", "json"])
                 .takes_value(true)
@@ -146,7 +146,8 @@ fn parse_args(matches: ArgMatches) -> MainArgs {
     let command = if let Some(matches) = matches.subcommand_matches("list") {
         parse_list(matches, language == Language::Hebrew)
     } else {
-        panic!("not implemented");
+        println!("{}", matches.usage());
+        std::process::exit(1);
     };
 
     MainArgs {
