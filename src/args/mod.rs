@@ -2,7 +2,11 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 
 pub mod types;
 use crate::args::types::*;
+use atoi::*;
+use chrono::prelude::*;
+use either::*;
 use heca_lib::prelude::*;
+use heca_lib::HebrewDate;
 use std::env;
 
 pub fn build_args<'a>() -> MainArgs {
@@ -11,13 +15,13 @@ pub fn build_args<'a>() -> MainArgs {
         .about(
             "This program is a fast utility to convert and analyze dates in the Hebrew Calendar.",
         )
-        .arg(
-            Arg::with_name("configfile")
+/*        .arg(
+     Arg::with_name("configfile")
                 .long("config")
                 .help("Sets a custom config file (default: $XDG_CONFIG_HOME/heca/config.yaml)")
                 .takes_value(true)
                 .required(false),
-        )
+        )*/
 .arg(
             Arg::with_name("type")
                 .long("print")
@@ -41,15 +45,15 @@ pub fn build_args<'a>() -> MainArgs {
                 .arg(
                     Arg::with_name("DateFormat")
                         .long("datefmt")
-                        .help("Set date format: US or M for mm/dd/yyyy, UK or L for dd/mm/yyyy, ISO or B for yyyy/mm/dd, or fuzzy")
-                        .possible_values(&["US","M","UK","L","ISO","B", "fuzzy"])
+                        .help("Set date format (for Gregorian only): US or M for mm/dd/yyyy, UK or L for dd/mm/yyyy, ISO or B for yyyy/mm/dd")
+                        .possible_values(&["US","M","UK","L","ISO","B"])
                         .takes_value(true)
                         .required(false)
-                        .default_value("fuzzy")
+                        .default_value("ISO")
                 )
                 .arg(Arg::with_name("T")
                      .long("type")
-                    .long_help("Force conversion from type T, where T is either \"hebrew\" (then date must be written as '5-אדרא-5779'), as \"gregorian\" (where the date must be written as '1996-12-19'), or as \"fuzzy\" (default, where we'll try to figure it out for you, but don't blame us when it breaks!!).")
+                    .long_help("Force conversion from type T, where T is either \"hebrew\" (then date must be written as '5/אדרא/5779'), as \"gregorian\" (where the date must be written as '1996/12/19'), or fuzzy (is Hebrew if year is above 4000, Gregorian otherwise).")
                     .possible_values(&["hebrew", "gregorian", "fuzzy"])
                     .takes_value(true)
                     .required(false)
@@ -68,11 +72,10 @@ pub fn build_args<'a>() -> MainArgs {
                            .takes_value(true)
                            .required(false)
                       )
-                      .arg(Arg::with_name("Don't sort")
-                           .long("nosort")
-                           .help("Avoid sorting results")
-                           )
-                      .arg(Arg::with_name("Location")
+                     .arg(Arg::with_name("NoSort")
+                          .long("no-sort")
+                          .help("Don't sort output."))
+                     .arg(Arg::with_name("Location")
                            .long("location")
                            .help("Are you looking for an Israeli calendar or a Chutz La'aretz calendar?")
                            .takes_value(true)
@@ -91,7 +94,7 @@ pub fn build_args<'a>() -> MainArgs {
                            .multiple(true)
                            .required(false)
                            .use_delimiter(true)
-                           .possible_values(&["yom-tov","shabbos","special-parshas","chol"])
+                           .possible_values(&["yom-tov","shabbos","special-parshas","chol","minor-holidays", "omer"])
                            .default_value("yom-tov"))
                       .arg(Arg::with_name("Year")
 .required(true)
@@ -103,11 +106,13 @@ pub fn build_args<'a>() -> MainArgs {
 fn parse_args(matches: ArgMatches) -> MainArgs {
     let config = {
         if let Some(v) = matches.value_of("configfile") {
-            Some(String::from(v))
+            //            Some(String::from(v))
+            None
         } else {
             if let Ok(base_dir) = xdg::BaseDirectories::with_prefix("heca") {
                 if let Some(path) = base_dir.find_config_file("config.yaml") {
-                    Some(String::from(path.to_string_lossy()))
+                    //    Some(String::from(path.to_string_lossy()))
+                    None
                 } else {
                     None
                 }
@@ -145,6 +150,8 @@ fn parse_args(matches: ArgMatches) -> MainArgs {
 
     let command = if let Some(matches) = matches.subcommand_matches("list") {
         parse_list(matches, language == Language::Hebrew)
+    } else if let Some(matches) = matches.subcommand_matches("convert") {
+        parse_convert(matches, language == Language::Hebrew)
     } else {
         println!("{}", matches.usage());
         std::process::exit(1);
@@ -155,6 +162,117 @@ fn parse_args(matches: ArgMatches) -> MainArgs {
         output_type,
         language,
         command,
+    }
+}
+
+fn parse_hebrew(sp: &[&str]) -> Command {
+    let day = atoi::<u8>(sp[0].as_bytes()).expect("Day entered is not a number");
+    let year = atoi::<u64>(sp[2].as_bytes()).expect("Year entered is not a number.");
+    let month = {
+        let mut a = str_to_month(sp[1], true);
+        if !a.is_some() {
+            a = str_to_month(&(String::from(sp[1]).to_lowercase()), false);
+        }
+        a
+    }
+    .expect(&format!("Cannot parse month: {}", sp[1]));
+    Command::Convert(ConvertArgs {
+        date: ConvertType::Hebrew(HebrewDate::from_ymd(year, month, day).unwrap()),
+    })
+}
+
+fn parse_gregorian(sp: &[&str], format: &str) -> Command {
+    let (day, month, year) = match format {
+        "ISO" | "B" => {
+            let year = atoi::<i32>(sp[0].as_bytes()).expect("Could not parse year");
+            let month =
+                atoi::<u32>(sp[1].as_bytes()).expect(&format!("Cannot not parse month {}", sp[1]));
+            let day = atoi::<u32>(sp[2].as_bytes()).expect("Could not parse day");
+            (day, month, year)
+        }
+        "US" | "M" => {
+            let month = atoi::<u32>(sp[0].as_bytes()).expect("Could not parse month");
+            let day = atoi::<u32>(sp[1].as_bytes()).expect("Day entered is not a number");
+            let year = atoi::<i32>(sp[2].as_bytes()).expect("Year entered is not a number.");
+
+            (day, month, year)
+        }
+        "UK" | "L" => {
+            let day = atoi::<u32>(sp[0].as_bytes()).expect("Day entered is not a number");
+            let month = atoi::<u32>(sp[1].as_bytes()).expect("Could not parse month");
+            let year = atoi::<i32>(sp[2].as_bytes()).expect("Year entered is not a number.");
+
+            (day, month, year)
+        }
+        x => {
+            panic!(format!("Assertion error! How did {} get here?", x));
+        }
+    };
+    Command::Convert(ConvertArgs {
+        date: ConvertType::Gregorian(Utc.ymd(year, month, day)),
+    })
+}
+fn parse_convert(matches: &ArgMatches, hebrew: bool) -> Command {
+    let date = matches.value_of("Date").unwrap();
+
+    let sp = date
+        .split(&['-', '/', '_', '\\', '.', ',', '='][..])
+        .collect::<Vec<&str>>();
+    if sp.len() != 3 {
+        panic!("Couldn't parse date");
+    }
+
+    match matches.value_of("T").unwrap() {
+        "hebrew" => parse_hebrew(&sp),
+        "gregorian" => parse_gregorian(&sp, matches.value_of("DateFormat").unwrap()),
+        "fuzzy" => {
+            if sp[1].parse::<f64>().is_ok() {
+                parse_gregorian(&sp, matches.value_of("DateFormat").unwrap())
+            } else {
+                parse_hebrew(&sp)
+            }
+        }
+        x => panic!(format!("Assertion error! How did {} get here?", x)),
+    }
+}
+
+fn str_to_month(text: &str, exact: bool) -> Option<HebrewMonth> {
+    let ret = match text {
+        "תשרי" => Some(HebrewMonth::Tishrei),
+        "חשון" => Some(HebrewMonth::Cheshvan),
+        "כסלב" => Some(HebrewMonth::Kislev),
+        "טבת" => Some(HebrewMonth::Teves),
+        "שבט" => Some(HebrewMonth::Shvat),
+        "אדר" => Some(HebrewMonth::Adar),
+        "אדרא" => Some(HebrewMonth::Adar1),
+        "אדרב" => Some(HebrewMonth::Adar2),
+        "ניסן" => Some(HebrewMonth::Nissan),
+        "אייר" => Some(HebrewMonth::Iyar),
+        "סיון" => Some(HebrewMonth::Sivan),
+        "תמוז" => Some(HebrewMonth::Tammuz),
+        "אב" => Some(HebrewMonth::Av),
+        "אלול" => Some(HebrewMonth::Elul),
+        _ => None,
+    };
+    if exact || ret.is_some() {
+        return ret;
+    }
+    match text {
+        "tishrei" | "tishre" => Some(HebrewMonth::Tishrei),
+        "cheshvan" | "marcheshvan" | "mar cheshvan" => Some(HebrewMonth::Cheshvan),
+        "kislev" => Some(HebrewMonth::Kislev),
+        "teves" | "tevet" | "teiveis" => Some(HebrewMonth::Teves),
+        "shvat" | "shevat" => Some(HebrewMonth::Shvat),
+        "adar" => Some(HebrewMonth::Adar),
+        "adar1" | "adar 1" | "adar aleph" | "adar rishon" => Some(HebrewMonth::Adar1),
+        "adar2" | "adar 2" | "adar beis" | "adar bet" | "adar sheini" => Some(HebrewMonth::Adar2),
+        "nissan" | "Nisan" => Some(HebrewMonth::Nissan),
+        "iyar" => Some(HebrewMonth::Iyar),
+        "sivan" => Some(HebrewMonth::Sivan),
+        "tammuz" | "tamuz" => Some(HebrewMonth::Tammuz),
+        "av" | "menachem av" => Some(HebrewMonth::Av),
+        "elul" | "ellul" => Some(HebrewMonth::Elul),
+        _ => None,
     }
 }
 
@@ -178,7 +296,8 @@ fn parse_list(matches: &ArgMatches, hebrew: bool) -> Command {
         x => panic!(format!("Assertion Error! How did {} get here?", x)),
     };
 
-    let shuffle = matches.is_present("nosort");
+    let no_sort = matches.occurrences_of("NoSort") > 0;
+
     let location = match matches.value_of("Location").unwrap_or("") {
         "Chul" => Location::Chul,
         "Israel" => Location::Israel,
@@ -197,18 +316,20 @@ fn parse_list(matches: &ArgMatches, hebrew: bool) -> Command {
         .unwrap()
         .into_iter()
         .map(|x| match x {
-            "yom-tov" => TorahReadingType::YomTov,
-            "chol" => TorahReadingType::Chol,
-            "shabbos" => TorahReadingType::Shabbos,
-            "special-parshas" => TorahReadingType::SpecialParsha,
+            "yom-tov" => Either::Left(TorahReadingType::YomTov),
+            "chol" => Either::Left(TorahReadingType::Chol),
+            "shabbos" => Either::Left(TorahReadingType::Shabbos),
+            "special-parshas" => Either::Left(TorahReadingType::SpecialParsha),
+            "omer" => Either::Right(CustomHoliday::Omer),
+            "minor-holidays" => Either::Right(CustomHoliday::Minor),
             x => panic!(format!("Assertion Error! How did {} get here?", x)),
         })
-        .collect::<Vec<TorahReadingType>>();
+        .collect::<Vec<Either<TorahReadingType, CustomHoliday>>>();
     Command::List(ListArgs {
         year,
         location,
         events,
-        shuffle,
         amnt_years,
+        no_sort,
     })
 }
