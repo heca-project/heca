@@ -472,7 +472,7 @@ pub(crate) fn get_shabbos_list(year: u64, location: Location) -> SmallVec<[Torah
         .iter()
         .enumerate()
         .map(|(i, &v)| TorahReadingDay {
-            name: TorahReading::Shabbos(parsha_list[i].clone()),
+            name: TorahReading::Shabbos(parsha_list[i]),
             day: v,
         })
         .collect::<SmallVec<[TorahReadingDay; 256]>>();

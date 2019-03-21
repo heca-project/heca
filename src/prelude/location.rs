@@ -17,7 +17,7 @@ impl TorahReadingDay {
 
     #[inline]
     pub fn name(&self) -> TorahReading {
-        self.name.clone()
+        self.name
     }
 }
 

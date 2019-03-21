@@ -56,6 +56,13 @@ impl HebrewYear {
     ) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_ymd(self.year, month, day)
     }
+    pub fn get_hebrew_date_unsafe(
+        &self,
+        month: HebrewMonth,
+        day: u8,
+    ) -> Result<HebrewDate, ConversionError> {
+        HebrewDate::from_ymd(self.year, month, day)
+    }
 
     /// Returns all the days when the Torah is read.
     ///
@@ -114,15 +121,18 @@ impl HebrewYear {
         yt_types: &[TorahReadingType],
     ) -> SmallVec<[TorahReadingDay; 256]> {
         let mut return_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
-        yt_types
-            .iter()
-            .map(|yt_type| match yt_type {
-                TorahReadingType::YomTov => get_yt_list(self.year, location),
-                TorahReadingType::Chol => get_chol_list(self.year),
-                TorahReadingType::Shabbos => get_shabbos_list(self.year, location),
-                TorahReadingType::SpecialParsha => get_special_parsha_list(self.year),
-            })
-            .for_each(|r| return_vec.extend_from_slice(&r));
+        if yt_types.contains(&TorahReadingType::YomTov) {
+          return_vec.extend_from_slice(&get_yt_list(self.year, location));
+        }
+        if yt_types.contains(&TorahReadingType::Chol) {
+          return_vec.extend_from_slice(&get_chol_list(self.year));
+        }
+        if yt_types.contains(&TorahReadingType::Shabbos) {
+          return_vec.extend_from_slice(&get_shabbos_list(self.year, location));
+        }
+        if yt_types.contains(&TorahReadingType::SpecialParsha) {
+          return_vec.extend_from_slice(&get_special_parsha_list(self.year));
+        }
         return_vec
     }
 }
