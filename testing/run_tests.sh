@@ -3,7 +3,7 @@
 set -e
 set -o pipefail
 
-cargo build 
+cargo build --release 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 $DIR/convert_test.sh
 $DIR/list_test.sh
