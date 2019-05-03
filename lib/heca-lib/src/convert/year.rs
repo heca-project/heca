@@ -122,16 +122,16 @@ impl HebrewYear {
     ) -> SmallVec<[TorahReadingDay; 256]> {
         let mut return_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
         if yt_types.contains(&TorahReadingType::YomTov) {
-          return_vec.extend_from_slice(&get_yt_list(self.year, location));
+            return_vec.extend_from_slice(&get_yt_list(self.year, location));
         }
         if yt_types.contains(&TorahReadingType::Chol) {
-          return_vec.extend_from_slice(&get_chol_list(self.year));
+            return_vec.extend_from_slice(&get_chol_list(self.year));
         }
         if yt_types.contains(&TorahReadingType::Shabbos) {
-          return_vec.extend_from_slice(&get_shabbos_list(self.year, location));
+            return_vec.extend_from_slice(&get_shabbos_list(self.year, location));
         }
         if yt_types.contains(&TorahReadingType::SpecialParsha) {
-          return_vec.extend_from_slice(&get_special_parsha_list(self.year));
+            return_vec.extend_from_slice(&get_special_parsha_list(self.year));
         }
         return_vec
     }

@@ -1,13 +1,11 @@
 use chrono::prelude::*;
 use chrono::Duration;
-use clap::App;
 use either::*;
 use heca_lib::prelude::*;
 use heca_lib::*;
 use rayon::prelude::*;
-use serde::ser::{SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
-use std::borrow::Cow;
 
 use cpuprofiler::PROFILER;
 
@@ -16,7 +14,7 @@ use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-        PROFILER.lock().unwrap().start("./my-prof.profile");
+    //PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
 
     use args;
     let args = args::build_args();
@@ -30,7 +28,7 @@ fn main() {
         OutputType::JSON => (&res).print_json(),
     };
 
-        PROFILER.lock().unwrap().stop();
+    //PROFILER.lock().unwrap().stop().unwrap();
 }
 
 trait Runnable<T: Printable> {
@@ -43,7 +41,7 @@ trait Printable {
 }
 
 impl Runnable<ConvertReturn> for ConvertArgs {
-    fn run(&self, args: &MainArgs) -> ConvertReturn {
+    fn run(&self, _args: &MainArgs) -> ConvertReturn {
         match self.date {
             ConvertType::Gregorian(date) => ConvertReturn {
                 day: Either::Right([
@@ -61,7 +59,7 @@ impl Runnable<ConvertReturn> for ConvertArgs {
     }
 }
 impl Runnable<ListReturn> for ListArgs {
-    fn run(&self, args: &MainArgs) -> ListReturn {
+    fn run(&self, _args: &MainArgs) -> ListReturn {
         let mut main_events: Vec<TorahReadingType> = Vec::new();
         let mut custom_events: Vec<CustomHoliday> = Vec::new();
         for event in &self.events {
@@ -97,8 +95,7 @@ impl Runnable<ListReturn> for ListArgs {
                 ListReturn { list }
             }
             YearType::Gregorian(year) => {
-                let that_year = (year + 3760 - 1);
-                let last_year = (self.amnt_years + that_year);
+                let that_year = year + 3760 - 1;
                 let list = (0 as u32..(self.amnt_years as u32) + 2)
                     .into_par_iter()
                     .flat_map(|x| {
@@ -181,7 +178,7 @@ impl Printable for ConvertReturn {
             Either::Left(r) => println!("{}", serde_json::to_string(&r).unwrap()),
         };
     }
-    fn print(&self, args: MainArgs) {}
+    fn print(&self, _args: MainArgs) {}
 }
 impl Printable for ListReturn {
     fn print_json(&self) {
@@ -192,36 +189,37 @@ impl Printable for ListReturn {
         use std::io::stdout;
         use std::io::BufWriter;
         use std::io::Write;
-
         let stdout = stdout();
         let mut lock = BufWriter::with_capacity(100_000, stdout.lock());
-        self.list
-            .iter()
-            .map(|x| {
-                let ret = x.day;
-                (ret.year(), ret.month(), ret.day(), x.name.clone())
-            })
-            .for_each(|(year, month, day, name)| {
-                let mut year_arr = [b'\0'; 16];
-                let mut month_arr = [b'\0'; 2];
-                let mut day_arr = [b'\0'; 2];
-                let count_y = itoa::write(&mut year_arr[..], year).unwrap();
-                let count_m = itoa::write(&mut month_arr[..], month).unwrap();
-                let count_d = itoa::write(&mut day_arr[..], day).unwrap();
-                lock.write(&year_arr[..count_y as usize]).unwrap();
-                lock.write(b"/").unwrap();
-                lock.write(&month_arr[..count_m as usize]).unwrap();
-                lock.write(b"/").unwrap();
-                lock.write(&day_arr[..count_d as usize]).unwrap();
-                lock.write(b" ").unwrap();
-                match name {
-                    Name::TorahReading(name) => {
-                        lock.write(print(name, &args.language).as_bytes()).unwrap()
-                    }
-                    Name::CustomName{json, printable} => lock.write(printable.as_bytes()).unwrap(),
-                };
-                lock.write(b"\n").unwrap();
-            });
+        self.list.iter().for_each(|d| {
+            let ret = d.day;
+            let year = ret.year();
+            let month = ret.month();
+            let day = ret.day();
+            let name = d.name.clone();
+
+            let mut year_arr = [b'\0'; 16];
+            let mut month_arr = [b'\0'; 2];
+            let mut day_arr = [b'\0'; 2];
+            let count_y = itoa::write(&mut year_arr[..], year).unwrap();
+            let count_m = itoa::write(&mut month_arr[..], month).unwrap();
+            let count_d = itoa::write(&mut day_arr[..], day).unwrap();
+            lock.write(&year_arr[..count_y as usize]).unwrap();
+            lock.write(b"/").unwrap();
+            lock.write(&month_arr[..count_m as usize]).unwrap();
+            lock.write(b"/").unwrap();
+            lock.write(&day_arr[..count_d as usize]).unwrap();
+            lock.write(b" ").unwrap();
+            match name {
+                Name::TorahReading(name) => {
+                    lock.write(print(name, &args.language).as_bytes()).unwrap()
+                }
+                Name::CustomName { json: _, printable } => {
+                    lock.write(printable.as_bytes()).unwrap()
+                }
+            };
+            lock.write(b"\n").unwrap();
+        });
     }
 }
 
@@ -508,7 +506,7 @@ pub fn get_omer(year: &HebrewYear) -> Vec<DayVal> {
     for i in 1..=49 {
         dv.push(DayVal {
             day: first_day_of_pesach + Duration::days(i),
-            name: Name::CustomName{
+            name: Name::CustomName {
                 printable: format!(
                     "{}{} day of the Omer",
                     i,
@@ -523,11 +521,7 @@ pub fn get_omer(year: &HebrewYear) -> Vec<DayVal> {
                     }
                 )
                 .into(),
-                json: format!(
-                    "Omer{}",
-                    i,
-                )
-                .into()
+                json: format!("Omer{}", i,).into(),
             },
         })
     }
@@ -540,63 +534,90 @@ fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .get_hebrew_date(HebrewMonth::Tishrei, 9)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Erev Yom Kippur".into(), json: "ErevYomKippur".into()},
+            name: Name::CustomName {
+                printable: "Erev Yom Kippur".into(),
+                json: "ErevYomKippur".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Erev Sukkos".into(), json: "ErevSukkos".into()},
+            name: Name::CustomName {
+                printable: "Erev Sukkos".into(),
+                json: "ErevSukkos".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Nissan, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Erev Pesach".into(), json: "ErevPesach".into()},
+            name: Name::CustomName {
+                printable: "Erev Pesach".into(),
+                json: "ErevPesach".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Iyar, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Pesach Sheni".into(), json: "PesachSheni".into()},
+            name: Name::CustomName {
+                printable: "Pesach Sheni".into(),
+                json: "PesachSheni".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Iyar, 18)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Lag Baomer".into(), json: "LagBaomer".into()},
+            name: Name::CustomName {
+                printable: "Lag Baomer".into(),
+                json: "LagBaomer".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Sivan, 5)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Erev Shavuos".into(), json: "ErevShavuos".into()},
+            name: Name::CustomName {
+                printable: "Erev Shavuos".into(),
+                json: "ErevShavuos".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Elul, 29)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Erev Rosh Hashana".into(), json: "ErevRoshHashanah".into()},
+            name: Name::CustomName {
+                printable: "Erev Rosh Hashana".into(),
+                json: "ErevRoshHashanah".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Shvat, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "15th of Shvat".into(), json: "Shvat15".into()},
+            name: Name::CustomName {
+                printable: "15th of Shvat".into(),
+                json: "Shvat15".into(),
+            },
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Av, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "15th of Av".into(), json: "Av15".into()},
+            name: Name::CustomName {
+                printable: "15th of Av".into(),
+                json: "Av15".into(),
+            },
         },
     ];
 
@@ -606,17 +627,22 @@ fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .get_hebrew_date(HebrewMonth::Adar1, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Purim Kattan".into(), json: "PurimKattan".into()},
+            name: Name::CustomName {
+                printable: "Purim Kattan".into(),
+                json: "PurimKattan".into(),
+            },
         });
         holidays.push(DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Adar1, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName{printable: "Shushan Purim Kattan".into(), json: "ShushanPurimKattan".into()},
+            name: Name::CustomName {
+                printable: "Shushan Purim Kattan".into(),
+                json: "ShushanPurimKattan".into(),
+            },
         });
     }
 
     holidays
 }
-
