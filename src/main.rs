@@ -316,7 +316,7 @@ fn print(tr: TorahReading, language: &types::Language) -> &'static str {
                 Parsha::Tetzaveh => "Tetzaveh",
                 Parsha::KiSisa => "Ki Sisa",
                 Parsha::VayakhelPikudei => "Vayakhel/Pikudei",
-                Parsha::Vayakhel => "Vayekhel",
+                Parsha::Vayakhel => "Vayakhel",
                 Parsha::Pikudei => "Pikudei",
                 Parsha::Vayikra => "Vayikra",
                 Parsha::Tzav => "Tzav",
