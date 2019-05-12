@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 use chrono::Duration;
+use cpuprofiler::PROFILER;
 use either::*;
 use heca_lib::prelude::*;
 use heca_lib::*;
@@ -7,14 +8,12 @@ use rayon::prelude::*;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 
-use cpuprofiler::PROFILER;
-
 mod args;
 use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-    //PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
+    PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
 
     use args;
     let args = args::build_args();
@@ -28,7 +27,7 @@ fn main() {
         OutputType::JSON => (&res).print_json(),
     };
 
-    //PROFILER.lock().unwrap().stop().unwrap();
+    PROFILER.lock().unwrap().stop().unwrap();
 }
 
 trait Runnable<T: Printable> {
@@ -70,9 +69,10 @@ impl Runnable<ListReturn> for ListArgs {
         }
         let mut result = match self.year {
             YearType::Hebrew(year) => {
-                let list = (0 as u32..(self.amnt_years as u32))
+                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
-                    .flat_map(|x| {
+                    .map(|x| {
                         let mut ret = Vec::with_capacity(200);
                         let year = HebrewYear::new(x as u64 + year).unwrap();
                         ret.extend(
@@ -91,14 +91,20 @@ impl Runnable<ListReturn> for ListArgs {
                         }
                         ret
                     })
-                    .collect::<Vec<DayVal>>();
-                ListReturn { list }
+                    .collect_into_vec(&mut part1);
+                let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
+                part1
+                    .into_iter()
+                    .flat_map(|x| x)
+                    .for_each(|x| part2.push(x));
+                ListReturn { list: part2 }
             }
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
-                let list = (0 as u32..(self.amnt_years as u32) + 2)
+                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                (0 as u32..(self.amnt_years as u32) + 2)
                     .into_par_iter()
-                    .flat_map(|x| {
+                    .map(|x| {
                         let mut ret = Vec::with_capacity(200);
                         let heb_year = HebrewYear::new(x as u64 + that_year).unwrap();
                         ret.extend(
@@ -120,6 +126,11 @@ impl Runnable<ListReturn> for ListArgs {
                         }
                         ret
                     })
+                    .collect_into_vec(&mut part1);
+                let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
+                part1
+                    .into_iter()
+                    .flat_map(|x| x)
                     .filter(|x| x.day > Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0))
                     .filter(|x| {
                         x.day
@@ -127,8 +138,9 @@ impl Runnable<ListReturn> for ListArgs {
                                 .ymd((year + self.amnt_years) as i32, 1, 1)
                                 .and_hms(0, 0, 0)
                     })
-                    .collect::<Vec<DayVal>>();
-                ListReturn { list }
+                    .for_each(|x| part2.push(x));
+
+                ListReturn { list: part2 }
             }
         };
         if !self.no_sort {

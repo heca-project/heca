@@ -2,36 +2,70 @@ mod location;
 #[doc(inline)]
 pub use location::*;
 use serde::{Deserialize, Serialize};
-enum_from_primitive! {
+
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum Day{
+pub enum Day {
     Sunday,
     Monday,
     Tuesday,
     Wednesday,
     Thursday,
     Friday,
-    Shabbos
+    Shabbos,
 }
+
+impl From<u64> for Day {
+    fn from(input: u64) -> Self {
+        match input {
+            0 => Day::Sunday,
+            1 => Day::Monday,
+            2 => Day::Tuesday,
+            3 => Day::Wednesday,
+            4 => Day::Thursday,
+            5 => Day::Friday,
+            6 => Day::Shabbos,
+            _ => panic!(format!("{} Is out of bounds", input)),
+        }
+    }
 }
-enum_from_primitive! {
-  #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
-  pub enum HebrewMonth {
-    Tishrei = 0,
-    Cheshvan = 1,
-    Kislev = 2,
-    Teves = 3,
-    Shvat = 4,
-    Adar = 5,
-    Adar1 = 6,
-    Adar2 = 7,
-    Nissan = 8,
-    Iyar = 9,
-    Sivan = 10,
-    Tammuz = 11,
-    Av = 12,
-    Elul = 13
-  }
+
+#[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum HebrewMonth {
+    Tishrei,
+    Cheshvan,
+    Kislev,
+    Teves,
+    Shvat,
+    Adar,
+    Adar1,
+    Adar2,
+    Nissan,
+    Iyar,
+    Sivan,
+    Tammuz,
+    Av,
+    Elul,
+}
+impl From<u64> for HebrewMonth {
+    fn from(input: u64) -> Self {
+        match input {
+            0 => HebrewMonth::Tishrei,
+            1 => HebrewMonth::Cheshvan,
+            2 => HebrewMonth::Kislev,
+            3 => HebrewMonth::Teves,
+            4 => HebrewMonth::Shvat,
+            5 => HebrewMonth::Adar,
+            6 => HebrewMonth::Adar1,
+            7 => HebrewMonth::Adar2,
+            8 => HebrewMonth::Nissan,
+            9 => HebrewMonth::Iyar,
+            10 => HebrewMonth::Sivan,
+            11 => HebrewMonth::Tammuz,
+            12 => HebrewMonth::Av,
+            13 => HebrewMonth::Elul,
+            _ => panic!(format!("{} Is out of bounds", input)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -50,4 +84,11 @@ pub enum TorahReadingType {
     Chol,
     Shabbos,
     SpecialParsha,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
+pub enum MonthSchedule {
+    Short,
+    Regular,
+    Year,
 }
