@@ -1,6 +1,5 @@
 use chrono::prelude::*;
 use chrono::Duration;
-use cpuprofiler::PROFILER;
 use either::*;
 use heca_lib::prelude::*;
 use heca_lib::*;
@@ -14,7 +13,6 @@ use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-    //PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
 
     use args;
     let args = args::build_args();
@@ -28,7 +26,6 @@ fn main() {
         OutputType::JSON => (&res).print_json(),
     };
 
-    //PROFILER.lock().unwrap().stop().unwrap();
 }
 
 trait Runnable<T: Printable> {
