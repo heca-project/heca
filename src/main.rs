@@ -13,7 +13,6 @@ use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-
     use args;
     let args = args::build_args();
     let res: Box<Printable> = match args.command {
@@ -25,7 +24,6 @@ fn main() {
         OutputType::Regular | OutputType::Pretty => (&res).print(args),
         OutputType::JSON => (&res).print_json(),
     };
-
 }
 
 trait Runnable<T: Printable> {
