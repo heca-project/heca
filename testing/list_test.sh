@@ -45,7 +45,6 @@ else
 fi
 
 for i in $(seq 50 2999; seq 3800 6000) ; do
-
 outputOfYear=`$DIR/../target/release/heca --language "en_US" --print json list $i --show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer`
 
 day49ofomer=`echo $outputOfYear|jq '. | .[] | select (.name.CustomVal == "Omer49") | .day'`
