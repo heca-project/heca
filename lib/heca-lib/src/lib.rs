@@ -83,8 +83,6 @@
 //!4. While this library _works_, there are still a few inefficienciess that need to be taken care of.
 
 #[macro_use]
-extern crate enum_primitive;
-#[macro_use]
 extern crate lazy_static;
 mod convert;
 mod holidays;

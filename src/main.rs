@@ -6,16 +6,13 @@ use heca_lib::*;
 use rayon::prelude::*;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
-
-use cpuprofiler::PROFILER;
+use smallvec::{smallvec, SmallVec};
 
 mod args;
 use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-    //PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
-
     use args;
     let args = args::build_args();
     let res: Box<Printable> = match args.command {
@@ -27,8 +24,6 @@ fn main() {
         OutputType::Regular | OutputType::Pretty => (&res).print(args),
         OutputType::JSON => (&res).print_json(),
     };
-
-    //PROFILER.lock().unwrap().stop().unwrap();
 }
 
 trait Runnable<T: Printable> {
@@ -70,10 +65,11 @@ impl Runnable<ListReturn> for ListArgs {
         }
         let mut result = match self.year {
             YearType::Hebrew(year) => {
-                let list = (0 as u32..(self.amnt_years as u32))
+                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
-                    .flat_map(|x| {
-                        let mut ret = Vec::with_capacity(200);
+                    .map(|x| {
+                        let mut ret: Vec<DayVal> = Vec::new();
                         let year = HebrewYear::new(x as u64 + year).unwrap();
                         ret.extend(
                             year.get_holidays(self.location, &main_events)
@@ -84,21 +80,27 @@ impl Runnable<ListReturn> for ListArgs {
                                 }),
                         );
                         if custom_events.contains(&CustomHoliday::Omer) {
-                            ret.extend(get_omer(&year));
+                            ret.extend_from_slice(&get_omer(&year));
                         }
                         if custom_events.contains(&CustomHoliday::Minor) {
                             ret.extend(get_minor_holidays(&year));
                         }
                         ret
                     })
-                    .collect::<Vec<DayVal>>();
-                ListReturn { list }
+                    .collect_into_vec(&mut part1);
+                let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
+                part1
+                    .into_iter()
+                    .flat_map(|x| x)
+                    .for_each(|x| part2.push(x));
+                ListReturn { list: part2 }
             }
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
-                let list = (0 as u32..(self.amnt_years as u32) + 2)
+                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                (0 as u32..(self.amnt_years as u32) + 2)
                     .into_par_iter()
-                    .flat_map(|x| {
+                    .map(|x| {
                         let mut ret = Vec::with_capacity(200);
                         let heb_year = HebrewYear::new(x as u64 + that_year).unwrap();
                         ret.extend(
@@ -113,13 +115,18 @@ impl Runnable<ListReturn> for ListArgs {
                         );
 ;
                         if custom_events.contains(&CustomHoliday::Omer) {
-                            ret.extend(get_omer(&heb_year).into_iter());
+                            ret.extend_from_slice(&get_omer(&heb_year));
                         }
                         if custom_events.contains(&CustomHoliday::Minor) {
                             ret.extend(get_minor_holidays(&heb_year).into_iter());
                         }
                         ret
                     })
+                    .collect_into_vec(&mut part1);
+                let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
+                part1
+                    .into_iter()
+                    .flat_map(|x| x)
                     .filter(|x| x.day > Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0))
                     .filter(|x| {
                         x.day
@@ -127,8 +134,9 @@ impl Runnable<ListReturn> for ListArgs {
                                 .ymd((year + self.amnt_years) as i32, 1, 1)
                                 .and_hms(0, 0, 0)
                     })
-                    .collect::<Vec<DayVal>>();
-                ListReturn { list }
+                    .for_each(|x| part2.push(x));
+
+                ListReturn { list: part2 }
             }
         };
         if !self.no_sort {
@@ -497,38 +505,9 @@ fn print(tr: TorahReading, language: &types::Language) -> &'static str {
         },
     }
 }
-pub fn get_omer(year: &HebrewYear) -> Vec<DayVal> {
-    let mut dv: Vec<DayVal> = Vec::new();
-    let first_day_of_pesach = year
-        .get_hebrew_date(HebrewMonth::Nissan, 15)
-        .unwrap()
-        .to_gregorian();
-    for i in 1..=49 {
-        dv.push(DayVal {
-            day: first_day_of_pesach + Duration::days(i),
-            name: Name::CustomName {
-                printable: format!(
-                    "{}{} day of the Omer",
-                    i,
-                    if (i % 10) == 1 && i != 11 {
-                        "st"
-                    } else if (i % 10) == 2 && i != 12 {
-                        "nd"
-                    } else if (i % 10) == 3 && i != 13 {
-                        "rd"
-                    } else {
-                        "th"
-                    }
-                )
-                .into(),
-                json: format!("Omer{}", i,).into(),
-            },
-        })
-    }
-    dv
-}
-fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
-    let mut holidays = vec![
+
+fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
+    let mut holidays = smallvec![
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, 9)
@@ -645,4 +624,357 @@ fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
     }
 
     holidays
+}
+
+//generated from https://play.golang.com/p/fCtYz6kNCBw
+pub fn get_omer(year: &HebrewYear) -> [DayVal; 49] {
+    let first_day_of_pesach = year
+        .get_hebrew_date(HebrewMonth::Nissan, 15)
+        .unwrap()
+        .to_gregorian();
+    [
+        DayVal {
+            day: first_day_of_pesach + Duration::days(1),
+            name: Name::CustomName {
+                printable: "1st day of the Omer".into(),
+                json: "Omer1".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(2),
+            name: Name::CustomName {
+                printable: "2nd day of the Omer".into(),
+                json: "Omer2".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(3),
+            name: Name::CustomName {
+                printable: "3rd day of the Omer".into(),
+                json: "Omer3".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(4),
+            name: Name::CustomName {
+                printable: "4th day of the Omer".into(),
+                json: "Omer4".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(5),
+            name: Name::CustomName {
+                printable: "5th day of the Omer".into(),
+                json: "Omer5".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(6),
+            name: Name::CustomName {
+                printable: "6th day of the Omer".into(),
+                json: "Omer6".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(7),
+            name: Name::CustomName {
+                printable: "7th day of the Omer".into(),
+                json: "Omer7".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(8),
+            name: Name::CustomName {
+                printable: "8th day of the Omer".into(),
+                json: "Omer8".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(9),
+            name: Name::CustomName {
+                printable: "9th day of the Omer".into(),
+                json: "Omer9".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(10),
+            name: Name::CustomName {
+                printable: "10th day of the Omer".into(),
+                json: "Omer10".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(11),
+            name: Name::CustomName {
+                printable: "11th day of the Omer".into(),
+                json: "Omer11".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(12),
+            name: Name::CustomName {
+                printable: "12th day of the Omer".into(),
+                json: "Omer12".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(13),
+            name: Name::CustomName {
+                printable: "13th day of the Omer".into(),
+                json: "Omer13".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(14),
+            name: Name::CustomName {
+                printable: "14th day of the Omer".into(),
+                json: "Omer14".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(15),
+            name: Name::CustomName {
+                printable: "15th day of the Omer".into(),
+                json: "Omer15".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(16),
+            name: Name::CustomName {
+                printable: "16th day of the Omer".into(),
+                json: "Omer16".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(17),
+            name: Name::CustomName {
+                printable: "17th day of the Omer".into(),
+                json: "Omer17".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(18),
+            name: Name::CustomName {
+                printable: "18th day of the Omer".into(),
+                json: "Omer18".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(19),
+            name: Name::CustomName {
+                printable: "19th day of the Omer".into(),
+                json: "Omer19".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(20),
+            name: Name::CustomName {
+                printable: "20th day of the Omer".into(),
+                json: "Omer20".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(21),
+            name: Name::CustomName {
+                printable: "21st day of the Omer".into(),
+                json: "Omer21".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(22),
+            name: Name::CustomName {
+                printable: "22nd day of the Omer".into(),
+                json: "Omer22".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(23),
+            name: Name::CustomName {
+                printable: "23rd day of the Omer".into(),
+                json: "Omer23".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(24),
+            name: Name::CustomName {
+                printable: "24th day of the Omer".into(),
+                json: "Omer24".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(25),
+            name: Name::CustomName {
+                printable: "25th day of the Omer".into(),
+                json: "Omer25".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(26),
+            name: Name::CustomName {
+                printable: "26th day of the Omer".into(),
+                json: "Omer26".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(27),
+            name: Name::CustomName {
+                printable: "27th day of the Omer".into(),
+                json: "Omer27".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(28),
+            name: Name::CustomName {
+                printable: "28th day of the Omer".into(),
+                json: "Omer28".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(29),
+            name: Name::CustomName {
+                printable: "29th day of the Omer".into(),
+                json: "Omer29".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(30),
+            name: Name::CustomName {
+                printable: "30th day of the Omer".into(),
+                json: "Omer30".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(31),
+            name: Name::CustomName {
+                printable: "31st day of the Omer".into(),
+                json: "Omer31".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(32),
+            name: Name::CustomName {
+                printable: "32nd day of the Omer".into(),
+                json: "Omer32".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(33),
+            name: Name::CustomName {
+                printable: "33rd day of the Omer".into(),
+                json: "Omer33".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(34),
+            name: Name::CustomName {
+                printable: "34th day of the Omer".into(),
+                json: "Omer34".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(35),
+            name: Name::CustomName {
+                printable: "35th day of the Omer".into(),
+                json: "Omer35".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(36),
+            name: Name::CustomName {
+                printable: "36th day of the Omer".into(),
+                json: "Omer36".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(37),
+            name: Name::CustomName {
+                printable: "37th day of the Omer".into(),
+                json: "Omer37".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(38),
+            name: Name::CustomName {
+                printable: "38th day of the Omer".into(),
+                json: "Omer38".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(39),
+            name: Name::CustomName {
+                printable: "39th day of the Omer".into(),
+                json: "Omer39".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(40),
+            name: Name::CustomName {
+                printable: "40th day of the Omer".into(),
+                json: "Omer40".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(41),
+            name: Name::CustomName {
+                printable: "41st day of the Omer".into(),
+                json: "Omer41".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(42),
+            name: Name::CustomName {
+                printable: "42nd day of the Omer".into(),
+                json: "Omer42".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(43),
+            name: Name::CustomName {
+                printable: "43rd day of the Omer".into(),
+                json: "Omer43".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(44),
+            name: Name::CustomName {
+                printable: "44th day of the Omer".into(),
+                json: "Omer44".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(45),
+            name: Name::CustomName {
+                printable: "45th day of the Omer".into(),
+                json: "Omer45".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(46),
+            name: Name::CustomName {
+                printable: "46th day of the Omer".into(),
+                json: "Omer46".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(47),
+            name: Name::CustomName {
+                printable: "47th day of the Omer".into(),
+                json: "Omer47".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(48),
+            name: Name::CustomName {
+                printable: "48th day of the Omer".into(),
+                json: "Omer48".into(),
+            },
+        },
+        DayVal {
+            day: first_day_of_pesach + Duration::days(49),
+            name: Name::CustomName {
+                printable: "49th day of the Omer".into(),
+                json: "Omer49".into(),
+            },
+        },
+    ]
 }

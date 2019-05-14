@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use either::{Either, Left, Right};
+use either::Either;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use serde::ser::*;
@@ -54,10 +54,46 @@ pub enum YearType {
     Hebrew(u64),
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct DayVal {
     pub day: chrono::DateTime<Utc>,
     pub name: Name,
+}
+
+impl Serialize for DayVal {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use crate::types::*;
+        let mut state = serializer.serialize_struct("Day", 2)?;
+        state.serialize_field("day", &self.day)?;
+        match &self.name {
+            Name::TorahReading(val) => match val {
+                TorahReading::YomTov(yt) => {
+                    state.serialize_field("type", "YomTov")?;
+                    state.serialize_field("name", yt)?;
+                }
+                TorahReading::Chol(chol) => {
+                    state.serialize_field("type", "Chol")?;
+                    state.serialize_field("name", chol)?;
+                }
+                TorahReading::Shabbos(shabbos) => {
+                    state.serialize_field("type", "Shabbos")?;
+                    state.serialize_field("name", shabbos)?;
+                }
+                TorahReading::SpecialParsha(special_parsha) => {
+                    state.serialize_field("type", "YomTov")?;
+                    state.serialize_field("name", special_parsha)?;
+                }
+            },
+            Name::CustomName { printable: _, json } => {
+                state.serialize_field("type", "CustomVal")?;
+                state.serialize_field("name", &json)?;
+            }
+        };
+        state.end()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -67,21 +103,6 @@ pub enum Name {
         printable: Cow<'static, str>,
         json: Cow<'static, str>,
     },
-}
-
-impl Serialize for Name {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use crate::types::*;
-        let mut state = serializer.serialize_struct("Name", 2)?;
-        match self {
-            Name::TorahReading(val) => state.serialize_field("TorahReading", val)?,
-            Name::CustomName { printable, json } => state.serialize_field("CustomVal", json)?,
-        };
-        state.end()
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
