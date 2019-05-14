@@ -10,4 +10,8 @@ rust:
   - nightly
   - stable
 
-
+deploy:
+  provider: script
+  script: bash testing/run_tests.sh
+  on:
+    tags: true
