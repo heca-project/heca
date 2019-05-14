@@ -42,5 +42,3 @@ members = ["lib/heca-lib"]
 [profile.release]
 lto = true
 debug = true
-
-
