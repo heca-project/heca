@@ -2,6 +2,7 @@ mod location;
 #[doc(inline)]
 pub use location::*;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum Day {
@@ -76,6 +77,28 @@ pub enum ConversionError {
     MonthDoesntExist,
     YearTooSmall,
     DayIsZero,
+}
+
+impl fmt::Display for ConversionError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ConversionError::IsNotLeapYear => write!(
+                f,
+                "Can't convert an Adar 1 or Adar 2 of a year which isn't a leap year"
+            ),
+            ConversionError::TooManyDaysInMonth(d) => write!(f, "Too many days ({}) in month", d),
+            ConversionError::IsLeapYear => write!(
+                f,
+                "Can't convert an Adar of a year which is a leap year. Specify Adar1 or Adar2"
+            ),
+            ConversionError::MonthDoesntExist => write!(f, "Month doesn't exist"),
+            ConversionError::YearTooSmall => write!(
+                f,
+                "Cannot build calendar for years below 3764 (After Creation)"
+            ),
+            ConversionError::DayIsZero => write!(f, "Months must have a non-zero amount of days"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]

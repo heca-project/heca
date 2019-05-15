@@ -156,15 +156,15 @@ impl HebrewDate {
     /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(18,0,0)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,2).unwrap());
     /// ```
     /// # Error Values:
-    /// * YearTooSmall - This algorithm won't work if the year is before roughly year 4.
+    /// * YearTooSmall - This algorithm won't work if the year is before year 4.
     ///
     pub fn from_gregorian(date: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
+        if date < *crate::convert::year::backend::FIRST_RH + Duration::days(2 + 365) {
+            return Err(ConversionError::YearTooSmall);
+        }
         let days_since_first_rh =
             ((date - *crate::convert::year::backend::FIRST_RH).num_days() + 2) as u64;
 
-        if days_since_first_rh < 365 {
-            return Err(ConversionError::YearTooSmall);
-        }
         let hebrew_year = HebrewYear::new(crate::convert::year::backend::day_of_last_rh(
             days_since_first_rh,
         ))
