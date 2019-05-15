@@ -13,48 +13,61 @@ use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
+    if let Err(err) = app() {
+        println!("{}", err);
+        std::process::exit(1);
+    }
+}
+
+fn app() -> Result<(), String> {
     use args;
-    let args = args::build_args();
+    let args = args::build_args()?;
     let res: Box<Printable> = match args.command {
-        Command::List(ref sub_args) => Box::new(sub_args.run(&args)),
-        Command::Convert(ref sub_args) => Box::new(sub_args.run(&args)),
+        Command::List(ref sub_args) => Box::new(sub_args.run(&args)?),
+        Command::Convert(ref sub_args) => Box::new(sub_args.run(&args)?),
     };
 
     match args.output_type {
-        OutputType::Regular | OutputType::Pretty => (&res).print(args),
-        OutputType::JSON => (&res).print_json(),
+        OutputType::Regular | OutputType::Pretty => (&res).print(args)?,
+        OutputType::JSON => (&res).print_json()?,
     };
+
+    Ok(())
 }
 
 trait Runnable<T: Printable> {
-    fn run(&self, args: &MainArgs) -> T;
+    fn run(&self, args: &MainArgs) -> Result<T, String>;
 }
 
 trait Printable {
-    fn print(&self, args: MainArgs);
-    fn print_json(&self);
+    fn print(&self, args: MainArgs) -> Result<(), String>;
+    fn print_json(&self) -> Result<(), String>;
 }
 
 impl Runnable<ConvertReturn> for ConvertArgs {
-    fn run(&self, _args: &MainArgs) -> ConvertReturn {
+    fn run(&self, _args: &MainArgs) -> Result<ConvertReturn, String> {
         match self.date {
-            ConvertType::Gregorian(date) => ConvertReturn {
+            ConvertType::Gregorian(date) => Ok(ConvertReturn {
+                orig_day: Either::Right(date.and_hms(0, 0, 1)),
                 day: Either::Right([
-                    HebrewDate::from_gregorian(date.and_hms(0, 0, 1)).unwrap(),
-                    HebrewDate::from_gregorian(date.and_hms(23, 0, 1)).unwrap(),
+                    HebrewDate::from_gregorian(date.and_hms(0, 0, 1))
+                        .map_err(|e| format!("{}", e))?,
+                    HebrewDate::from_gregorian(date.and_hms(23, 0, 1))
+                        .map_err(|e| format!("{}", e))?,
                 ]),
-            },
-            ConvertType::Hebrew(date) => ConvertReturn {
+            }),
+            ConvertType::Hebrew(date) => Ok(ConvertReturn {
+                orig_day: Either::Left(date),
                 day: Either::Left([
                     date.to_gregorian().into(),
                     (date.to_gregorian() + Duration::days(1)).into(),
                 ]),
-            },
+            }),
         }
     }
 }
 impl Runnable<ListReturn> for ListArgs {
-    fn run(&self, _args: &MainArgs) -> ListReturn {
+    fn run(&self, _args: &MainArgs) -> Result<ListReturn, String> {
         let mut main_events: Vec<TorahReadingType> = Vec::new();
         let mut custom_events: Vec<CustomHoliday> = Vec::new();
         for event in &self.events {
@@ -63,8 +76,9 @@ impl Runnable<ListReturn> for ListArgs {
                 Right(event) => custom_events.push(*event),
             };
         }
-        let mut result = match self.year {
+        let result: Result<ListReturn, String> = match self.year {
             YearType::Hebrew(year) => {
+                HebrewYear::new(year).map_err(|e| format!("{}", e))?;
                 let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
                 (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
@@ -93,10 +107,12 @@ impl Runnable<ListReturn> for ListArgs {
                     .into_iter()
                     .flat_map(|x| x)
                     .for_each(|x| part2.push(x));
-                ListReturn { list: part2 }
+                Ok(ListReturn { list: part2 })
             }
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
+                HebrewYear::new(that_year).map_err(|e| format!("{}", e))?;
+
                 let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
                 (0 as u32..(self.amnt_years as u32) + 2)
                     .into_par_iter()
@@ -136,18 +152,20 @@ impl Runnable<ListReturn> for ListArgs {
                     })
                     .for_each(|x| part2.push(x));
 
-                ListReturn { list: part2 }
+                Ok(ListReturn { list: part2 })
             }
         };
+        let mut result1 = result?;
         if !self.no_sort {
-            result.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
+            result1.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
         }
-        result
+        Ok(result1)
     }
 }
 #[derive(Debug)]
 struct ConvertReturn {
     pub day: Either<[chrono::DateTime<Utc>; 2], [HebrewDate; 2]>,
+    pub orig_day: Either<HebrewDate, chrono::DateTime<Utc>>,
 }
 impl Serialize for ConvertReturn {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -180,19 +198,102 @@ struct ListReturn {
 }
 
 impl Printable for ConvertReturn {
-    fn print_json(&self) {
+    fn print_json(&self) -> Result<(), String> {
         match &self.day {
             Either::Right(r) => println!("{}", serde_json::to_string(&r).unwrap()),
             Either::Left(r) => println!("{}", serde_json::to_string(&r).unwrap()),
         };
+        Ok(())
     }
-    fn print(&self, _args: MainArgs) {}
+    fn print(&self, args: MainArgs) -> Result<(), String> {
+        match args.language {
+            Language::English => match self.orig_day {
+                Either::Right(r) => println!(
+                    "{}: From {} {} {} to {} {} {}.",
+                    r.format("%A %B %-d %Y"),
+                    self.day.right().unwrap()[0].day(),
+                    print_hebrew_month_english(self.day.right().unwrap()[0].month()),
+                    self.day.right().unwrap()[0].year(),
+                    self.day.right().unwrap()[1].day(),
+                    print_hebrew_month_english(self.day.right().unwrap()[1].month()),
+                    self.day.right().unwrap()[1].year(),
+                ),
+                Either::Left(l) => println!(
+                    "{} {} {} -> From sunset {} to sunset {}.",
+                    l.day(),
+                    print_hebrew_month_english(l.month()),
+                    l.year(),
+                    self.day.left().unwrap()[0].format("%A %B %-d %Y"),
+                    self.day.left().unwrap()[1].format("%A %B %-d %Y"),
+                ),
+            },
+            Language::Hebrew => match self.orig_day {
+                Either::Right(r) => println!(
+                    "{}: {} {} {} - {} {} {}.",
+                    r.format("%A %B %-d %Y"),
+                    self.day.right().unwrap()[0].day(),
+                    print_hebrew_month_hebrew(self.day.right().unwrap()[0].month()),
+                    self.day.right().unwrap()[0].year(),
+                    self.day.right().unwrap()[1].day(),
+                    print_hebrew_month_hebrew(self.day.right().unwrap()[1].month()),
+                    self.day.right().unwrap()[1].year(),
+                ),
+                Either::Left(l) => println!(
+                    "{} {} {}: {} - {}.",
+                    l.day(),
+                    print_hebrew_month_hebrew(l.month()),
+                    l.year(),
+                    self.day.left().unwrap()[0].format("%A %B %-d %Y"),
+                    self.day.left().unwrap()[1].format("%A %B %-d %Y"),
+                ),
+            },
+        };
+        Ok(())
+    }
+}
+
+fn print_hebrew_month_english(h: HebrewMonth) -> &'static str {
+    match h {
+        HebrewMonth::Tishrei => "Tishrei",
+        HebrewMonth::Cheshvan => "Cheshvan",
+        HebrewMonth::Kislev => "Kislev",
+        HebrewMonth::Teves => "Teves",
+        HebrewMonth::Shvat => "Shvat",
+        HebrewMonth::Adar => "Adar",
+        HebrewMonth::Adar1 => "Adar Rishon",
+        HebrewMonth::Adar2 => "Adar Sheni",
+        HebrewMonth::Nissan => "Nissan",
+        HebrewMonth::Iyar => "Iyar",
+        HebrewMonth::Sivan => "Sivan",
+        HebrewMonth::Tammuz => "Tammuz",
+        HebrewMonth::Av => "Av",
+        HebrewMonth::Elul => "Elul",
+    }
+}
+fn print_hebrew_month_hebrew(h: HebrewMonth) -> &'static str {
+    match h {
+        HebrewMonth::Tishrei => "תשרי",
+        HebrewMonth::Cheshvan => "חשוון",
+        HebrewMonth::Kislev => "כסלו",
+        HebrewMonth::Teves => "טבת",
+        HebrewMonth::Shvat => "שבט",
+        HebrewMonth::Adar => "אדר",
+        HebrewMonth::Adar1 => "אדר א",
+        HebrewMonth::Adar2 => "אדר ב",
+        HebrewMonth::Nissan => "ניסן",
+        HebrewMonth::Iyar => "אייר",
+        HebrewMonth::Sivan => "סיוון",
+        HebrewMonth::Tammuz => "תמוז",
+        HebrewMonth::Av => "אב",
+        HebrewMonth::Elul => "אלול",
+    }
 }
 impl Printable for ListReturn {
-    fn print_json(&self) {
+    fn print_json(&self) -> Result<(), String> {
         println!("{}", serde_json::to_string(&self).unwrap());
+        Ok(())
     }
-    fn print(&self, args: MainArgs) {
+    fn print(&self, args: MainArgs) -> Result<(), String> {
         use chrono::Datelike;
         use std::io::stdout;
         use std::io::BufWriter;
@@ -212,26 +313,155 @@ impl Printable for ListReturn {
             let count_y = itoa::write(&mut year_arr[..], year).unwrap();
             let count_m = itoa::write(&mut month_arr[..], month).unwrap();
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
-            lock.write(&year_arr[..count_y as usize]).unwrap();
-            lock.write(b"/").unwrap();
-            lock.write(&month_arr[..count_m as usize]).unwrap();
-            lock.write(b"/").unwrap();
-            lock.write(&day_arr[..count_d as usize]).unwrap();
-            lock.write(b" ").unwrap();
+            lock.write(&year_arr[..count_y as usize]).ok();
+            lock.write(b"/").ok();
+            lock.write(&month_arr[..count_m as usize]).ok();
+            lock.write(b"/").ok();
+            lock.write(&day_arr[..count_d as usize]).ok();
+            lock.write(b" ").ok();
             match name {
                 Name::TorahReading(name) => {
-                    lock.write(print(name, &args.language).as_bytes()).unwrap()
+                    lock.write(print_tr(name, &args.language).as_bytes()).ok()
                 }
-                Name::CustomName { json: _, printable } => {
-                    lock.write(printable.as_bytes()).unwrap()
-                }
+                Name::MinorDays(day) => lock.write(print_md(day, &args.language).as_bytes()).ok(),
+                Name::CustomName { json: _, printable } => lock.write(printable.as_bytes()).ok(),
             };
             lock.write(b"\n").unwrap();
         });
+        Ok(())
     }
 }
-
-fn print(tr: TorahReading, language: &types::Language) -> &'static str {
+fn print_md(tr: MinorDays, language: &types::Language) -> &'static str {
+    match language {
+        Language::English => match tr {
+            //Generated from https://play.golang.org/p/HtWEMOgflMt
+            MinorDays::Omer1 => "1st day of the Omer",
+            MinorDays::Omer2 => "2nd day of the Omer",
+            MinorDays::Omer3 => "3rd day of the Omer",
+            MinorDays::Omer4 => "4th day of the Omer",
+            MinorDays::Omer5 => "5th day of the Omer",
+            MinorDays::Omer6 => "6th day of the Omer",
+            MinorDays::Omer7 => "7th day of the Omer",
+            MinorDays::Omer8 => "8th day of the Omer",
+            MinorDays::Omer9 => "9th day of the Omer",
+            MinorDays::Omer10 => "10th day of the Omer",
+            MinorDays::Omer11 => "11th day of the Omer",
+            MinorDays::Omer12 => "12th day of the Omer",
+            MinorDays::Omer13 => "13th day of the Omer",
+            MinorDays::Omer14 => "14th day of the Omer",
+            MinorDays::Omer15 => "15th day of the Omer",
+            MinorDays::Omer16 => "16th day of the Omer",
+            MinorDays::Omer17 => "17th day of the Omer",
+            MinorDays::Omer18 => "18th day of the Omer",
+            MinorDays::Omer19 => "19th day of the Omer",
+            MinorDays::Omer20 => "20th day of the Omer",
+            MinorDays::Omer21 => "21st day of the Omer",
+            MinorDays::Omer22 => "22nd day of the Omer",
+            MinorDays::Omer23 => "23rd day of the Omer",
+            MinorDays::Omer24 => "24th day of the Omer",
+            MinorDays::Omer25 => "25th day of the Omer",
+            MinorDays::Omer26 => "26th day of the Omer",
+            MinorDays::Omer27 => "27th day of the Omer",
+            MinorDays::Omer28 => "28th day of the Omer",
+            MinorDays::Omer29 => "29th day of the Omer",
+            MinorDays::Omer30 => "30th day of the Omer",
+            MinorDays::Omer31 => "31st day of the Omer",
+            MinorDays::Omer32 => "32nd day of the Omer",
+            MinorDays::Omer33 => "33rd day of the Omer",
+            MinorDays::Omer34 => "34th day of the Omer",
+            MinorDays::Omer35 => "35th day of the Omer",
+            MinorDays::Omer36 => "36th day of the Omer",
+            MinorDays::Omer37 => "37th day of the Omer",
+            MinorDays::Omer38 => "38th day of the Omer",
+            MinorDays::Omer39 => "39th day of the Omer",
+            MinorDays::Omer40 => "40th day of the Omer",
+            MinorDays::Omer41 => "41st day of the Omer",
+            MinorDays::Omer42 => "42nd day of the Omer",
+            MinorDays::Omer43 => "43rd day of the Omer",
+            MinorDays::Omer44 => "44th day of the Omer",
+            MinorDays::Omer45 => "45th day of the Omer",
+            MinorDays::Omer46 => "46th day of the Omer",
+            MinorDays::Omer47 => "47th day of the Omer",
+            MinorDays::Omer48 => "48th day of the Omer",
+            MinorDays::Omer49 => "49th day of the Omer",
+            MinorDays::ErevPesach => "Erev Pesach",
+            MinorDays::ErevSukkos => "Erev Sukkos",
+            MinorDays::ErevShavuos => "Erev Shavuos",
+            MinorDays::ErevYomKippur => "Erev Yom Kippur",
+            MinorDays::ErevRoshHashanah => "Erev Rosh Hashana",
+            MinorDays::PesachSheni => "Pesach Sheni",
+            MinorDays::LagBaOmer => "Lag BaOmer",
+            MinorDays::FifteenAv => "15th of Av",
+            MinorDays::FifteenShvat => "15th of Shevat",
+            MinorDays::PurimKattan => "Purim Kattan",
+            MinorDays::ShushanPurimKattan => "Shushan Purim Kattan",
+        },
+        Language::Hebrew => match tr {
+            //generated from https://play.golang.org/p/LH0qQmYxZsP
+            MinorDays::Omer1 => "היום יום 1 לעומר",
+            MinorDays::Omer2 => "היום יום 2 לעומר",
+            MinorDays::Omer3 => "היום יום 3 לעומר",
+            MinorDays::Omer4 => "היום יום 4 לעומר",
+            MinorDays::Omer5 => "היום יום 5 לעומר",
+            MinorDays::Omer6 => "היום יום 6 לעומר",
+            MinorDays::Omer7 => "היום יום 7 לעומר",
+            MinorDays::Omer8 => "היום יום 8 לעומר",
+            MinorDays::Omer9 => "היום יום 9 לעומר",
+            MinorDays::Omer10 => "היום יום 10 לעומר",
+            MinorDays::Omer11 => "היום יום 11 לעומר",
+            MinorDays::Omer12 => "היום יום 12 לעומר",
+            MinorDays::Omer13 => "היום יום 13 לעומר",
+            MinorDays::Omer14 => "היום יום 14 לעומר",
+            MinorDays::Omer15 => "היום יום 15 לעומר",
+            MinorDays::Omer16 => "היום יום 16 לעומר",
+            MinorDays::Omer17 => "היום יום 17 לעומר",
+            MinorDays::Omer18 => "היום יום 18 לעומר",
+            MinorDays::Omer19 => "היום יום 19 לעומר",
+            MinorDays::Omer20 => "היום יום 20 לעומר",
+            MinorDays::Omer21 => "היום יום 21 לעומר",
+            MinorDays::Omer22 => "היום יום 22 לעומר",
+            MinorDays::Omer23 => "היום יום 23 לעומר",
+            MinorDays::Omer24 => "היום יום 24 לעומר",
+            MinorDays::Omer25 => "היום יום 25 לעומר",
+            MinorDays::Omer26 => "היום יום 26 לעומר",
+            MinorDays::Omer27 => "היום יום 27 לעומר",
+            MinorDays::Omer28 => "היום יום 28 לעומר",
+            MinorDays::Omer29 => "היום יום 29 לעומר",
+            MinorDays::Omer30 => "היום יום 30 לעומר",
+            MinorDays::Omer31 => "היום יום 31 לעומר",
+            MinorDays::Omer32 => "היום יום 32 לעומר",
+            MinorDays::Omer33 => "היום יום 33 לעומר",
+            MinorDays::Omer34 => "היום יום 34 לעומר",
+            MinorDays::Omer35 => "היום יום 35 לעומר",
+            MinorDays::Omer36 => "היום יום 36 לעומר",
+            MinorDays::Omer37 => "היום יום 37 לעומר",
+            MinorDays::Omer38 => "היום יום 38 לעומר",
+            MinorDays::Omer39 => "היום יום 39 לעומר",
+            MinorDays::Omer40 => "היום יום 40 לעומר",
+            MinorDays::Omer41 => "היום יום 41 לעומר",
+            MinorDays::Omer42 => "היום יום 42 לעומר",
+            MinorDays::Omer43 => "היום יום 43 לעומר",
+            MinorDays::Omer44 => "היום יום 44 לעומר",
+            MinorDays::Omer45 => "היום יום 45 לעומר",
+            MinorDays::Omer46 => "היום יום 46 לעומר",
+            MinorDays::Omer47 => "היום יום 47 לעומר",
+            MinorDays::Omer48 => "היום יום 48 לעומר",
+            MinorDays::Omer49 => "היום יום 49 לעומר",
+            MinorDays::ErevPesach => "ערב פסח",
+            MinorDays::ErevSukkos => "ערב סוכות",
+            MinorDays::ErevShavuos => "ערב שבועות",
+            MinorDays::ErevYomKippur => "ערב יום כיפור",
+            MinorDays::ErevRoshHashanah => "ערב ראש השנה",
+            MinorDays::PesachSheni => "ערב פסח שני",
+            MinorDays::LagBaOmer => "ל\"ג בעומר",
+            MinorDays::FifteenAv => "ט\"ו באב",
+            MinorDays::FifteenShvat => "ט\"ו בשבט",
+            MinorDays::PurimKattan => "פורים קטן",
+            MinorDays::ShushanPurimKattan => "שושן פורים קטן",
+        },
+    }
+}
+fn print_tr(tr: TorahReading, language: &types::Language) -> &'static str {
     match language {
         Language::English => match tr {
             TorahReading::YomTov(yt) => match yt {
@@ -513,90 +743,63 @@ fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
                 .get_hebrew_date(HebrewMonth::Tishrei, 9)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Erev Yom Kippur".into(),
-                json: "ErevYomKippur".into(),
-            },
+            name: Name::MinorDays(MinorDays::ErevYomKippur)
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Erev Sukkos".into(),
-                json: "ErevSukkos".into(),
-            },
+            name: Name::MinorDays(MinorDays::ErevSukkos)
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Nissan, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Erev Pesach".into(),
-                json: "ErevPesach".into(),
-            },
+            name: Name::MinorDays(MinorDays::ErevPesach)
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Iyar, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Pesach Sheni".into(),
-                json: "PesachSheni".into(),
-            },
+            name: Name::MinorDays(MinorDays::PesachSheni),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Iyar, 18)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Lag Baomer".into(),
-                json: "LagBaomer".into(),
-            },
+            name: Name::MinorDays(MinorDays::LagBaOmer),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Sivan, 5)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Erev Shavuos".into(),
-                json: "ErevShavuos".into(),
-            },
+            name: Name::MinorDays(MinorDays::ErevShavuos),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Elul, 29)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Erev Rosh Hashana".into(),
-                json: "ErevRoshHashanah".into(),
-            },
+            name: Name::MinorDays(MinorDays::ErevRoshHashanah),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Shvat, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "15th of Shvat".into(),
-                json: "Shvat15".into(),
-            },
+            name: Name::MinorDays(MinorDays::FifteenShvat),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Av, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "15th of Av".into(),
-                json: "Av15".into(),
-            },
+            name: Name::MinorDays(MinorDays::FifteenAv),
         },
     ];
 
@@ -606,20 +809,14 @@ fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
                 .get_hebrew_date(HebrewMonth::Adar1, 14)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Purim Kattan".into(),
-                json: "PurimKattan".into(),
-            },
+            name: Name::MinorDays(MinorDays::PurimKattan),
         });
         holidays.push(DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Adar1, 15)
                 .unwrap()
                 .to_gregorian(),
-            name: Name::CustomName {
-                printable: "Shushan Purim Kattan".into(),
-                json: "ShushanPurimKattan".into(),
-            },
+            name: Name::MinorDays(MinorDays::ShushanPurimKattan),
         });
     }
 
@@ -632,349 +829,204 @@ pub fn get_omer(year: &HebrewYear) -> [DayVal; 49] {
         .get_hebrew_date(HebrewMonth::Nissan, 15)
         .unwrap()
         .to_gregorian();
+
+    //generated by https://play.golang.org/p/G78vf0EJnCN
     [
         DayVal {
             day: first_day_of_pesach + Duration::days(1),
-            name: Name::CustomName {
-                printable: "1st day of the Omer".into(),
-                json: "Omer1".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer1),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(2),
-            name: Name::CustomName {
-                printable: "2nd day of the Omer".into(),
-                json: "Omer2".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer2),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(3),
-            name: Name::CustomName {
-                printable: "3rd day of the Omer".into(),
-                json: "Omer3".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer3),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(4),
-            name: Name::CustomName {
-                printable: "4th day of the Omer".into(),
-                json: "Omer4".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer4),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(5),
-            name: Name::CustomName {
-                printable: "5th day of the Omer".into(),
-                json: "Omer5".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer5),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(6),
-            name: Name::CustomName {
-                printable: "6th day of the Omer".into(),
-                json: "Omer6".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer6),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(7),
-            name: Name::CustomName {
-                printable: "7th day of the Omer".into(),
-                json: "Omer7".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer7),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(8),
-            name: Name::CustomName {
-                printable: "8th day of the Omer".into(),
-                json: "Omer8".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer8),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(9),
-            name: Name::CustomName {
-                printable: "9th day of the Omer".into(),
-                json: "Omer9".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer9),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(10),
-            name: Name::CustomName {
-                printable: "10th day of the Omer".into(),
-                json: "Omer10".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer10),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(11),
-            name: Name::CustomName {
-                printable: "11th day of the Omer".into(),
-                json: "Omer11".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer11),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(12),
-            name: Name::CustomName {
-                printable: "12th day of the Omer".into(),
-                json: "Omer12".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer12),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(13),
-            name: Name::CustomName {
-                printable: "13th day of the Omer".into(),
-                json: "Omer13".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer13),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(14),
-            name: Name::CustomName {
-                printable: "14th day of the Omer".into(),
-                json: "Omer14".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer14),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(15),
-            name: Name::CustomName {
-                printable: "15th day of the Omer".into(),
-                json: "Omer15".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer15),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(16),
-            name: Name::CustomName {
-                printable: "16th day of the Omer".into(),
-                json: "Omer16".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer16),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(17),
-            name: Name::CustomName {
-                printable: "17th day of the Omer".into(),
-                json: "Omer17".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer17),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(18),
-            name: Name::CustomName {
-                printable: "18th day of the Omer".into(),
-                json: "Omer18".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer18),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(19),
-            name: Name::CustomName {
-                printable: "19th day of the Omer".into(),
-                json: "Omer19".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer19),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(20),
-            name: Name::CustomName {
-                printable: "20th day of the Omer".into(),
-                json: "Omer20".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer20),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(21),
-            name: Name::CustomName {
-                printable: "21st day of the Omer".into(),
-                json: "Omer21".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer21),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(22),
-            name: Name::CustomName {
-                printable: "22nd day of the Omer".into(),
-                json: "Omer22".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer22),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(23),
-            name: Name::CustomName {
-                printable: "23rd day of the Omer".into(),
-                json: "Omer23".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer23),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(24),
-            name: Name::CustomName {
-                printable: "24th day of the Omer".into(),
-                json: "Omer24".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer24),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(25),
-            name: Name::CustomName {
-                printable: "25th day of the Omer".into(),
-                json: "Omer25".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer25),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(26),
-            name: Name::CustomName {
-                printable: "26th day of the Omer".into(),
-                json: "Omer26".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer26),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(27),
-            name: Name::CustomName {
-                printable: "27th day of the Omer".into(),
-                json: "Omer27".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer27),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(28),
-            name: Name::CustomName {
-                printable: "28th day of the Omer".into(),
-                json: "Omer28".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer28),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(29),
-            name: Name::CustomName {
-                printable: "29th day of the Omer".into(),
-                json: "Omer29".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer29),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(30),
-            name: Name::CustomName {
-                printable: "30th day of the Omer".into(),
-                json: "Omer30".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer30),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(31),
-            name: Name::CustomName {
-                printable: "31st day of the Omer".into(),
-                json: "Omer31".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer31),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(32),
-            name: Name::CustomName {
-                printable: "32nd day of the Omer".into(),
-                json: "Omer32".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer32),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(33),
-            name: Name::CustomName {
-                printable: "33rd day of the Omer".into(),
-                json: "Omer33".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer33),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(34),
-            name: Name::CustomName {
-                printable: "34th day of the Omer".into(),
-                json: "Omer34".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer34),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(35),
-            name: Name::CustomName {
-                printable: "35th day of the Omer".into(),
-                json: "Omer35".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer35),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(36),
-            name: Name::CustomName {
-                printable: "36th day of the Omer".into(),
-                json: "Omer36".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer36),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(37),
-            name: Name::CustomName {
-                printable: "37th day of the Omer".into(),
-                json: "Omer37".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer37),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(38),
-            name: Name::CustomName {
-                printable: "38th day of the Omer".into(),
-                json: "Omer38".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer38),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(39),
-            name: Name::CustomName {
-                printable: "39th day of the Omer".into(),
-                json: "Omer39".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer39),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(40),
-            name: Name::CustomName {
-                printable: "40th day of the Omer".into(),
-                json: "Omer40".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer40),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(41),
-            name: Name::CustomName {
-                printable: "41st day of the Omer".into(),
-                json: "Omer41".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer41),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(42),
-            name: Name::CustomName {
-                printable: "42nd day of the Omer".into(),
-                json: "Omer42".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer42),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(43),
-            name: Name::CustomName {
-                printable: "43rd day of the Omer".into(),
-                json: "Omer43".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer43),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(44),
-            name: Name::CustomName {
-                printable: "44th day of the Omer".into(),
-                json: "Omer44".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer44),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(45),
-            name: Name::CustomName {
-                printable: "45th day of the Omer".into(),
-                json: "Omer45".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer45),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(46),
-            name: Name::CustomName {
-                printable: "46th day of the Omer".into(),
-                json: "Omer46".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer46),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(47),
-            name: Name::CustomName {
-                printable: "47th day of the Omer".into(),
-                json: "Omer47".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer47),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(48),
-            name: Name::CustomName {
-                printable: "48th day of the Omer".into(),
-                json: "Omer48".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer48),
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(49),
-            name: Name::CustomName {
-                printable: "49th day of the Omer".into(),
-                json: "Omer49".into(),
-            },
+            name: Name::MinorDays(MinorDays::Omer49),
         },
     ]
 }

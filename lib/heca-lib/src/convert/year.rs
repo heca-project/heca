@@ -12,7 +12,7 @@ use crate::convert::year::backend::{
     get_rosh_hashana, months_per_year, return_year_sched, FIRST_YEAR, YEAR_SCHED,
 };
 
-/// HebrewYear holds data on a given year. Hypothetically, it's faster to get multiple HebrewDates from
+/// HebrewYear holds data on a given year. It's faster to get multiple HebrewDates from
 /// an existing HebrewYear rather than generating each one on its own.
 
 #[derive(Copy, Clone, Debug)]
@@ -35,16 +35,16 @@ impl HebrewYear {
     ///
     #[inline]
     pub fn new(year: u64) -> Result<HebrewYear, ConversionError> {
-        let cur_rh = get_rosh_hashana(year);
-        let next_rh = get_rosh_hashana(year + 1);
-        let days_since_epoch = cur_rh.0;
-        let amnt_days_in_year = next_rh.0 - cur_rh.0;
-        let months_per_year = months_per_year(year);
-        let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
-
-        if year < FIRST_YEAR {
+        if year < FIRST_YEAR + 1 {
             Err(ConversionError::YearTooSmall)
         } else {
+            let cur_rh = get_rosh_hashana(year);
+            let next_rh = get_rosh_hashana(year + 1);
+            let days_since_epoch = cur_rh.0;
+            let amnt_days_in_year = next_rh.0 - cur_rh.0;
+            let months_per_year = months_per_year(year);
+            let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
+
             Ok(HebrewYear {
                 day_of_rh: get_rosh_hashana(year).1,
                 year,
