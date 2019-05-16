@@ -108,6 +108,10 @@ impl HebrewDate {
             return Err(ConversionError::IsNotLeapYear);
         }
 
+        if hebrew_year.is_leap_year() && month == HebrewMonth::Adar {
+            return Err(ConversionError::IsLeapYear);
+        }
+
         if day > hebrew_year.sched[month as usize] {
             return Err(ConversionError::TooManyDaysInMonth(
                 hebrew_year.sched[month as usize],
