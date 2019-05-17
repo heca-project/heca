@@ -87,7 +87,7 @@ impl Serialize for DayVal {
                     state.serialize_field("name", special_parsha)?;
                 }
             },
-            Name::MinorDays (days) => {
+            Name::MinorDays(days) => {
                 state.serialize_field("type", "MinorDays")?;
                 state.serialize_field("name", days)?;
             }

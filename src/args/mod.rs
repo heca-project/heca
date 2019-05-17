@@ -10,7 +10,11 @@ use heca_lib::HebrewDate;
 use serde::Deserialize;
 use std::env;
 use std::fs;
-pub fn build_args<'a>() -> Result<MainArgs, String> {
+pub fn build_args<'a, I, T>(args: I) -> Result<MainArgs, String>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<std::ffi::OsString> + Clone,
+{
     parse_args(App::new("Hebrew Calendar Manipulator")
         .version("0.2.0")
         .about(
@@ -96,11 +100,11 @@ pub fn build_args<'a>() -> Result<MainArgs, String> {
                            .use_delimiter(true)
                            .possible_values(&["yom-tov","shabbos","special-parshas","chol","minor-holidays", "omer"])
                            .default_value("yom-tov"))
-                      .arg(Arg::with_name("Year")
-.required(true)
-                     .takes_value(true))
+                           .arg(Arg::with_name("Year")
+                      .required(true)
+                      .takes_value(true))
                            )
-        .get_matches())
+        .get_matches_safe().map_err(|e|format!("{}",e))?)
 }
 
 fn parse_args(matches: ArgMatches) -> Result<MainArgs, String> {
@@ -176,8 +180,7 @@ fn parse_args(matches: ArgMatches) -> Result<MainArgs, String> {
     } else if let Some(matches) = matches.subcommand_matches("convert") {
         parse_convert(matches, language == Language::Hebrew)?
     } else {
-        println!("{}", matches.usage());
-        std::process::exit(1);
+        return Err(String::from(matches.usage()));
     };
 
     Ok(MainArgs {
@@ -200,7 +203,9 @@ fn parse_hebrew(sp: &[&str], is_hebrew: bool) -> Result<Command, String> {
     }
     .ok_or(format!("Cannot parse month: {}", sp[1]))?;
     Ok(Command::Convert(ConvertArgs {
-        date: ConvertType::Hebrew(HebrewDate::from_ymd(year, month, day).unwrap()),
+        date: ConvertType::Hebrew(
+            HebrewDate::from_ymd(year, month, day).map_err(|e| format!("{}", e))?,
+        ),
     }))
 }
 

@@ -37,3 +37,10 @@ members = ["lib/heca-lib"]
 lto = true
 debug = true
 overflow-checks = true
+
+[dev-dependencies]
+assert_cmd = "0.11"
+predicates = "1"
+lazy_static = "1.3.0"
+
+

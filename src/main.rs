@@ -13,15 +13,18 @@ use crate::args::types;
 use crate::args::types::*;
 
 fn main() {
-    if let Err(err) = app() {
-        println!("{}", err);
+    if let Err(err) = app(std::env::args()) {
+        eprintln!("{}", err);
         std::process::exit(1);
     }
 }
 
-fn app() -> Result<(), String> {
-    use args;
-    let args = args::build_args()?;
+fn app<I, T>(args: I) -> Result<(), String>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<std::ffi::OsString> + Clone,
+{
+    let args = args::build_args(args)?;
     let res: Box<Printable> = match args.command {
         Command::List(ref sub_args) => Box::new(sub_args.run(&args)?),
         Command::Convert(ref sub_args) => Box::new(sub_args.run(&args)?),
