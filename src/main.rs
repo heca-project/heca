@@ -10,16 +10,49 @@ use smallvec::{smallvec, SmallVec};
 
 mod args;
 use crate::args::types;
+use crate::args::types::AppError;
 use crate::args::types::*;
 
 fn main() {
     if let Err(err) = app(std::env::args()) {
-        eprintln!("{}", err);
+        if should_json() {
+            eprintln!("{}", serde_json::to_string(&err).unwrap());
+        } else {
+            eprintln!("{}", err);
+        }
         std::process::exit(1);
     }
 }
 
-fn app<I, T>(args: I) -> Result<(), String>
+fn should_json() -> bool {
+    let mut args = std::env::args();
+    loop {
+        let arg = args.next();
+        if arg == None {
+            break;
+        } else if let Some(arg) = arg {
+            if arg == "--print=json" {
+                return true;
+            } else if arg == "--print" {
+                if let Some(next) = args.next() {
+                    if next == "json" {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    if let Ok(json_str) = std::env::var("JSON") {
+        if json_str == "YES" {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn app<I, T>(args: I) -> Result<(), AppError>
 where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
@@ -39,24 +72,22 @@ where
 }
 
 trait Runnable<T: Printable> {
-    fn run(&self, args: &MainArgs) -> Result<T, String>;
+    fn run(&self, args: &MainArgs) -> Result<T, AppError>;
 }
 
 trait Printable {
-    fn print(&self, args: MainArgs) -> Result<(), String>;
-    fn print_json(&self) -> Result<(), String>;
+    fn print(&self, args: MainArgs) -> Result<(), AppError>;
+    fn print_json(&self) -> Result<(), AppError>;
 }
 
 impl Runnable<ConvertReturn> for ConvertArgs {
-    fn run(&self, _args: &MainArgs) -> Result<ConvertReturn, String> {
+    fn run(&self, _args: &MainArgs) -> Result<ConvertReturn, AppError> {
         match self.date {
             ConvertType::Gregorian(date) => Ok(ConvertReturn {
                 orig_day: Either::Right(date.and_hms(0, 0, 1)),
                 day: Either::Right([
-                    HebrewDate::from_gregorian(date.and_hms(0, 0, 1))
-                        .map_err(|e| format!("{}", e))?,
-                    HebrewDate::from_gregorian(date.and_hms(23, 0, 1))
-                        .map_err(|e| format!("{}", e))?,
+                    HebrewDate::from_gregorian(date.and_hms(0, 0, 1))?,
+                    HebrewDate::from_gregorian(date.and_hms(23, 0, 1))?,
                 ]),
             }),
             ConvertType::Hebrew(date) => Ok(ConvertReturn {
@@ -70,7 +101,7 @@ impl Runnable<ConvertReturn> for ConvertArgs {
     }
 }
 impl Runnable<ListReturn> for ListArgs {
-    fn run(&self, _args: &MainArgs) -> Result<ListReturn, String> {
+    fn run(&self, _args: &MainArgs) -> Result<ListReturn, AppError> {
         let mut main_events: Vec<TorahReadingType> = Vec::new();
         let mut custom_events: Vec<CustomHoliday> = Vec::new();
         for event in &self.events {
@@ -79,9 +110,9 @@ impl Runnable<ListReturn> for ListArgs {
                 Right(event) => custom_events.push(*event),
             };
         }
-        let result: Result<ListReturn, String> = match self.year {
+        let result: Result<ListReturn, AppError> = match self.year {
             YearType::Hebrew(year) => {
-                HebrewYear::new(year).map_err(|e| format!("{}", e))?;
+                HebrewYear::new(year)?;
                 let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
                 (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
@@ -114,7 +145,7 @@ impl Runnable<ListReturn> for ListArgs {
             }
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
-                HebrewYear::new(that_year).map_err(|e| format!("{}", e))?;
+                HebrewYear::new(that_year)?;
 
                 let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
                 (0 as u32..(self.amnt_years as u32) + 2)
@@ -201,14 +232,14 @@ struct ListReturn {
 }
 
 impl Printable for ConvertReturn {
-    fn print_json(&self) -> Result<(), String> {
+    fn print_json(&self) -> Result<(), AppError> {
         match &self.day {
             Either::Right(r) => println!("{}", serde_json::to_string(&r).unwrap()),
             Either::Left(r) => println!("{}", serde_json::to_string(&r).unwrap()),
         };
         Ok(())
     }
-    fn print(&self, args: MainArgs) -> Result<(), String> {
+    fn print(&self, args: MainArgs) -> Result<(), AppError> {
         match args.language {
             Language::English => match self.orig_day {
                 Either::Right(r) => println!(
@@ -292,11 +323,11 @@ fn print_hebrew_month_hebrew(h: HebrewMonth) -> &'static str {
     }
 }
 impl Printable for ListReturn {
-    fn print_json(&self) -> Result<(), String> {
+    fn print_json(&self) -> Result<(), AppError> {
         println!("{}", serde_json::to_string(&self).unwrap());
         Ok(())
     }
-    fn print(&self, args: MainArgs) -> Result<(), String> {
+    fn print(&self, args: MainArgs) -> Result<(), AppError> {
         use chrono::Datelike;
         use std::io::stdout;
         use std::io::BufWriter;
