@@ -24,7 +24,7 @@ pub enum Command {
     List(ListArgs),
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum OutputType {
     Regular,
     Pretty,

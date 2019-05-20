@@ -70,8 +70,6 @@ fn convert_adar2_in_regular_year_no_json() -> Result<(), Box<std::error::Error>>
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("4-adar2-5750");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -120,8 +118,6 @@ fn convert_regular_in_leap_year_no_json() -> Result<(), Box<std::error::Error>> 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("4-adar-5752");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -153,8 +149,6 @@ fn convert_year_too_small_no_json() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("0/1/2");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -174,9 +168,9 @@ fn convert_month_too_large_json() -> Result<(), Box<std::error::Error>> {
         .arg("json")
         .arg("convert")
         .arg("5/13/3");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains(r#"{"Type":"InvalidGregorianDay","Error":""#));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        r#"{"Type":"InvalidGregorianDay","Error":""#,
+    ));
 
     Ok(())
 }
@@ -186,8 +180,6 @@ fn convert_month_too_large_no_json() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("5/13/3");
     cmd.assert()
@@ -219,8 +211,6 @@ fn convert_day_too_large_no_json() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("5/1/33");
     cmd.assert()

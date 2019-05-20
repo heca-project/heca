@@ -14,8 +14,9 @@ use crate::args::types::AppError;
 use crate::args::types::*;
 
 fn main() {
-    if let Err(err) = app(std::env::args()) {
-        if should_json() {
+    let output_type = output_type();
+    if let Err(err) = app(std::env::args(), output_type) {
+        if output_type == OutputType::JSON {
             eprintln!("{}", serde_json::to_string(&err).unwrap());
         } else {
             eprintln!("{}", err);
@@ -24,7 +25,7 @@ fn main() {
     }
 }
 
-fn should_json() -> bool {
+fn output_type() -> OutputType {
     let mut args = std::env::args();
     loop {
         let arg = args.next();
@@ -32,11 +33,11 @@ fn should_json() -> bool {
             break;
         } else if let Some(arg) = arg {
             if arg == "--print=json" {
-                return true;
+                return OutputType::JSON;
             } else if arg == "--print" {
                 if let Some(next) = args.next() {
                     if next == "json" {
-                        return true;
+                        return OutputType::JSON;
                     }
                 }
             }
@@ -45,19 +46,19 @@ fn should_json() -> bool {
 
     if let Ok(json_str) = std::env::var("JSON") {
         if json_str == "YES" {
-            return true;
+            return OutputType::JSON;
         }
     }
 
-    false
+    OutputType::Pretty
 }
 
-fn app<I, T>(args: I) -> Result<(), AppError>
+fn app<I, T>(args: I, output_type: OutputType) -> Result<(), AppError>
 where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
 {
-    let args = args::build_args(args)?;
+    let args = args::build_args(args, output_type)?;
     let res: Box<Printable> = match args.command {
         Command::List(ref sub_args) => Box::new(sub_args.run(&args)?),
         Command::Convert(ref sub_args) => Box::new(sub_args.run(&args)?),

@@ -10,7 +10,7 @@ use heca_lib::HebrewDate;
 use serde::Deserialize;
 use std::env;
 use std::fs;
-pub fn build_args<'a, I, T>(args: I) -> Result<MainArgs, AppError>
+pub fn build_args<'a, I, T>(args: I, output_type: OutputType) -> Result<MainArgs, AppError>
 where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
@@ -102,10 +102,10 @@ where
                       .required(true)
                       .takes_value(true))
                            )
-        .get_matches_safe()?)
+        .get_matches_safe()?, output_type)
 }
 
-fn parse_args(matches: ArgMatches) -> Result<MainArgs, AppError> {
+fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, AppError> {
     let config_file = {
         if let Some(v) = matches.value_of("configfile") {
             Some(String::from(v))
@@ -127,7 +127,7 @@ fn parse_args(matches: ArgMatches) -> Result<MainArgs, AppError> {
         Some(ref file) => Some(toml::from_str(&fs::read_to_string(file)?)?),
     };
 
-    let output_type = match matches.value_of("type") {
+    let _ = match matches.value_of("type") {
         Some(x) => match x {
             "regular" => Some(OutputType::Regular),
             "pretty" => Some(OutputType::Pretty),
@@ -180,20 +180,7 @@ fn parse_args(matches: ArgMatches) -> Result<MainArgs, AppError> {
 
     Ok(MainArgs {
         custom_days: None,
-        output_type: match output_type {
-            Some(x) => x,
-            None => {
-                if let Ok(json_str) = std::env::var("JSON") {
-                    if json_str == "YES" {
-                        OutputType::JSON
-                    } else {
-                        OutputType::Pretty
-                    }
-                } else {
-                    OutputType::Pretty
-                }
-            }
-        },
+        output_type,
         language,
         command,
     })
