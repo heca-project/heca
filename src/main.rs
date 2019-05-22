@@ -228,12 +228,12 @@ impl Runnable<ListReturn> for ListArgs {
                             custom_events
                                 .iter()
                                 .map(|x| {
-                                    let day = if let Ok(day) = heb_year.get_hebrew_date(x.month, x.day)
-                                    {
-                                        Some(day.to_gregorian())
-                                    } else {
-                                        None
-                                    };
+                                    let day =
+                                        if let Ok(day) = heb_year.get_hebrew_date(x.month, x.day) {
+                                            Some(day.to_gregorian())
+                                        } else {
+                                            None
+                                        };
                                     (Name::CustomHoliday(x.clone()), day)
                                 })
                                 .filter(|x| x.1.is_some())

@@ -457,7 +457,6 @@ fn custom_day_check_of_edge_cases_and_avoid_crash() {
     );
 }
 
-
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 struct Res {
     day: String,

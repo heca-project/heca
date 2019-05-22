@@ -361,7 +361,11 @@ fn str_to_month(text: &str, exact: bool) -> Option<HebrewMonth> {
     }
 }
 
-fn parse_list(matches: &ArgMatches, hebrew: bool, custom_days: Vec<CustomHoliday>) -> Result<Command, AppError> {
+fn parse_list(
+    matches: &ArgMatches,
+    hebrew: bool,
+    custom_days: Vec<CustomHoliday>,
+) -> Result<Command, AppError> {
     use atoi::atoi;
     let year_num = atoi::<u64>(
         matches
@@ -418,7 +422,10 @@ fn parse_list(matches: &ArgMatches, hebrew: bool, custom_days: Vec<CustomHoliday
             "shabbos" => vec![Event::TorahReadingType(TorahReadingType::Shabbos)],
             "special-parshas" => vec![Event::TorahReadingType(TorahReadingType::SpecialParsha)],
             "omer" => vec![Event::MinorHoliday(MinorHoliday::Omer)],
-            "custom-holidays" => custom_days.iter().map(|x| Event::CustomHoliday(x.clone())).collect(),
+            "custom-holidays" => custom_days
+                .iter()
+                .map(|x| Event::CustomHoliday(x.clone()))
+                .collect(),
             "minor-holidays" => vec![Event::MinorHoliday(MinorHoliday::Minor)],
             x => panic!(format!("Assertion Error! How did {} get here?", x)),
         })
