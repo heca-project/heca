@@ -111,7 +111,19 @@ pub enum TorahReadingType {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub enum MonthSchedule {
-    Short,
-    Regular,
-    Year,
+    BaChaG,
+    BaShaH,
+    GaChaH,
+    HaKaZ,
+    HaShA,
+    ZaChA,
+    ZaShaG,
+
+    BaChaH,
+    BaShaZ,
+    GaKaZ,
+    HaChA,
+    HaShaG,
+    ZaChaG,
+    ZaShaH,
 }

@@ -182,7 +182,7 @@ mod tests {
             })
             .count();
     }
-
+    #[test]
     fn compare_hebrew_day_elul_sanity_check() {
         let mut orig_date = Utc.ymd(1901, 8, 15).and_hms(18, 0, 0);
         for j in 1..=29 {
