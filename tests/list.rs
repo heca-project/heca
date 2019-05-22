@@ -374,9 +374,99 @@ fn hebcal_il_check() {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[test]
+fn custom_day_check_file_does_not_exist() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("sample_config_does_not_exist.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let res: Err =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stderr).unwrap()).unwrap();
+
+    assert_eq!(res.r#type, "ReadError");
+}
+
+#[test]
+fn custom_day_check() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/sample_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+
+    assert_eq!(
+        res.into_iter().find(|x| x.name == "YudShvat"),
+        Some(Res {
+            day: "1990-02-04T18:00:00Z".into(),
+            name: "YudShvat".into(),
+            r#type: "CustomHoliday".into()
+        })
+    );
+}
+
+#[test]
+fn custom_day_check_and_avoid_crash() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/sample_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("--years")
+        .arg("500")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    assert_eq!(
+        &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+        ""
+    );
+}
+
+#[test]
+fn custom_day_check_of_edge_cases_and_avoid_crash() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("--years")
+        .arg("500")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    assert_eq!(
+        &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+        ""
+    );
+}
+
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 struct Res {
     day: String,
     name: String,
+    r#type: String,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+struct Err {
+    error: String,
     r#type: String,
 }

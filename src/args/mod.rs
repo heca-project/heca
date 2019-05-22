@@ -10,6 +10,8 @@ use heca_lib::HebrewDate;
 use serde::Deserialize;
 use std::env;
 use std::fs;
+
+const DATE_TOKEN: [char; 8] = ['-', '/', '_', '\\', '.', ',', '=', ' '];
 pub fn build_args<'a, I, T>(args: I, output_type: OutputType) -> Result<MainArgs, AppError>
 where
     I: IntoIterator<Item = T>,
@@ -96,7 +98,7 @@ where
                            .multiple(true)
                            .required(false)
                            .use_delimiter(true)
-                           .possible_values(&["yom-tov","shabbos","special-parshas","chol","minor-holidays", "omer"])
+                           .possible_values(&["yom-tov","shabbos","special-parshas","chol","minor-holidays", "omer", "custom-holidays"])
                            .default_value("yom-tov"))
                            .arg(Arg::with_name("Year")
                       .required(true)
@@ -122,10 +124,46 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
         }
     };
 
-    let config: Option<Config> = match config_file {
-        None => None,
-        Some(ref file) => Some(toml::from_str(&fs::read_to_string(file)?)?),
-    };
+    let mut custom_days: Vec<CustomHoliday> = Vec::new();
+    if let Some(ref file) = config_file {
+        let config: Config = toml::from_str(&fs::read_to_string(file)?)?;
+        if let Some(days) = config.days {
+            for e in days {
+                let date = e.0;
+                let printable = e.1;
+                let json = e.2;
+                let h_date = date.split(&DATE_TOKEN[..]).collect::<Vec<&str>>();
+
+                if h_date.len() != 2 {
+                    return Err(AppError::ConfigError(format!(
+                        "Date {} was unable to be parsed",
+                        date
+                    )));
+                }
+                let (day, month) = if h_date[0].parse::<u8>().is_ok() {
+                    (
+                        h_date[0].parse::<u8>().expect(&format!("{}", line!())),
+                        h_date[1],
+                    )
+                } else {
+                    (
+                        h_date[1].parse::<u8>().expect(&format!("{}", line!())),
+                        h_date[0],
+                    )
+                };
+                let month = str_to_month(month, true).ok_or(AppError::ConfigError(format!(
+                    "Month {} was unable to be parsed",
+                    month
+                )))?;
+                custom_days.push(CustomHoliday {
+                    month,
+                    day,
+                    printable,
+                    json,
+                });
+            }
+        }
+    }
 
     let _ = match matches.value_of("type") {
         Some(x) => match x {
@@ -137,27 +175,11 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
         None => None,
     };
 
-    let language = match matches.value_of("language").unwrap_or("") {
-        "en_US" => Language::English,
-        "he_IL" => Language::Hebrew,
-        "" => {
+    let language = match matches.value_of("language") {
+        None => {
             let lang = env::vars().into_iter().find(|x| x.0 == "LANG");
             match lang {
-                None => {
-                    if let Some(config) = config {
-                        if let Some(language) = config.language {
-                            if language == "he_IL" {
-                                Language::Hebrew
-                            } else {
-                                Language::English
-                            }
-                        } else {
-                            Language::English
-                        }
-                    } else {
-                        Language::English
-                    }
-                }
+                None => Language::English,
                 Some(x) => {
                     if x.1 == "he_IL.UTF-8" {
                         Language::Hebrew
@@ -167,13 +189,46 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
                 }
             }
         }
-        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+        Some(language) => match language {
+            "en_US" => Language::English,
+            "he_IL" => Language::Hebrew,
+            x => panic!(format!("Assertion Error! How did {} get here?", x)),
+        },
     };
 
     let command = if let Some(matches) = matches.subcommand_matches("list") {
-        parse_list(matches, language == Language::Hebrew)?
+        parse_list(matches, language == Language::Hebrew, custom_days)?
     } else if let Some(matches) = matches.subcommand_matches("convert") {
-        parse_convert(matches, language == Language::Hebrew)?
+        let datefmt = if let Some(datefmt) = matches.value_of("DateFormat") {
+            match datefmt {
+                "ISO" => ConfigDateFmt::ISO,
+                "B" => ConfigDateFmt::B,
+                "M" => ConfigDateFmt::M,
+                "UK" => ConfigDateFmt::UK,
+                "L" => ConfigDateFmt::L,
+                "US" => ConfigDateFmt::US,
+                x => panic!(format!(
+                    "Assertion error!, how did DateFormat get a value of {}",
+                    x
+                )),
+            }
+        } else {
+            ConfigDateFmt::ISO
+        };
+        parse_convert(
+            matches
+                .value_of("Date")
+                .expect(&format!("{}", line!()))
+                .into(),
+            language == Language::Hebrew,
+            datefmt,
+            match matches.value_of("T").expect(&format!("{}", line!())) {
+                "hebrew" => ConfigDateType::Hebrew,
+                "gregorian" => ConfigDateType::Gregorian,
+                "fuzzy" => ConfigDateType::Fuzzy,
+                x => panic!(format!("How did you pass a T of {}", x)),
+            },
+        )?
     } else {
         return Err(AppError::ArgUndefinedError(String::from(matches.usage())));
     };
@@ -202,9 +257,9 @@ fn parse_hebrew(sp: &[&str], is_hebrew: bool) -> Result<Command, AppError> {
     }))
 }
 
-fn parse_gregorian(sp: &[&str], format: &str) -> Result<Command, AppError> {
+fn parse_gregorian(sp: &[&str], format: ConfigDateFmt) -> Result<Command, AppError> {
     let (day, month, year) = match format {
-        "ISO" | "B" => {
+        ConfigDateFmt::ISO | ConfigDateFmt::B => {
             let year =
                 atoi::<i32>(sp[0].as_bytes()).ok_or(AppError::CannotParseYear(sp[0].into()))?;
             let month =
@@ -213,7 +268,7 @@ fn parse_gregorian(sp: &[&str], format: &str) -> Result<Command, AppError> {
                 atoi::<u32>(sp[2].as_bytes()).ok_or(AppError::CannotParseDay(sp[2].into()))?;
             (day, month, year)
         }
-        "US" | "M" => {
+        ConfigDateFmt::US | ConfigDateFmt::M => {
             let year =
                 atoi::<i32>(sp[2].as_bytes()).ok_or(AppError::CannotParseYear(sp[2].into()))?;
             let month =
@@ -223,7 +278,7 @@ fn parse_gregorian(sp: &[&str], format: &str) -> Result<Command, AppError> {
 
             (day, month, year)
         }
-        "UK" | "L" => {
+        ConfigDateFmt::UK | ConfigDateFmt::L => {
             let year =
                 atoi::<i32>(sp[2].as_bytes()).ok_or(AppError::CannotParseYear(sp[2].into()))?;
             let month =
@@ -232,9 +287,6 @@ fn parse_gregorian(sp: &[&str], format: &str) -> Result<Command, AppError> {
                 atoi::<u32>(sp[0].as_bytes()).ok_or(AppError::CannotParseDay(sp[0].into()))?;
 
             (day, month, year)
-        }
-        x => {
-            panic!(format!("Assertion error! How did {} get here?", x));
         }
     };
     Ok(Command::Convert(ConvertArgs {
@@ -245,27 +297,27 @@ fn parse_gregorian(sp: &[&str], format: &str) -> Result<Command, AppError> {
         ),
     }))
 }
-fn parse_convert(matches: &ArgMatches, hebrew_lang: bool) -> Result<Command, AppError> {
-    let date = matches.value_of("Date").unwrap();
-
-    let sp = date
-        .split(&['-', '/', '_', '\\', '.', ',', '='][..])
-        .collect::<Vec<&str>>();
+fn parse_convert(
+    date: String,
+    hebrew_lang: bool,
+    datefmt: ConfigDateFmt,
+    date_type: ConfigDateType,
+) -> Result<Command, AppError> {
+    let sp = date.split(&DATE_TOKEN[..]).collect::<Vec<&str>>();
     if sp.len() != 3 {
         return Err(AppError::SplitDateError);
     }
 
-    Ok(match matches.value_of("T").unwrap() {
-        "hebrew" => parse_hebrew(&sp, hebrew_lang)?,
-        "gregorian" => parse_gregorian(&sp, matches.value_of("DateFormat").unwrap())?,
-        "fuzzy" => {
-            if sp[1].parse::<f64>().is_ok() {
-                parse_gregorian(&sp, matches.value_of("DateFormat").unwrap())?
+    Ok(match date_type {
+        ConfigDateType::Hebrew => parse_hebrew(&sp, hebrew_lang)?,
+        ConfigDateType::Gregorian => parse_gregorian(&sp, datefmt)?,
+        ConfigDateType::Fuzzy => {
+            if sp[1].parse::<u8>().is_ok() {
+                parse_gregorian(&sp, datefmt)?
             } else {
                 parse_hebrew(&sp, hebrew_lang)?
             }
         }
-        x => panic!(format!("Assertion error! How did {} get here?", x)),
     })
 }
 
@@ -309,14 +361,24 @@ fn str_to_month(text: &str, exact: bool) -> Option<HebrewMonth> {
     }
 }
 
-fn parse_list(matches: &ArgMatches, hebrew: bool) -> Result<Command, AppError> {
+fn parse_list(matches: &ArgMatches, hebrew: bool, custom_days: Vec<CustomHoliday>) -> Result<Command, AppError> {
     use atoi::atoi;
-    let year_num = atoi::<u64>(matches.value_of("Year").unwrap().as_bytes())
-        .expect("The supplied year must be a number");
-    let amnt_years = atoi::<u64>(matches.value_of("AmountYears").unwrap().as_bytes())
-        .expect("The supplied year must be a number");
+    let year_num = atoi::<u64>(
+        matches
+            .value_of("Year")
+            .expect(&format!("{}", line!()))
+            .as_bytes(),
+    )
+    .expect("The supplied year must be a number");
+    let amnt_years = atoi::<u64>(
+        matches
+            .value_of("AmountYears")
+            .expect(&format!("{}", line!()))
+            .as_bytes(),
+    )
+    .expect("The supplied year must be a number");
 
-    let year = match matches.value_of("YearType").unwrap() {
+    let year = match matches.value_of("YearType").expect(&format!("{}", line!())) {
         "hebrew" => YearType::Hebrew(year_num),
         "gregorian" => YearType::Gregorian(year_num),
         "fuzzy" => {
@@ -331,33 +393,36 @@ fn parse_list(matches: &ArgMatches, hebrew: bool) -> Result<Command, AppError> {
 
     let no_sort = matches.occurrences_of("NoSort") > 0;
 
-    let location = match matches.value_of("Location").unwrap_or("") {
-        "Chul" => Location::Chul,
-        "Israel" => Location::Israel,
-        "" => {
+    let location = match matches.value_of("Location") {
+        None => {
             if hebrew {
                 Location::Israel
             } else {
                 Location::Chul
             }
         }
-        x => panic!(format!("Assertion Error! How did {} get here?", x)),
+        Some(location) => match location {
+            "Chul" => Location::Chul,
+            "Israel" => Location::Israel,
+            x => panic!(format!("Assertion Error! How did {} get here?", x)),
+        },
     };
 
     let events = matches
         .values_of("Events")
-        .unwrap()
+        .expect(&format!("{}", line!()))
         .into_iter()
-        .map(|x| match x {
-            "yom-tov" => Either::Left(TorahReadingType::YomTov),
-            "chol" => Either::Left(TorahReadingType::Chol),
-            "shabbos" => Either::Left(TorahReadingType::Shabbos),
-            "special-parshas" => Either::Left(TorahReadingType::SpecialParsha),
-            "omer" => Either::Right(CustomHoliday::Omer),
-            "minor-holidays" => Either::Right(CustomHoliday::Minor),
+        .flat_map(|x| match x {
+            "yom-tov" => vec![Event::TorahReadingType(TorahReadingType::YomTov)],
+            "chol" => vec![Event::TorahReadingType(TorahReadingType::Chol)],
+            "shabbos" => vec![Event::TorahReadingType(TorahReadingType::Shabbos)],
+            "special-parshas" => vec![Event::TorahReadingType(TorahReadingType::SpecialParsha)],
+            "omer" => vec![Event::MinorHoliday(MinorHoliday::Omer)],
+            "custom-holidays" => custom_days.iter().map(|x| Event::CustomHoliday(x.clone())).collect(),
+            "minor-holidays" => vec![Event::MinorHoliday(MinorHoliday::Minor)],
             x => panic!(format!("Assertion Error! How did {} get here?", x)),
         })
-        .collect::<Vec<Either<TorahReadingType, CustomHoliday>>>();
+        .collect::<Vec<Event>>();
     Ok(Command::List(ListArgs {
         year,
         location,
@@ -368,8 +433,33 @@ fn parse_list(matches: &ArgMatches, hebrew: bool) -> Result<Command, AppError> {
 }
 #[derive(Deserialize)]
 struct Config {
-    days: Option<Vec<String>>,
-    language: Option<String>,
-    datefmt: Option<String>,
-    location: Option<String>,
+    days: Option<Vec<(String, String, String)>>,
+}
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy)]
+enum ConfigLanguage {
+    he_IL,
+    en_US,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy)]
+enum ConfigDateFmt {
+    ISO,
+    US,
+    UK,
+    M,
+    L,
+    B,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy)]
+enum ConfigLocation {
+    Israel,
+    Chul,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Copy)]
+enum ConfigDateType {
+    Hebrew,
+    Gregorian,
+    Fuzzy,
 }

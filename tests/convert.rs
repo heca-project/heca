@@ -90,7 +90,7 @@ fn convert_adar2_in_regular_year_json() -> Result<(), Box<std::error::Error>> {
         .arg("convert")
         .arg("4-adar2-5750");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"{"Type":"ConversionError","Error":"IsNotLeapYear"}"#,
+        r#"{"type":"ConversionError","error":"IsNotLeapYear"}"#,
     ));
 
     Ok(())
@@ -107,7 +107,7 @@ fn convert_regular_in_leap_year_json() -> Result<(), Box<std::error::Error>> {
         .arg("convert")
         .arg("4-adar-5752");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"{"Type":"ConversionError","Error":"IsLeapYear"}"#,
+        r#"{"type":"ConversionError","error":"IsLeapYear"}"#,
     ));
 
     Ok(())
@@ -138,7 +138,7 @@ fn convert_year_too_small_json() -> Result<(), Box<std::error::Error>> {
         .arg("convert")
         .arg("0/1/2");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"{"Type":"ConversionError","Error":"YearTooSmall"}"#,
+        r#"{"type":"ConversionError","error":"YearTooSmall"}"#,
     ));
 
     Ok(())
@@ -169,7 +169,7 @@ fn convert_month_too_large_json() -> Result<(), Box<std::error::Error>> {
         .arg("convert")
         .arg("5/13/3");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"{"Type":"InvalidGregorianDay","Error":""#,
+        r#"{"type":"InvalidGregorianDay","error":""#,
     ));
 
     Ok(())
@@ -200,7 +200,7 @@ fn convert_day_too_large_json() -> Result<(), Box<std::error::Error>> {
         .arg("convert")
         .arg("5/1/33");
     cmd.assert().failure().stderr(predicate::str::contains(
-        r#"{"Type":"InvalidGregorianDay","Error":"5/1/33"}"#,
+        r#"{"type":"InvalidGregorianDay","error":"5/1/33"}"#,
     ));
 
     Ok(())

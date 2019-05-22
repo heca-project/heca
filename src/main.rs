@@ -7,7 +7,6 @@ use rayon::prelude::*;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 use smallvec::{smallvec, SmallVec};
-
 mod args;
 use crate::args::types;
 use crate::args::types::AppError;
@@ -103,23 +102,46 @@ impl Runnable<ConvertReturn> for ConvertArgs {
 }
 impl Runnable<ListReturn> for ListArgs {
     fn run(&self, _args: &MainArgs) -> Result<ListReturn, AppError> {
-        let mut main_events: Vec<TorahReadingType> = Vec::new();
-        let mut custom_events: Vec<CustomHoliday> = Vec::new();
-        for event in &self.events {
-            match event {
-                Left(event) => main_events.push(*event),
-                Right(event) => custom_events.push(*event),
-            };
-        }
+        let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+
+        let main_events = self
+            .events
+            .iter()
+            .map(|x| {
+                if let Event::TorahReadingType(trr) = x {
+                    Some(trr)
+                } else {
+                    None
+                }
+            })
+            .filter(|x| x.is_some())
+            .map(|x| *x.unwrap())
+            .collect::<Vec<TorahReadingType>>();
+
+        let custom_events = self
+            .events
+            .iter()
+            .map(|x| {
+                if let Event::CustomHoliday(CustomHoliday) = x {
+                    Some(CustomHoliday)
+                } else {
+                    None
+                }
+            })
+            .filter(|x| x.is_some())
+            .map(|x| x.unwrap().clone())
+            .collect::<Vec<CustomHoliday>>();
+
         let result: Result<ListReturn, AppError> = match self.year {
             YearType::Hebrew(year) => {
                 HebrewYear::new(year)?;
-                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                HebrewYear::new(year + self.amnt_years)?;
                 (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
                     .map(|x| {
-                        let mut ret: Vec<DayVal> = Vec::new();
+                        let mut ret: Vec<DayVal> = Vec::with_capacity(200);
                         let year = HebrewYear::new(x as u64 + year).unwrap();
+
                         ret.extend(
                             year.get_holidays(self.location, &main_events)
                                 .into_iter()
@@ -128,11 +150,37 @@ impl Runnable<ListReturn> for ListArgs {
                                     name: Name::TorahReading(x.name()),
                                 }),
                         );
-                        if custom_events.contains(&CustomHoliday::Omer) {
+
+                        if self
+                            .events
+                            .contains(&Event::MinorHoliday(MinorHoliday::Omer))
+                        {
                             ret.extend_from_slice(&get_omer(&year));
                         }
-                        if custom_events.contains(&CustomHoliday::Minor) {
+                        if self
+                            .events
+                            .contains(&Event::MinorHoliday(MinorHoliday::Minor))
+                        {
                             ret.extend(get_minor_holidays(&year));
+                        }
+                        if custom_events.len() > 0 {
+                            custom_events
+                                .iter()
+                                .map(|x| {
+                                    let day = if let Ok(day) = year.get_hebrew_date(x.month, x.day)
+                                    {
+                                        Some(day.to_gregorian())
+                                    } else {
+                                        None
+                                    };
+                                    (Name::CustomHoliday(x.clone()), day)
+                                })
+                                .filter(|x| x.1.is_some())
+                                .map(|x| DayVal {
+                                    day: x.1.unwrap(),
+                                    name: x.0,
+                                })
+                                .for_each(|x| ret.push(x));
                         }
                         ret
                     })
@@ -144,16 +192,17 @@ impl Runnable<ListReturn> for ListArgs {
                     .for_each(|x| part2.push(x));
                 Ok(ListReturn { list: part2 })
             }
+
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
                 HebrewYear::new(that_year)?;
-
-                let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
+                HebrewYear::new(that_year + self.amnt_years)?;
                 (0 as u32..(self.amnt_years as u32) + 2)
                     .into_par_iter()
                     .map(|x| {
                         let mut ret = Vec::with_capacity(200);
                         let heb_year = HebrewYear::new(x as u64 + that_year).unwrap();
+
                         ret.extend(
                             heb_year
                                 .get_holidays(self.location, &main_events)
@@ -161,15 +210,38 @@ impl Runnable<ListReturn> for ListArgs {
                                 .map(|x| DayVal {
                                     day: x.day().to_gregorian(),
                                     name: Name::TorahReading(x.name()),
-                                })
-                                .into_iter(),
+                                }),
                         );
-;
-                        if custom_events.contains(&CustomHoliday::Omer) {
+                        if self
+                            .events
+                            .contains(&Event::MinorHoliday(MinorHoliday::Omer))
+                        {
                             ret.extend_from_slice(&get_omer(&heb_year));
                         }
-                        if custom_events.contains(&CustomHoliday::Minor) {
-                            ret.extend(get_minor_holidays(&heb_year).into_iter());
+                        if self
+                            .events
+                            .contains(&Event::MinorHoliday(MinorHoliday::Minor))
+                        {
+                            ret.extend(get_minor_holidays(&heb_year));
+                        }
+                        if custom_events.len() > 0 {
+                            custom_events
+                                .iter()
+                                .map(|x| {
+                                    let day = if let Ok(day) = heb_year.get_hebrew_date(x.month, x.day)
+                                    {
+                                        Some(day.to_gregorian())
+                                    } else {
+                                        None
+                                    };
+                                    (Name::CustomHoliday(x.clone()), day)
+                                })
+                                .filter(|x| x.1.is_some())
+                                .map(|x| DayVal {
+                                    day: x.1.unwrap(),
+                                    name: x.0,
+                                })
+                                .for_each(|x| ret.push(x));
                         }
                         ret
                     })
@@ -359,7 +431,9 @@ impl Printable for ListReturn {
                     lock.write(print_tr(name, &args.language).as_bytes()).ok()
                 }
                 Name::MinorDays(day) => lock.write(print_md(day, &args.language).as_bytes()).ok(),
-                Name::CustomName { json: _, printable } => lock.write(printable.as_bytes()).ok(),
+                Name::CustomHoliday(CustomHoliday) => {
+                    lock.write(CustomHoliday.printable.as_bytes()).ok()
+                }
             };
             lock.write(b"\n").unwrap();
         });

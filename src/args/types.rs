@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::borrow::Cow;
 
 pub struct MainArgs {
-    pub custom_days: Option<Vec<DayVal>>,
+    pub custom_days: Option<Vec<Name>>,
     pub output_type: OutputType,
     pub language: Language,
     pub command: Command,
@@ -43,9 +43,23 @@ pub enum ConvertType {
 pub struct ListArgs {
     pub year: YearType,
     pub location: Location,
-    pub events: Vec<Either<TorahReadingType, CustomHoliday>>,
+    pub events: Vec<Event>,
     pub amnt_years: u64,
     pub no_sort: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Event {
+    TorahReadingType(TorahReadingType),
+    MinorHoliday(MinorHoliday),
+    CustomHoliday(CustomHoliday),
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct CustomHoliday {
+    pub printable: String,
+    pub json: String,
+    pub month: HebrewMonth,
+    pub day: u8,
 }
 
 #[derive(Eq, PartialEq)]
@@ -91,9 +105,9 @@ impl Serialize for DayVal {
                 state.serialize_field("type", "MinorDays")?;
                 state.serialize_field("name", days)?;
             }
-            Name::CustomName { printable: _, json } => {
-                state.serialize_field("type", "CustomVal")?;
-                state.serialize_field("name", &json)?;
+            Name::CustomHoliday(CustomHoliday) => {
+                state.serialize_field("type", "CustomHoliday")?;
+                state.serialize_field("name", &CustomHoliday.json)?;
             }
         };
         state.end()
@@ -104,10 +118,7 @@ impl Serialize for DayVal {
 pub enum Name {
     TorahReading(TorahReading),
     MinorDays(MinorDays),
-    CustomName {
-        printable: Cow<'static, str>,
-        json: Cow<'static, str>,
-    },
+    CustomHoliday(CustomHoliday),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -175,7 +186,7 @@ pub enum MinorDays {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
-pub enum CustomHoliday {
+pub enum MinorHoliday {
     Omer,
     Minor,
 }
@@ -185,6 +196,7 @@ type Day = u32;
 type Year = i32;
 #[derive(Debug)]
 pub enum AppError {
+    DateSyntaxError(String),
     ConversionError(ConversionError),
     ArgError(clap::Error),
     ArgUndefinedError(String),
@@ -196,7 +208,7 @@ pub enum AppError {
     CannotParseYear(String),
     InvalidGregorianDate(Year, Month, Day),
     SplitDateError,
-    TomlParsingError(String),
+    ConfigError(String),
     ReadError(String),
     TypeError(String),
 }
@@ -209,94 +221,98 @@ impl Serialize for AppError {
     {
         let mut state = serializer.serialize_struct("AppError", 2)?;
         match self {
+            AppError::DateSyntaxError(err) => {
+                state.serialize_field("type", "DateSyntaxError")?;
+                state.serialize_field("error", err)?;
+            }
             AppError::TypeError(err) => {
-                state.serialize_field("Type", "TypeError")?;
-                state.serialize_field("Error", err)?;
+                state.serialize_field("type", "TypeError")?;
+                state.serialize_field("error", err)?;
             }
             AppError::ReadError(err) => {
-                state.serialize_field("Type", "SplitDateError")?;
-                state.serialize_field("Error", err)?;
+                state.serialize_field("type", "ReadError")?;
+                state.serialize_field("error", err)?;
             }
             AppError::SplitDateError => {
-                state.serialize_field("Type", "SplitDateError")?;
+                state.serialize_field("type", "SplitDateError")?;
             }
-            AppError::TomlParsingError(err) => {
-                state.serialize_field("Type", "TomlParsingError")?;
-                state.serialize_field("Error", err)?;
+            AppError::ConfigError(err) => {
+                state.serialize_field("type", "ConfigError")?;
+                state.serialize_field("error", err)?;
             }
             AppError::MonthNotParsed(month) => {
-                state.serialize_field("Type", "MonthNotParsed")?;
-                state.serialize_field("Error", month)?;
+                state.serialize_field("type", "MonthNotParsed")?;
+                state.serialize_field("error", month)?;
             }
             AppError::CannotParseMonth(month) => {
-                state.serialize_field("Type", "CannotParseMonth")?;
-                state.serialize_field("Error", month)?;
+                state.serialize_field("type", "CannotParseMonth")?;
+                state.serialize_field("error", month)?;
             }
             AppError::CannotParseDay(day) => {
-                state.serialize_field("Type", "CannotParseDay")?;
-                state.serialize_field("Error", day)?;
+                state.serialize_field("type", "CannotParseDay")?;
+                state.serialize_field("error", day)?;
             }
             AppError::CannotParseYear(day) => {
-                state.serialize_field("Type", "CannotParseYear")?;
-                state.serialize_field("Error", day)?;
+                state.serialize_field("type", "CannotParseYear")?;
+                state.serialize_field("error", day)?;
             }
             AppError::InvalidGregorianDate(year, month, day) => {
-                state.serialize_field("Type", "InvalidGregorianDay")?;
-                state.serialize_field("Error", &format!("{}/{}/{}", year, month, day))?;
+                state.serialize_field("type", "InvalidGregorianDay")?;
+                state.serialize_field("error", &format!("{}/{}/{}", year, month, day))?;
             }
             AppError::YearIsNotANumber(year) => {
-                state.serialize_field("Type", "YearIsNotANumber")?;
-                state.serialize_field("Error", year)?;
+                state.serialize_field("type", "YearIsNotANumber")?;
+                state.serialize_field("error", year)?;
             }
             AppError::DayIsNotANumber(day) => {
-                state.serialize_field("Type", "DayIsNotANumber")?;
-                state.serialize_field("Error", day)?;
+                state.serialize_field("type", "DayIsNotANumber")?;
+                state.serialize_field("error", day)?;
             }
             AppError::ArgUndefinedError(ce) => {
-                state.serialize_field("Type", "ArgUndefinedError")?;
-                state.serialize_field("Error", ce)?;
+                state.serialize_field("type", "ArgUndefinedError")?;
+                state.serialize_field("error", ce)?;
             }
             AppError::ConversionError(ce) => {
-                state.serialize_field("Type", "ConversionError")?;
-                state.serialize_field("Error", ce)?;
+                state.serialize_field("type", "ConversionError")?;
+                state.serialize_field("error", ce)?;
             }
             AppError::ArgError(err) => match err.kind {
-                ErrorKind::InvalidValue => state.serialize_field("Type", "InvalidValue")?,
-                ErrorKind::UnknownArgument => state.serialize_field("Type", "UnknownArgument")?,
+                ErrorKind::InvalidValue => state.serialize_field("type", "InvalidValue")?,
+                ErrorKind::UnknownArgument => state.serialize_field("type", "UnknownArgument")?,
                 ErrorKind::InvalidSubcommand => {
-                    state.serialize_field("Type", "InvalidSubcommand")?
+                    state.serialize_field("type", "InvalidSubcommand")?
                 }
                 ErrorKind::UnrecognizedSubcommand => {
-                    state.serialize_field("Type", "UnrecognizedSubcommand")?
+                    state.serialize_field("type", "UnrecognizedSubcommand")?
                 }
-                ErrorKind::EmptyValue => state.serialize_field("Type", "EmptyValue")?,
-                ErrorKind::ValueValidation => state.serialize_field("Type", "ValueValidation")?,
-                ErrorKind::TooManyValues => state.serialize_field("Type", "TooManyValues")?,
-                ErrorKind::TooFewValues => state.serialize_field("Type", "TooFewValues")?,
+                ErrorKind::EmptyValue => state.serialize_field("type", "EmptyValue")?,
+                ErrorKind::ValueValidation => state.serialize_field("type", "ValueValidation")?,
+                ErrorKind::TooManyValues => state.serialize_field("type", "TooManyValues")?,
+                ErrorKind::TooFewValues => state.serialize_field("type", "TooFewValues")?,
                 ErrorKind::WrongNumberOfValues => {
-                    state.serialize_field("Type", "WrongNumberOfValues")?
+                    state.serialize_field("type", "WrongNumberOfValues")?
                 }
                 ErrorKind::ArgumentConflict => {
-                    state.serialize_field("Type", "WrongNumberOfValues")?
+                    state.serialize_field("type", "WrongNumberOfValues")?
                 }
                 ErrorKind::MissingRequiredArgument => {
-                    state.serialize_field("Type", "MissingRequiredArgument")?
+                    state.serialize_field("type", "MissingRequiredArgument")?
                 }
                 ErrorKind::MissingSubcommand => {
-                    state.serialize_field("Type", "MissingSubcommand")?
+                    state.serialize_field("type", "MissingSubcommand")?
                 }
                 ErrorKind::MissingArgumentOrSubcommand => {
-                    state.serialize_field("Type", "MissingArgumentOrSubcommand")?
+                    state.serialize_field("type", "MissingArgumentOrSubcommand")?
                 }
                 ErrorKind::UnexpectedMultipleUsage => {
-                    state.serialize_field("Type", "UnexpectedMultipleUsage")?
+                    state.serialize_field("type", "UnexpectedMultipleUsage")?
                 }
-                ErrorKind::InvalidUtf8 => state.serialize_field("Type", "InvalidUtf8")?,
-                ErrorKind::HelpDisplayed => state.serialize_field("Type", "HelpDisplayed")?,
-                ErrorKind::VersionDisplayed => state.serialize_field("Type", "VersionDisplayed")?,
-                ErrorKind::ArgumentNotFound => state.serialize_field("Type", "ArgumentNotFound")?,
-                ErrorKind::Io => state.serialize_field("Type", "Io")?,
-                ErrorKind::Format => state.serialize_field("Type", "Format")?,
+                ErrorKind::InvalidUtf8 => state.serialize_field("type", "InvalidUtf8")?,
+                ErrorKind::HelpDisplayed => state.serialize_field("type", "HelpDisplayed")?,
+                ErrorKind::VersionDisplayed => state.serialize_field("type", "VersionDisplayed")?,
+                ErrorKind::ArgumentNotFound => state.serialize_field("type", "ArgumentNotFound")?,
+                ErrorKind::Io => state.serialize_field("type", "Io")?,
+                ErrorKind::Format => state.serialize_field("type", "Format")?,
             },
         };
         state.end()
@@ -307,6 +323,11 @@ use std::fmt;
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            AppError::DateSyntaxError(err) => write!(
+                f,
+                r#"Cannot parse date {} in config file. The date must be in the format of YYYY/MM/DD|Name"#,
+                err
+            ),
             AppError::TypeError(err) => write!(
                 f,
                 r#"Cannot understand output format: {}. Options are ["regular", "pretty", json"]"#,
@@ -317,7 +338,7 @@ impl fmt::Display for AppError {
                 f,
                 "Cannot split the date. Deliminators are: '-', '/', '_', '\\', '.', ',', '=']"
             ),
-            AppError::TomlParsingError(err) => write!(f, "Read error: {}", err),
+            AppError::ConfigError(err) => write!(f, "Error in configuration file: {}", err),
             AppError::MonthNotParsed(month) => write!(f, "{} does not seem to be a month", month),
             AppError::CannotParseMonth(month) => write!(f, "Cannot parse month {}", month),
             AppError::CannotParseDay(day) => write!(f, "Cannot parse day {}", day),
@@ -354,7 +375,7 @@ impl std::convert::From<clap::Error> for AppError {
 
 impl std::convert::From<toml::de::Error> for AppError {
     fn from(source: toml::de::Error) -> Self {
-        AppError::TomlParsingError(source.to_string())
+        AppError::ConfigError(source.to_string())
     }
 }
 
