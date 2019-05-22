@@ -7,6 +7,8 @@ use rayon::prelude::*;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 use smallvec::{smallvec, SmallVec};
+use std::convert::TryInto;
+
 mod args;
 use crate::args::types;
 use crate::args::types::AppError;
@@ -86,8 +88,8 @@ impl Runnable<ConvertReturn> for ConvertArgs {
             ConvertType::Gregorian(date) => Ok(ConvertReturn {
                 orig_day: Either::Right(date.and_hms(0, 0, 1)),
                 day: Either::Right([
-                    HebrewDate::from_gregorian(date.and_hms(0, 0, 1))?,
-                    HebrewDate::from_gregorian(date.and_hms(23, 0, 1))?,
+                    date.and_hms(0, 0, 1).try_into()?,
+                    date.and_hms(23, 0, 1).try_into()?,
                 ]),
             }),
             ConvertType::Hebrew(date) => Ok(ConvertReturn {
@@ -122,8 +124,8 @@ impl Runnable<ListReturn> for ListArgs {
             .events
             .iter()
             .map(|x| {
-                if let Event::CustomHoliday(CustomHoliday) = x {
-                    Some(CustomHoliday)
+                if let Event::CustomHoliday(custom_holiday) = x {
+                    Some(custom_holiday)
                 } else {
                     None
                 }
@@ -146,7 +148,7 @@ impl Runnable<ListReturn> for ListArgs {
                             year.get_holidays(self.location, &main_events)
                                 .into_iter()
                                 .map(|x| DayVal {
-                                    day: x.day().to_gregorian(),
+                                    day: x.day().into(),
                                     name: Name::TorahReading(x.name()),
                                 }),
                         );
@@ -169,7 +171,7 @@ impl Runnable<ListReturn> for ListArgs {
                                 .map(|x| {
                                     let day = if let Ok(day) = year.get_hebrew_date(x.month, x.day)
                                     {
-                                        Some(day.to_gregorian())
+                                        Some(day.into())
                                     } else {
                                         None
                                     };
@@ -208,7 +210,7 @@ impl Runnable<ListReturn> for ListArgs {
                                 .get_holidays(self.location, &main_events)
                                 .into_iter()
                                 .map(|x| DayVal {
-                                    day: x.day().to_gregorian(),
+                                    day: x.day().into(),
                                     name: Name::TorahReading(x.name()),
                                 }),
                         );
@@ -230,7 +232,7 @@ impl Runnable<ListReturn> for ListArgs {
                                 .map(|x| {
                                     let day =
                                         if let Ok(day) = heb_year.get_hebrew_date(x.month, x.day) {
-                                            Some(day.to_gregorian())
+                                            Some(day.into())
                                         } else {
                                             None
                                         };
@@ -431,8 +433,8 @@ impl Printable for ListReturn {
                     lock.write(print_tr(name, &args.language).as_bytes()).ok()
                 }
                 Name::MinorDays(day) => lock.write(print_md(day, &args.language).as_bytes()).ok(),
-                Name::CustomHoliday(CustomHoliday) => {
-                    lock.write(CustomHoliday.printable.as_bytes()).ok()
+                Name::CustomHoliday(custom_holiday) => {
+                    lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
             };
             lock.write(b"\n").unwrap();
@@ -851,80 +853,56 @@ fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, 9)
                 .unwrap()
-                .to_gregorian(),
+                .into(),
             name: Name::MinorDays(MinorDays::ErevYomKippur)
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, 14)
                 .unwrap()
-                .to_gregorian(),
+                .into(),
             name: Name::MinorDays(MinorDays::ErevSukkos)
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Nissan, 14)
                 .unwrap()
-                .to_gregorian(),
+                .into(),
             name: Name::MinorDays(MinorDays::ErevPesach)
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Iyar, 14)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Iyar, 14).unwrap().into(),
             name: Name::MinorDays(MinorDays::PesachSheni),
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Iyar, 18)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Iyar, 18).unwrap().into(),
             name: Name::MinorDays(MinorDays::LagBaOmer),
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Sivan, 5)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Sivan, 5).unwrap().into(),
             name: Name::MinorDays(MinorDays::ErevShavuos),
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Elul, 29)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Elul, 29).unwrap().into(),
             name: Name::MinorDays(MinorDays::ErevRoshHashanah),
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Shvat, 15)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Shvat, 15).unwrap().into(),
             name: Name::MinorDays(MinorDays::FifteenShvat),
         },
         DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Av, 15)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Av, 15).unwrap().into(),
             name: Name::MinorDays(MinorDays::FifteenAv),
         },
     ];
 
     if year.is_leap_year() {
         holidays.push(DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Adar1, 14)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Adar1, 14).unwrap().into(),
             name: Name::MinorDays(MinorDays::PurimKattan),
         });
         holidays.push(DayVal {
-            day: year
-                .get_hebrew_date(HebrewMonth::Adar1, 15)
-                .unwrap()
-                .to_gregorian(),
+            day: year.get_hebrew_date(HebrewMonth::Adar1, 15).unwrap().into(),
             name: Name::MinorDays(MinorDays::ShushanPurimKattan),
         });
     }

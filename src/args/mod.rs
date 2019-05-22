@@ -4,7 +4,6 @@ pub mod types;
 use crate::args::types::*;
 use atoi::*;
 use chrono::prelude::*;
-use either::*;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use serde::Deserialize;
@@ -12,7 +11,7 @@ use std::env;
 use std::fs;
 
 const DATE_TOKEN: [char; 8] = ['-', '/', '_', '\\', '.', ',', '=', ' '];
-pub fn build_args<'a, I, T>(args: I, output_type: OutputType) -> Result<MainArgs, AppError>
+pub fn build_args<'a, I, T>(_args: I, output_type: OutputType) -> Result<MainArgs, AppError>
 where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
@@ -438,14 +437,10 @@ fn parse_list(
         no_sort,
     }))
 }
+
 #[derive(Deserialize)]
 struct Config {
     days: Option<Vec<(String, String, String)>>,
-}
-#[derive(Deserialize, PartialEq, Eq, Clone, Copy)]
-enum ConfigLanguage {
-    he_IL,
-    en_US,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Copy)]

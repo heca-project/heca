@@ -1,10 +1,8 @@
 use chrono::prelude::*;
-use either::Either;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use serde::ser::*;
 use serde::Serialize;
-use std::borrow::Cow;
 
 pub struct MainArgs {
     pub custom_days: Option<Vec<Name>>,
@@ -105,9 +103,9 @@ impl Serialize for DayVal {
                 state.serialize_field("type", "MinorDays")?;
                 state.serialize_field("name", days)?;
             }
-            Name::CustomHoliday(CustomHoliday) => {
+            Name::CustomHoliday(custom_holiday) => {
                 state.serialize_field("type", "CustomHoliday")?;
-                state.serialize_field("name", &CustomHoliday.json)?;
+                state.serialize_field("name", &custom_holiday.json)?;
             }
         };
         state.end()
