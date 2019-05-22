@@ -3,7 +3,7 @@ use chrono::prelude::*;
 /// The amount of Chalakim in an hour.
 const CHALAKIM_PER_HOUR: u64 = 1080;
 /// The amount of Chalakim between two Molads.
-// See https://www.chabad.org/library/article_cdo/aid/947923/jewish/Kiddush-HaChodesh-Chapter-Six.htm#footnoteRef8a947923
+// See https://www.chabad.org/library/article_cdo/aid/947923/jewish/Kiddush-HaChodesh-Chapter-Six.htm#bartnoteRef8a947923
 const CHALAKIM_BETWEEN_MOLAD: u64 = 29 * 24 * CHALAKIM_PER_HOUR + 12 * CHALAKIM_PER_HOUR + 793;
 
 //An array documenting which years are leap years. The Hebrew calendar has a 19 year cycle of leap
