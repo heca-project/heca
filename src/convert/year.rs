@@ -85,16 +85,16 @@ impl HebrewYear {
     ///
     /// # Examples
     ///
-    /// 
-    /// 
+    ///
+    ///
     /// ~~~
     /// use heca_lib::HebrewYear;
     /// use heca_lib::prelude::*;
     /// assert_eq!(HebrewYear::new(5779).unwrap().year_type(),MonthSchedule::BaShaZ);
     /// ~~~
-    /// 
+    ///
     /// ## Find out how often does Pesach start on which days:
-    /// 
+    ///
     /// ~~~
     /// use heca_lib::HebrewYear;
     /// use heca_lib::prelude::*;
@@ -106,18 +106,18 @@ impl HebrewYear {
     ///         | MonthSchedule::BaShaH
     ///         | MonthSchedule::BaChaH
     ///         | MonthSchedule::ZaShaH => thu += 1,
-    /// 
+    ///
     ///         MonthSchedule::HaShaG
     ///         | MonthSchedule::ZaShaG
     ///         | MonthSchedule::ZaChaG
     ///         | MonthSchedule::BaChaG => tue += 1,
-    /// 
-    ///         MonthSchedule::HaShA 
-    ///         | MonthSchedule::ZaChA 
+    ///
+    ///         MonthSchedule::HaShA
+    ///         | MonthSchedule::ZaChA
     ///         | MonthSchedule::HaChA => sun += 1,
     ///         
-    ///         MonthSchedule::HaKaZ 
-    ///         | MonthSchedule::BaShaZ 
+    ///         MonthSchedule::HaKaZ
+    ///         | MonthSchedule::BaShaZ
     ///         | MonthSchedule::GaKaZ => sat += 1,
     ///     }
     /// }
@@ -125,11 +125,11 @@ impl HebrewYear {
     /// assert_eq!(tue, 1988);
     /// assert_eq!(sun, 718); // <-- Note, that Pesach falls out on a Motzei Shabbos only 10% of the time.
     /// assert_eq!(sat, 1746);
-    /// 
+    ///
     /// ~~~
-    /// 
+    ///
     /// ## Find out when will Pesach start on Motzei Shabbos:
-    /// 
+    ///
     /// ~~~
     /// use heca_lib::HebrewYear;
     /// use heca_lib::prelude::*;
@@ -137,18 +137,18 @@ impl HebrewYear {
     /// for year in 5780..5880 {
     ///     let t = HebrewYear::new(year).unwrap().year_type();
     ///     match t {
-    ///         MonthSchedule::HaShA 
-    ///         | MonthSchedule::ZaChA 
+    ///         MonthSchedule::HaShA
+    ///         | MonthSchedule::ZaChA
     ///         | MonthSchedule::HaChA => years.push(year),
-    /// 
+    ///
     ///         _ => { }
     ///         
     ///     }
     /// }
     /// assert_eq!(years, vec![5781, 5785, 5805, 5808, 5812, 5832, 5835, 5839, 5859, 5863] ); // <-- We'll have two of them over the next few years, and then Pesach won't fall out on Motzei Shabbos for twenty years!
-    /// 
+    ///
     /// ~~~
-    /// 
+    ///
     pub fn year_type(&self) -> MonthSchedule {
         if self.months_per_year == 12 {
             match self.day_of_rh {
