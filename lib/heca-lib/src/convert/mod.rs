@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use time::Duration;
 
 use crate::prelude::*;
-use serde::ser::{SerializeStruct, Serializer};
+use serde::ser::SerializeStruct;
 use serde::Serialize;
 
 mod year;
@@ -269,9 +269,9 @@ impl HebrewDate {
 }
 
 mod tests {
-    use super::*;
     #[test]
     fn get_year() {
+        use super::*;
         for j in 0..100 {
             let mut original_day = Utc.ymd(16 + j, 10, 4).and_hms(18, 0, 0);
             for _i in 1..366 {
