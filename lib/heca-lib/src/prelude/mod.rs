@@ -4,7 +4,7 @@ pub use location::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, Serialize, Deserialize)]
 pub enum Day {
     Sunday,
     Monday,
@@ -30,7 +30,7 @@ impl From<u64> for Day {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize, Ord, PartialOrd)]
 pub enum HebrewMonth {
     Tishrei,
     Cheshvan,
@@ -77,6 +77,8 @@ pub enum ConversionError {
     MonthDoesntExist,
     YearTooSmall,
 }
+
+impl std::error::Error for ConversionError {}
 
 impl fmt::Display for ConversionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
