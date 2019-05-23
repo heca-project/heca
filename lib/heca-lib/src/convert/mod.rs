@@ -4,6 +4,7 @@ use time::Duration;
 use crate::prelude::*;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
+use std::num::NonZeroI8;
 
 mod year;
 #[doc(inline)]
@@ -11,7 +12,7 @@ pub use year::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct HebrewDate {
-    day: u8,
+    day: NonZeroI8,
     month: HebrewMonth,
     year: HebrewYear,
 }
@@ -21,7 +22,7 @@ impl Serialize for HebrewDate {
         S: serde::ser::Serializer,
     {
         let mut state = serializer.serialize_struct("HebrewDate", 3)?;
-        state.serialize_field("day", &self.day)?;
+        state.serialize_field("day", &self.day.get())?;
         state.serialize_field("month", &self.month)?;
         state.serialize_field("year", &self.year())?;
         state.end()
@@ -62,7 +63,7 @@ impl PartialOrd for HebrewDate {
 }
 
 impl HebrewDate {
-    /// Returns a HebrewDate on success, or a ConversionError on failure.
+    /// Returns a HebrewDate on success or a ConversionError on failure.
     ///
     /// # Arguments
     /// * `year` - The Hebrew year since creation.
@@ -71,7 +72,6 @@ impl HebrewDate {
     ///
     /// # Error Values
     /// * `YearTooSmall` - This algorithm won't work if the year is before 3764.
-    /// * `DayIsZero` - Months start with day 1, not zero. So 0 Adar won't work.
     /// * `IsLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so if you want to
     /// convert a day in Adar 1 or Adar 2 of a leap year, specify which one.
     ///  * `IsNotLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so it won't
@@ -79,11 +79,31 @@ impl HebrewDate {
     ///  leap year.
     ///  * `TooManyDaysInMonth` - There are either 29 or 30 days in a month, so it doesn't make sense
     ///  to find the 50th day of Nissan.
-    pub fn from_ymd(year: u64, month: HebrewMonth, day: u8) -> Result<HebrewDate, ConversionError> {
+    pub fn from_ymd(
+        year: u64,
+        month: HebrewMonth,
+        day: NonZeroI8,
+    ) -> Result<HebrewDate, ConversionError> {
         HebrewYear::new(year)?.get_hebrew_date(month, day)
     }
 
-    pub fn from_ymd_unchecked(year: u64, month: HebrewMonth, day: u8) -> HebrewDate {
+    /// Returns a HebrewDate on success or panics on failure.
+    ///
+    /// # Arguments
+    /// * `year` - The Hebrew year since creation.
+    /// * `month` - The Hebrew month.
+    /// * `day` - The Hebrew day of month.
+    ///
+    /// # Error Values
+    /// * `YearTooSmall` - This algorithm won't work if the year is before 3764.
+    /// * `IsLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so if you want to
+    /// convert a day in Adar 1 or Adar 2 of a leap year, specify which one.
+    ///  * `IsNotLeapYear` - I treat Adar, Adar 1 and Adar 2 as three seperate months, so it won't
+    ///  make sense to get the English date of the first of Adar 1 or Adar 2 if the year isn't a
+    ///  leap year.
+    ///  * `TooManyDaysInMonth` - There are either 29 or 30 days in a month, so it doesn't make sense
+    ///  to find the 50th day of Nissan.
+    pub fn from_ymd_unchecked(year: u64, month: HebrewMonth, day: NonZeroI8) -> HebrewDate {
         HebrewYear::new(year)
             .unwrap()
             .get_hebrew_date(month, day)
@@ -92,16 +112,11 @@ impl HebrewDate {
 
     pub(crate) fn from_ymd_internal(
         month: HebrewMonth,
-        day: u8,
+        day: NonZeroI8,
         hebrew_year: HebrewYear,
     ) -> Result<HebrewDate, ConversionError> {
         //Get a HebrewDate object from the Hebrew Year, Month, and Day. Can fail if the year is too
         //small or the day is less than one.
-
-        if day == 0 {
-            return Err(ConversionError::DayIsZero);
-        }
-
         if !hebrew_year.is_leap_year()
             && (month == HebrewMonth::Adar1 || month == HebrewMonth::Adar2)
         {
@@ -112,7 +127,7 @@ impl HebrewDate {
             return Err(ConversionError::IsLeapYear);
         }
 
-        if day > hebrew_year.sched[month as usize] {
+        if day.get() as u8 > hebrew_year.sched[month as usize] {
             return Err(ConversionError::TooManyDaysInMonth(
                 hebrew_year.sched[month as usize],
             ));
@@ -120,7 +135,7 @@ impl HebrewDate {
 
         Ok(HebrewDate {
             month,
-            day: day as u8,
+            day: day,
             year: hebrew_year,
         })
     }
@@ -130,39 +145,46 @@ impl HebrewDate {
     /// # Arguments
     /// * `date` - The Gregorian date.
     ///
-    /// # Notes:
+    /// # Note:
     /// Hebrew days start at sundown, not midnight, so there isn't a full 1:1 mapping between
-    /// Gregorian days and Hebrew. So when you look up the date of Rosh Hashana 5779, you'll get "Monday, 10th of September 2018", while Rosh Hashana really started at sundown on the 9th of September.
+    /// Gregorian days and Hebrew. So when you look up the date of Rosh Hashana 5779, most calendars will say that it's on Monday the 10th of September, 2018, while Rosh Hashana really started at sundown on the 9th of September.
     ///
-    /// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So for
-    /// example:
+    /// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So fore xample:
+    ///
     /// ```
-    /// extern crate heca_lib;
+    /// use std::num::NonZeroI8;
+    /// use std::convert::TryInto;
     ///
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
     /// use heca_lib::prelude::*;
     /// use heca_lib::HebrewDate;
     ///
-    /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(17,59,59)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,1).unwrap());
+    /// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(17,59,59).try_into()?;
+    /// assert_eq!(hebrew_date,HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(1).unwrap())?);
+    /// # Ok::<(),ConversionError>(())
     /// ```
     ///
     /// while
     ///
     /// ```
-    /// extern crate heca_lib;
+    /// use std::num::NonZeroI8;
+    /// use std::convert::TryInto;
     ///
     /// use chrono::Utc;
     /// use chrono::offset::TimeZone;
     /// use heca_lib::prelude::*;
     /// use heca_lib::HebrewDate;
     ///
-    /// assert_eq!(HebrewDate::from_gregorian(Utc.ymd(2018,9,10).and_hms(18,0,0)).unwrap(),HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,2).unwrap());
+    ///
+    /// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(18,0,0).try_into()?;
+    /// assert_eq!(hebrew_date, HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(2).unwrap())?);
+    /// # Ok::<(),ConversionError>(())
     /// ```
     /// # Error Values:
     /// * YearTooSmall - This algorithm won't work if the year is before year 4.
     ///
-    pub fn from_gregorian(date: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
+    fn from_gregorian(date: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
         if date < *crate::convert::year::backend::FIRST_RH + Duration::days(2 + 365) {
             return Err(ConversionError::YearTooSmall);
         }
@@ -184,14 +206,15 @@ impl HebrewDate {
     ///
     /// For example, Yom Kippur 5779 started at sunset of September 18, 2018. So
     /// ```
-    /// extern crate heca_lib;
+    /// use std::num::NonZeroI8;
     ///
-    /// use chrono::Utc;
-    /// use chrono::offset::TimeZone;
+    /// use chrono::prelude::*;
     /// use heca_lib::prelude::*;
     /// use heca_lib::HebrewDate;
     ///
-    /// assert_eq!(HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,10).unwrap().to_gregorian(),Utc.ymd(2018, 9,18).and_hms(18,00,00));
+    /// let gregorian_date: DateTime<Utc> = HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(10).unwrap())?.into();
+    /// assert_eq!(gregorian_date ,Utc.ymd(2018, 9,18).and_hms(18,00,00));
+    /// # Ok::<(),ConversionError>(())
     /// ```
     /// ## Algorithm:
     /// The conversion is done (at the moment) according to the calculation of the Rambam (Maimonidies), as is documented in [Hilchos Kiddush Ha'chodesh](https://www.sefaria.org/Mishneh_Torah%2C_Sanctification_of_the_New_Month.6.1?lang=bi&with=all&lang2=en).
@@ -244,13 +267,13 @@ impl HebrewDate {
         }
 
         let amnt_days =
-            amnt_days_between_rh_and_epoch + u64::from(amnt_days_in_month) + u64::from(self.day)
+            amnt_days_between_rh_and_epoch + u64::from(amnt_days_in_month) + self.day.get() as u64
                 - 1;
         *crate::convert::year::backend::EPOCH + Duration::days(amnt_days as i64)
     }
     ///Get the Hebrew day of month.
     #[inline]
-    pub fn day(&self) -> u8 {
+    pub fn day(&self) -> NonZeroI8 {
         self.day
     }
 

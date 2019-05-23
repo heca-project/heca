@@ -76,7 +76,6 @@ pub enum ConversionError {
     IsLeapYear,
     MonthDoesntExist,
     YearTooSmall,
-    DayIsZero,
 }
 
 impl fmt::Display for ConversionError {
@@ -96,7 +95,6 @@ impl fmt::Display for ConversionError {
                 f,
                 "Cannot build calendar for years below 3764 (After Creation)"
             ),
-            ConversionError::DayIsZero => write!(f, "Months must have a non-zero amount of days"),
         }
     }
 }

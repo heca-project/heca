@@ -137,6 +137,7 @@ pub(crate) fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
 mod tests {
     use crate::convert::HebrewDate;
     use crate::prelude::*;
+    use std::num::NonZeroI8;
     use time::Duration;
 
     use super::*;
@@ -186,7 +187,8 @@ mod tests {
     fn compare_hebrew_day_elul_sanity_check() {
         let mut orig_date = Utc.ymd(1901, 8, 15).and_hms(18, 0, 0);
         for j in 1..=29 {
-            let heb_day = HebrewDate::from_ymd(5661, HebrewMonth::Elul, j).unwrap();
+            let heb_day =
+                HebrewDate::from_ymd(5661, HebrewMonth::Elul, NonZeroI8::new(j).unwrap()).unwrap();
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -198,7 +200,9 @@ mod tests {
     fn compare_hebrew_day_tishrei_sanity_check() {
         let mut orig_date = Utc.ymd(1900, 9, 23).and_hms(18, 0, 0);
         for j in 1..=30 {
-            let heb_day = HebrewDate::from_ymd(5661, HebrewMonth::Tishrei, j).unwrap();
+            let heb_day =
+                HebrewDate::from_ymd(5661, HebrewMonth::Tishrei, NonZeroI8::new(j).unwrap())
+                    .unwrap();
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -209,7 +213,8 @@ mod tests {
     fn compare_hebrew_day_adar1_sanity_check() {
         let mut orig_date = Utc.ymd(1900, 1, 30).and_hms(18, 0, 0);
         for j in 1..=30 {
-            let heb_day = HebrewDate::from_ymd(5660, HebrewMonth::Adar1, j).unwrap();
+            let heb_day =
+                HebrewDate::from_ymd(5660, HebrewMonth::Adar1, NonZeroI8::new(j).unwrap()).unwrap();
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -234,11 +239,14 @@ mod tests {
             .for_each(|x| {
                 let res = x.split(" ").collect::<Vec<&str>>();
                 if res.len() != 1 {
-                    let eng_day =
-                        HebrewDate::from_ymd(res[0].parse::<u64>().unwrap(), month, day as u8)
-                            .unwrap()
-                            .to_gregorian()
-                            + Duration::days(1);
+                    let eng_day = HebrewDate::from_ymd(
+                        res[0].parse::<u64>().unwrap(),
+                        month,
+                        NonZeroI8::new(day as i8).unwrap(),
+                    )
+                    .unwrap()
+                    .to_gregorian()
+                        + Duration::days(1);
                     println!("{:?}", eng_day);
                     let sp = res[1].split("/").collect::<Vec<&str>>();
                     let (month, day, year) = (sp[0], sp[1], sp[2]);
