@@ -4,6 +4,9 @@ use std::cmp::Ordering;
 use crate::convert::HebrewDate;
 
 #[derive(Debug, Eq, Copy, Clone, Serialize)]
+/// This struct holds a day on which the Torah is read.
+///
+/// You can get the Hebrew Date and the Torah reading.
 pub struct TorahReadingDay {
     pub(crate) day: HebrewDate,
     pub(crate) name: TorahReading,

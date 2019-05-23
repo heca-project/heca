@@ -7,8 +7,10 @@ use chrono::prelude::*;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use serde::Deserialize;
+use std::convert::TryInto;
 use std::env;
 use std::fs;
+use std::num::NonZeroI8;
 
 const DATE_TOKEN: [char; 8] = ['-', '/', '_', '\\', '.', ',', '=', ' '];
 pub fn build_args<'a, I, T>(_args: I, output_type: OutputType) -> Result<MainArgs, AppError>
@@ -139,14 +141,14 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
                         date
                     )));
                 }
-                let (day, month) = if h_date[0].parse::<u8>().is_ok() {
+                let (day, month) = if h_date[0].parse::<i8>().is_ok() {
                     (
-                        h_date[0].parse::<u8>().expect(&format!("{}", line!())),
+                        h_date[0].parse::<i8>().expect(&format!("{}", line!())),
                         h_date[1],
                     )
                 } else {
                     (
-                        h_date[1].parse::<u8>().expect(&format!("{}", line!())),
+                        h_date[1].parse::<i8>().expect(&format!("{}", line!())),
                         h_date[0],
                     )
                 };
@@ -154,9 +156,14 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
                     "Month {} was unable to be parsed",
                     month
                 )))?;
+
                 custom_days.push(CustomHoliday {
                     month,
-                    day,
+                    day: NonZeroI8::new(
+                        day.try_into()
+                            .map_err(|_| AppError::DayIsNotAValidNumber(format!("{}", day)))?,
+                    )
+                    .ok_or(AppError::DayIsNotAValidNumber(format!("{}", day)))?,
                     printable,
                     json,
                 });
@@ -241,7 +248,16 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
 }
 
 fn parse_hebrew(sp: &[&str], is_hebrew: bool) -> Result<Command, AppError> {
-    let day = atoi::<u8>(sp[0].as_bytes()).ok_or(AppError::DayIsNotANumber(sp[0].to_owned()))?;
+    let day =
+        atoi::<u8>(sp[0].as_bytes()).ok_or(AppError::DayIsNotAValidNumber(sp[0].to_owned()))?;
+    let day = if let Some(day) = NonZeroI8::new(
+        day.try_into()
+            .map_err(|_| AppError::DayIsNotAValidNumber(sp[0].into()))?,
+    ) {
+        day
+    } else {
+        return Err(AppError::DayIsNotAValidNumber(sp[0].to_owned()));
+    };
     let year = atoi::<u64>(sp[2].as_bytes()).ok_or(AppError::YearIsNotANumber(sp[2].to_owned()))?;
     let month = {
         let mut a = str_to_month(sp[1], is_hebrew);
@@ -365,7 +381,6 @@ fn parse_list(
     hebrew: bool,
     custom_days: Vec<CustomHoliday>,
 ) -> Result<Command, AppError> {
-    use atoi::atoi;
     let year_num = atoi::<u64>(
         matches
             .value_of("Year")

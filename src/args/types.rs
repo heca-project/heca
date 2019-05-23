@@ -1,3 +1,5 @@
+use std::num::NonZeroI8;
+
 use chrono::prelude::*;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
@@ -57,7 +59,7 @@ pub struct CustomHoliday {
     pub printable: String,
     pub json: String,
     pub month: HebrewMonth,
-    pub day: u8,
+    pub day: NonZeroI8,
 }
 
 #[derive(Eq, PartialEq)]
@@ -198,7 +200,7 @@ pub enum AppError {
     ConversionError(ConversionError),
     ArgError(clap::Error),
     ArgUndefinedError(String),
-    DayIsNotANumber(String),
+    DayIsNotAValidNumber(String),
     YearIsNotANumber(String),
     MonthNotParsed(String),
     CannotParseMonth(String),
@@ -262,8 +264,8 @@ impl Serialize for AppError {
                 state.serialize_field("type", "YearIsNotANumber")?;
                 state.serialize_field("error", year)?;
             }
-            AppError::DayIsNotANumber(day) => {
-                state.serialize_field("type", "DayIsNotANumber")?;
+            AppError::DayIsNotAValidNumber(day) => {
+                state.serialize_field("type", "DayIsNotAValidNumber")?;
                 state.serialize_field("error", day)?;
             }
             AppError::ArgUndefinedError(ce) => {
@@ -349,8 +351,8 @@ impl fmt::Display for AppError {
             AppError::YearIsNotANumber(year) => {
                 write!(f, "{} is not a valid year as it's not a number", year)
             }
-            AppError::DayIsNotANumber(day) => {
-                write!(f, "{} is not a valid day as it's not a number", day)
+            AppError::DayIsNotAValidNumber(day) => {
+                write!(f, "{} is not a valid day as it's not a number larger than 0", day)
             }
             AppError::ArgUndefinedError(ce) => write!(f, "{}", ce),
             AppError::ConversionError(ce) => write!(f, "{}", ce),
