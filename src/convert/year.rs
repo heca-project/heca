@@ -1,4 +1,4 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 
 use smallvec::*;
 
@@ -370,6 +370,50 @@ impl HebrewYear {
     }
 }
 
+/// Returns a HebrewDate on success, or a ConversionError on failure.
+///
+/// # Arguments
+/// * `date` - The Gregorian date.
+///
+/// # Note:
+/// Hebrew days start at sundown, not midnight, so there isn't a full 1:1 mapping between
+/// Gregorian days and Hebrew. So when you look up the date of Rosh Hashana 5779, most calendars will say that it's on Monday the 10th of September, 2018, while Rosh Hashana really started at sundown on the 9th of September.
+///
+/// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So fore xample:
+///
+/// ```
+/// use std::num::NonZeroI8;
+/// use std::convert::TryInto;
+///
+/// use chrono::Utc;
+/// use chrono::offset::TimeZone;
+/// use heca_lib::prelude::*;
+/// use heca_lib::HebrewDate;
+///
+/// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(17,59,59).try_into()?;
+/// assert_eq!(hebrew_date,HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(1).unwrap())?);
+/// # Ok::<(),ConversionError>(())
+/// ```
+///
+/// while
+///
+/// ```
+/// use std::num::NonZeroI8;
+/// use std::convert::TryInto;
+///
+/// use chrono::Utc;
+/// use chrono::offset::TimeZone;
+/// use heca_lib::prelude::*;
+/// use heca_lib::HebrewDate;
+///
+///
+/// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(18,0,0).try_into()?;
+/// assert_eq!(hebrew_date, HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(2).unwrap())?);
+/// # Ok::<(),ConversionError>(())
+/// ```
+/// # Error Values:
+/// * YearTooSmall - This algorithm won't work if the year is before year 4.
+///
 impl TryFrom<chrono::DateTime<Utc>> for HebrewDate {
     type Error = ConversionError;
     fn try_from(original_day: chrono::DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
@@ -377,6 +421,63 @@ impl TryFrom<chrono::DateTime<Utc>> for HebrewDate {
     }
 }
 
+/// Gets the Gregorian date for the current Hebrew date.
+///
+/// # Notes
+///
+/// This function returns the DateTime of the given HebrewDate at nightfall.
+///
+/// For example, Yom Kippur 5779 started at sunset of September 18, 2018. So
+/// ```
+/// use std::num::NonZeroI8;
+///
+/// use chrono::prelude::*;
+/// use heca_lib::prelude::*;
+/// use heca_lib::HebrewDate;
+///
+/// let gregorian_date: DateTime<Utc> = HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(10).unwrap())?.into();
+/// assert_eq!(gregorian_date ,Utc.ymd(2018, 9,18).and_hms(18,00,00));
+/// # Ok::<(),ConversionError>(())
+/// ```
+/// ## Algorithm:
+/// The conversion is done (at the moment) according to the calculation of the Rambam (Maimonidies), as is documented in [Hilchos Kiddush Ha'chodesh](https://www.sefaria.org/Mishneh_Torah%2C_Sanctification_of_the_New_Month.6.1?lang=bi&with=all&lang2=en).
+///
+/// The algorithm is as follows:
+///
+/// 1. There are exactly 1080 Chalakim (parts) in an hour.
+/// 2. There are exactly (well, not really. But it's close enough that we use that number as exact.) 29 days, 12 hours, and 793 Chalakim between new moons.
+///
+///  So that's the basic numbers. Regarding the calendar itself:
+///
+/// 3. All months are either 29 or 30 days long.
+/// 4. There are either 12 or 13 months in the Hebrew calendar, depending if it's a leap year. When it's a leap year, Adar (which generally is in the late winter or early spring) is doubled into a "first Adar" (Adar1) and a "second Adar" (Adar2).
+/// 5. There is a 19 year cycle of leap years. So the first two years of the cycle are regular years, the one after that's a leap year. Then another two are regular, then a leap year. Then it's regular, leap, regular, regular, leap, regular, regular, leap.
+/// 6. Year 3763 was the first year of its 19 year cycle.
+/// 7. Now you can calculate when's the New Moon before a given Rosh Hashana.
+///
+///  So how to calculate Rosh Hashana:
+///
+/// 8. If the New Moon is in the afternoon, Rosh Hashana is postponed to the next day.
+/// 9. If Rosh Hashana's starting on a Sunday (Saturday night), Wednesday (Tuesday night), or Friday (Thursday night) - postpone it by a day.
+///
+///  If any of the above two conditions were fulfilled. Good. You just found Rosh Hashana. If not:
+///
+/// 10. If the New Moon is on a Tuesday after 3am+204 Chalakim and the coming year is not a leap year, Rosh Hashana is postponed to that upcoming Thursday instead.
+/// 11. If the New Moon is on a Monday after 9am+589 Chalakim, and the previous year was a leap year, then Rosh Hashana is postponed to Tuesday.
+///
+///
+///  Now you have all the Rosh Hashanas.
+///
+/// 12. In general, months alternate between “Full” (30 days long) and “Empty” (29 days long) months. So Tishrei is full, Teves is empty, Shvat is full, Adar is empty, Nissan is full.
+/// 13. When the year is a leap year, Adar 1 is full and Adar 2 is empty. (So a full Shvat is followed by a full Adar1).
+///
+///  Knowing this, you can calculate any other date of the year.
+///
+///  But wait! We're playing with the date when Rosh Hashana will start, so not every year will be the same length! How do we make up these days?
+///
+///  So there's a last little bit:
+///
+/// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
 impl From<HebrewDate> for chrono::DateTime<Utc> {
     fn from(h: HebrewDate) -> Self {
         h.to_gregorian()
@@ -444,7 +545,7 @@ mod test {
     fn hi() {
         use crate::convert::HebrewDate;
         use chrono::prelude::*;
-        use std::convert::{TryFrom, TryInto};
+        use std::convert::TryInto;
 
         let o = Utc.ymd(1990, 2, 3).and_hms(1, 2, 3);
         let h: Result<HebrewDate, _> = o.try_into();
