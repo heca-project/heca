@@ -99,6 +99,12 @@ impl fmt::Display for ConversionError {
     }
 }
 
+/// There are four types of Torah Readings:
+///
+/// 1. Yom Tov.
+/// 2. Shabbos - the weekly Parsha.
+/// 3. Chol (such as Chanuka and Purim).
+/// 4. Special Parshas (there are four extra portions read every winter).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub enum TorahReadingType {
     YomTov,
