@@ -1,3 +1,5 @@
+use std::convert::{TryFrom, TryInto};
+
 use smallvec::*;
 
 use crate::convert::*;
@@ -5,6 +7,7 @@ use crate::holidays::get_chol_list;
 use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
+use std::num::NonZeroI8;
 
 pub(crate) mod backend;
 use crate::convert::year::backend::{
@@ -88,19 +91,22 @@ impl HebrewYear {
     ///
     ///
     /// ~~~
+    ///
     /// use heca_lib::HebrewYear;
     /// use heca_lib::prelude::*;
-    /// assert_eq!(HebrewYear::new(5779).unwrap().year_type(),MonthSchedule::BaShaZ);
+    /// assert_eq!(HebrewYear::new(5779)?.year_type(),MonthSchedule::BaShaZ);
+    /// # Ok::<(),ConversionError>(())
     /// ~~~
     ///
     /// ## Find out how often does Pesach start on which days:
     ///
     /// ~~~
+    ///
     /// use heca_lib::HebrewYear;
     /// use heca_lib::prelude::*;
     /// let (mut thu, mut tue, mut sun, mut sat) = (0,0,0,0);
     /// for year in 3765..9999 {
-    ///     let t = HebrewYear::new(year).unwrap().year_type();
+    ///     let t = HebrewYear::new(year)?.year_type();
     ///     match t {
     ///         MonthSchedule::GaChaH
     ///         | MonthSchedule::BaShaH
@@ -125,6 +131,8 @@ impl HebrewYear {
     /// assert_eq!(tue, 1988);
     /// assert_eq!(sun, 718); // <-- Note, that Pesach falls out on a Motzei Shabbos only 10% of the time.
     /// assert_eq!(sat, 1746);
+    /// # Ok::<(),ConversionError>(())
+    ///
     ///
     /// ~~~
     ///
@@ -269,7 +277,7 @@ impl HebrewYear {
     pub fn get_hebrew_date(
         self,
         month: HebrewMonth,
-        day: u8,
+        day: NonZeroI8,
     ) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_ymd_internal(month, day, self)
     }
@@ -287,7 +295,7 @@ impl HebrewYear {
         HebrewDate {
             year: self,
             month: HebrewMonth::from(month),
-            day: remainder as u8 + 1,
+            day: NonZeroI8::new((remainder + 1) as i8).unwrap(),
         }
     }
     /// Returns all the days when the Torah is read.
@@ -313,33 +321,32 @@ impl HebrewYear {
     /// # Examples
     ///
     /// ```
-    /// extern crate heca_lib;
-    ///
+    /// use std::num::NonZeroI8;
     /// use heca_lib::prelude::*;
     /// use heca_lib::{HebrewDate, HebrewYear};
-    ///
-    /// let year = HebrewYear::new(5779).unwrap();
+    /// let year = HebrewYear::new(5779)?;
     /// let shabbosim = year.get_holidays(Location::Chul, &[TorahReadingType::Shabbos, TorahReadingType::SpecialParsha, TorahReadingType::Chol, TorahReadingType::YomTov]);
     /// let mut count = 0;
     /// for s in shabbosim.into_iter() {
     ///   if s.name() == TorahReading::Shabbos(Parsha::Bereishis) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, 27).unwrap());
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, NonZeroI8::new(27).unwrap())?);
     ///     count += 1;
     ///   }
     ///   else if s.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Adar2, 9).unwrap());
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Adar2, NonZeroI8::new(9).unwrap())?);
     ///     count += 1;
     ///   }
     ///   else if s.name() == TorahReading::Chol(Chol::Chanukah1) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Kislev, 25).unwrap());
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Kislev, NonZeroI8::new(25).unwrap())?);
     ///     count += 1;
     ///   }
     ///   else if s.name() == TorahReading::YomTov(YomTov::Shavuos1) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Sivan, 6).unwrap());
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Sivan, NonZeroI8::new(6).unwrap())?);
     ///     count += 1;
     ///   }
     /// }
     /// assert_eq!(count,4);
+    /// # Ok::<(),ConversionError>(())
     /// ```
     pub fn get_holidays(
         &self,
@@ -363,17 +370,16 @@ impl HebrewYear {
     }
 }
 
-use std::convert::TryFrom;
 impl TryFrom<chrono::DateTime<Utc>> for HebrewDate {
     type Error = ConversionError;
-    fn try_from(original_day: chrono::DateTime<Utc>) -> Result<Self, Self::Error> {
+    fn try_from(original_day: chrono::DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_gregorian(original_day)
     }
 }
 
-impl Into<chrono::DateTime<Utc>> for HebrewDate {
-    fn into(self) -> chrono::DateTime<Utc> {
-        self.to_gregorian()
+impl From<HebrewDate> for chrono::DateTime<Utc> {
+    fn from(h: HebrewDate) -> Self {
+        h.to_gregorian()
     }
 }
 
@@ -400,7 +406,7 @@ mod test {
                 | MonthSchedule::BaShaH
                 | MonthSchedule::BaChaH
                 | MonthSchedule::ZaShaH => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, 16)
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
@@ -411,21 +417,21 @@ mod test {
                 | MonthSchedule::ZaShaG
                 | MonthSchedule::ZaChaG
                 | MonthSchedule::BaChaG => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, 16)
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
                     Weekday::Tue
                 ),
                 MonthSchedule::HaShA | MonthSchedule::ZaChA | MonthSchedule::HaChA => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, 16)
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
                     Weekday::Sun
                 ),
                 MonthSchedule::HaKaZ | MonthSchedule::BaShaZ | MonthSchedule::GaKaZ => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, 16)
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
@@ -433,5 +439,14 @@ mod test {
                 ),
             }
         }
+    }
+    #[test]
+    fn hi() {
+        use crate::convert::HebrewDate;
+        use chrono::prelude::*;
+        use std::convert::{TryFrom, TryInto};
+
+        let o = Utc.ymd(1990, 2, 3).and_hms(1, 2, 3);
+        let h: Result<HebrewDate, _> = o.try_into();
     }
 }
