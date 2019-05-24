@@ -457,6 +457,18 @@ fn custom_day_check_of_edge_cases_and_avoid_crash() {
     );
 }
 
+#[test]
+fn just_shabbos_works() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("list")
+        .arg("5750")
+        .arg("--show=shabbos");
+    assert_eq!(
+        &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+        ""
+    );
+}
+
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 struct Res {
     day: String,
