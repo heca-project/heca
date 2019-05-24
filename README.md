@@ -133,20 +133,26 @@ The config is a TOML file, with one option:
 
 In my _totally not scientific benchmarks_ done on my main computer (Intel quad-core):
 
-    time for i in `seq 1 10`; do hebcal 5 --years 9999 -ors >/dev/null; done
-
-    real  0m8.940s
-    user  0m8.252s
-    sys	  0m0.518s
+Heca:
 
     time for i in `seq 1 10`; do ./target/release/heca list 5 --years 9999 --show shabbos,special-parshas,chol,minor-holidays,omer >/dev/null ; done
 
     real  0m7.559s
     user  0m11.177s
-    sys	  0m3.796s
+    sys   0m3.796s
+
+Hebcal:
+
+    time for i in `seq 1 10`; do hebcal 5 --years 9999 -ors >/dev/null; done
+
+    real  0m8.940s
+    user  0m8.252s
+    sys   0m0.518s
 
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning of JSON output. All other output may change at any time.
+
+## License 
 
 Licensed under the MIT license.
