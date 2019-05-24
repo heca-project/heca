@@ -51,6 +51,7 @@ pub enum Location {
     Chul,
 }
 
+/// Yom Tov, including Rosh Hashana, Yom Kippur and Chol HaMoed
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum YomTov {
     RoshHashanah1,
@@ -85,6 +86,7 @@ pub enum TorahReading {
     SpecialParsha(SpecialParsha),
 }
 
+/// Special Parshas read every winter
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum SpecialParsha {
     Shekalim,
@@ -92,7 +94,7 @@ pub enum SpecialParsha {
     Parah,
     HaChodesh,
 }
-
+/// Possible weekday Torah readings
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Chol {
     TzomGedalia,
@@ -136,6 +138,7 @@ pub enum Chol {
     NineAv,
 }
 
+/// Weekly Torah Portion
 #[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub enum Parsha {
     Vayelech,
