@@ -29,14 +29,14 @@ pub struct HebrewYear {
 }
 
 impl HebrewYear {
-    /// Returns a new HebrewYear.
-    ///
-    /// # Arguments
-    ///
-    /// `year` - The Hebrew year
-    ///
     #[inline]
     pub fn new(year: u64) -> Result<HebrewYear, ConversionError> {
+        //! Returns a new HebrewYear on success or a ConversionError on failure.
+        //!
+        //! # Arguments
+        //!
+        //! `year` - The Hebrew year
+        //!
         if year < FIRST_YEAR + 1 {
             Err(ConversionError::YearTooSmall)
         } else {
@@ -63,8 +63,10 @@ impl HebrewYear {
     /// Returns if this year is a leap year.
     ///
     /// ```
+    /// use heca_lib::prelude::*;
     /// use heca_lib::HebrewYear;
-    /// assert_eq!(HebrewYear::new(5779).unwrap().is_leap_year(),true);
+    /// assert_eq!(HebrewYear::new(5779)?.is_leap_year(),true);
+    /// # Ok::<(),ConversionError>(())
     /// ```
     pub fn is_leap_year(&self) -> bool {
         self.months_per_year == 13
@@ -79,7 +81,7 @@ impl HebrewYear {
     ///
     /// A Hebrew Year can be defined by three variables:
     ///
-    /// 1. The first day of Rosh Hashana - Monday (the second day of the week, represented by Beis - *Ba**), Tuesday (the third day of the week, represented by Gimmel - **Ga**), Thursday (the fifth day of the week, represented by Hei - **Ha**) and Shabbos (the seventh day of the week, represented by Zayin - **Za**).
+    /// 1. The first day of Rosh Hashana - Monday (the second day of the week, represented by Beis - **Ba**), Tuesday (the third day of the week, represented by Gimmel - **Ga**), Thursday (the fifth day of the week, represented by Hei - **Ha**) and Shabbos (the seventh day of the week, represented by Zayin - **Za**).
     /// 2. The length of the year, specifically, if Cheshvan and Kislev are both full (**She**leima - 30 days long), empty (**Chaseir** - 29 days long), or in regular order ("Kesidra", Cheshvan is 29 days long and Kislev is 30. So the year goes 30,29,30,29 etc.).
     /// 3. The day Pesach starts, defined as on Rosh Hashana above.
     ///
@@ -261,6 +263,18 @@ impl HebrewYear {
         }
     }
 
+    /// Returns the year.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use std::num::NonZeroI8;
+    /// use heca_lib::prelude::*;
+    /// use heca_lib::{HebrewDate, HebrewYear};
+    /// let year = HebrewYear::new(5779)?;
+    /// assert_eq!(year.year(), 5779);
+    /// # Ok::<(),ConversionError>(())
+    /// ```
     #[inline]
     pub fn year(&self) -> u64 {
         self.year
@@ -273,6 +287,19 @@ impl HebrewYear {
     ///
     /// `day` - The day of the Hebrew month.
     ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use std::num::NonZeroI8;
+    /// use heca_lib::prelude::*;
+    /// use heca_lib::{HebrewDate, HebrewYear};
+    /// let year = HebrewYear::new(5779)?;
+    /// assert_eq!(
+    ///        year.get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(10).unwrap())?,
+    ///        HebrewDate::from_ymd(5779, HebrewMonth::Tishrei, NonZeroI8::new(10).unwrap())?
+    ///  );
+    /// # Ok::<(),ConversionError>(())
+    /// ```
     #[inline]
     pub fn get_hebrew_date(
         self,
@@ -303,9 +330,9 @@ impl HebrewYear {
     /// # Arguments
     ///
     /// `location` - Specify if you're looking for the calendar in Israel or in the Diaspora. Is
-    /// relevent as there's one day of Yom Tov in Israel and two outside. This also affects the
-    /// Weekly parsha if the last day of Pesach or the second day of Shavuos is on Shabbos, when in
-    /// Israel we move to the next Parsha while outside we're still reading the Yom Tov reading.
+    /// relevent as there's only one day of Yom Tov in Israel while there are two day of Yom Tov outside. 
+    /// Since we don't read the Weekly Parsha on Yom Tov, in a year when the 8th day of Pesach is on a Shabbos, 
+    /// Israelis read the next Parsha while the Diaspora reads the Yom Tov Parsha, catching up in the summer.
     ///
     /// `yt_types` - An array containing `TorahReadingType`. This should be used as a flag to
     /// specify which types of Torah readings you want to list.
@@ -314,7 +341,7 @@ impl HebrewYear {
     ///
     /// Returns an array (or a vec) of days.
     ///
-    /// **Note**
+    /// # Note
     ///
     /// This may unsorted, and is returned under no defined order.
     ///
@@ -540,14 +567,5 @@ mod test {
                 ),
             }
         }
-    }
-    #[test]
-    fn hi() {
-        use crate::convert::HebrewDate;
-        use chrono::prelude::*;
-        use std::convert::TryInto;
-
-        let o = Utc.ymd(1990, 2, 3).and_hms(1, 2, 3);
-        let h: Result<HebrewDate, _> = o.try_into();
     }
 }
