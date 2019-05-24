@@ -69,12 +69,63 @@ impl From<u64> for HebrewMonth {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+///Occurs when failing to get a Hebrew Date.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub enum ConversionError {
+    /// Occurs when attempting to get an Adar 1 or Adar 2 in a non-leap year.
+    /// 
+    /// # Example: 
+    /// ```
+    /// # use heca_lib::prelude::*;
+    /// # use heca_lib::HebrewDate;
+    /// # use std::num::NonZeroI8;
+    /// #
+    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar1,NonZeroI8::new(1).unwrap());
+    /// assert!(!result.is_ok());
+    /// assert_eq!(result.unwrap_err(),ConversionError::IsNotLeapYear);
+    /// ``` 
     IsNotLeapYear,
+    
+    /// Occurs when trying to get a Hebrew Date who's day is out of range
+    /// 
+    /// # Example: 
+    /// ```
+    /// # use heca_lib::prelude::*;
+    /// # use heca_lib::HebrewDate;
+    /// # use std::num::NonZeroI8;
+    /// #
+    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar,NonZeroI8::new(40).unwrap());
+    /// assert!(!result.is_ok());
+    /// assert_eq!(result.unwrap_err(),ConversionError::TooManyDaysInMonth(29));
+    /// ``` 
+    
     TooManyDaysInMonth(u8),
+    
+    /// Occurs when attempting to get a regular Adar in a leap year.
+    /// 
+    /// # Example: 
+    /// ```
+    /// # use heca_lib::prelude::*;
+    /// # use heca_lib::HebrewDate;
+    /// # use std::num::NonZeroI8;
+    /// #
+    /// let result = HebrewDate::from_ymd(5779,HebrewMonth::Adar,NonZeroI8::new(1).unwrap());
+    /// assert!(!result.is_ok());
+    /// assert_eq!(result.unwrap_err(),ConversionError::IsLeapYear);
+    /// ``` 
     IsLeapYear,
-    MonthDoesntExist,
+    /// Occurs when attempting to get a year that is before the epoch (currently: year 3764/4).
+    /// 
+    /// # Example: 
+    /// ```
+    /// # use heca_lib::prelude::*;
+    /// # use heca_lib::HebrewDate;
+    /// # use std::num::NonZeroI8;
+    /// #
+    /// let result = HebrewDate::from_ymd(2448,HebrewMonth::Nissan,NonZeroI8::new(15).unwrap()); // What was the English day of the Exodus?
+    /// assert!(!result.is_ok());
+    /// assert_eq!(result.unwrap_err(),ConversionError::YearTooSmall);
+    /// ``` 
     YearTooSmall,
 }
 
@@ -87,12 +138,12 @@ impl fmt::Display for ConversionError {
                 f,
                 "Can't convert an Adar 1 or Adar 2 of a year which isn't a leap year"
             ),
-            ConversionError::TooManyDaysInMonth(d) => write!(f, "Too many days ({}) in month", d),
+            ConversionError::TooManyDaysInMonth(d) => write!(f, "Too many days in month. Month only has {} days", d),
             ConversionError::IsLeapYear => write!(
                 f,
                 "Can't convert an Adar of a year which is a leap year. Specify Adar1 or Adar2"
             ),
-            ConversionError::MonthDoesntExist => write!(f, "Month doesn't exist"),
+            //ConversionError::MonthDoesntExist => write!(f, "Month doesn't exist"),
             ConversionError::YearTooSmall => write!(
                 f,
                 "Cannot build calendar for years below 3764 (After Creation)"
