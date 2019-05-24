@@ -11,9 +11,8 @@ mod year;
 pub use year::*;
 
 #[derive(Debug, Copy, Clone)]
-/// HebrewDate holds a specific Hebrew Date. It can be constructed individually or through HebrewYear. 
+/// HebrewDate holds a specific Hebrew Date. It can be constructed individually or through HebrewYear.
 pub struct HebrewDate {
-    
     day: NonZeroI8,
     month: HebrewMonth,
     year: HebrewYear,

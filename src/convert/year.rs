@@ -330,8 +330,8 @@ impl HebrewYear {
     /// # Arguments
     ///
     /// `location` - Specify if you're looking for the calendar in Israel or in the Diaspora. Is
-    /// relevent as there's only one day of Yom Tov in Israel while there are two day of Yom Tov outside. 
-    /// Since we don't read the Weekly Parsha on Yom Tov, in a year when the 8th day of Pesach is on a Shabbos, 
+    /// relevent as there's only one day of Yom Tov in Israel while there are two day of Yom Tov outside.
+    /// Since we don't read the Weekly Parsha on Yom Tov, in a year when the 8th day of Pesach is on a Shabbos,
     /// Israelis read the next Parsha while the Diaspora reads the Yom Tov Parsha, catching up in the summer.
     ///
     /// `yt_types` - An array containing `TorahReadingType`. This should be used as a flag to
