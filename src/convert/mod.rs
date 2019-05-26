@@ -97,7 +97,6 @@ impl HebrewDate {
         day: NonZeroI8, //TODO: Make NonZeroU8
         hebrew_year: HebrewYear,
     ) -> Result<HebrewDate, ConversionError> {
-
         if day.get() < 0 {
             return Err(ConversionError::TooManyDaysInMonth(
                 hebrew_year.sched[month as usize],
