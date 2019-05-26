@@ -15,6 +15,7 @@ pub enum Day {
     Shabbos,
 }
 
+/// Notes: This panics if input is larger than 6, so this will be converted to a TryFrom in a future release.
 impl From<u64> for Day {
     fn from(input: u64) -> Self {
         match input {
