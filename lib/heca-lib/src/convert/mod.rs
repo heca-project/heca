@@ -80,6 +80,10 @@ impl HebrewDate {
     ///  leap year.
     ///  * `TooManyDaysInMonth` - There are either 29 or 30 days in a month, so it doesn't make sense
     ///  to find the 50th day of Nissan.
+    ///
+    /// # Notes:
+    ///
+    /// Day must be above zero. If it's below zero, the function returns TooManyDaysInMonth. In a future release, day will be a NonZeroU8 so that it will be impossible to supply a negative number.
     pub fn from_ymd(
         year: u64,
         month: HebrewMonth,
@@ -90,9 +94,15 @@ impl HebrewDate {
 
     pub(crate) fn from_ymd_internal(
         month: HebrewMonth,
-        day: NonZeroI8,
+        day: NonZeroI8, //TODO: Make NonZeroU8
         hebrew_year: HebrewYear,
     ) -> Result<HebrewDate, ConversionError> {
+
+        if day.get() < 0 {
+            return Err(ConversionError::TooManyDaysInMonth(
+                hebrew_year.sched[month as usize],
+            )); //TODO: Remove when day is NonZeroU8
+        }
         //Get a HebrewDate object from the Hebrew Year, Month, and Day. Can fail if the year is too
         //small or the day is less than one.
         if !hebrew_year.is_leap_year()
@@ -182,4 +192,18 @@ mod tests {
         }
     }
 
+    #[test]
+    fn from_ymd_negative() {
+        use crate::prelude::*;
+        use crate::HebrewYear;
+        use std::num::NonZeroI8;
+        let a: ConversionError = HebrewYear::new(5779)
+            .unwrap()
+            .get_hebrew_date(HebrewMonth::Shvat, NonZeroI8::new(-1).unwrap())
+            .unwrap_err();
+        if let ConversionError::TooManyDaysInMonth(_) = a {
+        } else {
+            panic!("A is not a TooManyDaysInMonth");
+        }
+    }
 }

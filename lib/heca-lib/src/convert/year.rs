@@ -221,6 +221,10 @@ impl HebrewYear {
     ///  );
     /// # Ok::<(),ConversionError>(())
     /// ```
+    /// 
+    /// # Notes:
+    ///
+    /// Day must be above zero. If it's below zero, the function returns TooManyDaysInMonth. In a future release, day will be a NonZeroU8 so that it will be impossible to supply a negative number.
     #[inline]
     pub fn get_hebrew_date(
         self,
