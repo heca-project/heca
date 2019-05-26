@@ -136,10 +136,7 @@ fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, 
                 let h_date = date.split(&DATE_TOKEN[..]).collect::<Vec<&str>>();
 
                 if h_date.len() != 2 {
-                    return Err(AppError::ConfigError(format!(
-                        "Date {} was unable to be parsed",
-                        date
-                    )));
+                    return Err(AppError::DateSyntaxError(date));
                 }
                 let (day, month) = if h_date[0].parse::<i8>().is_ok() {
                     (
