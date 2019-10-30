@@ -144,27 +144,27 @@ mod tests {
     #[test]
     fn years_correct_sum() {
         assert_eq!(
-            YEAR_SCHED[0].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[0].iter().map(|x| (*x) as u64).sum::<u64>(),
             353
         );
         assert_eq!(
-            YEAR_SCHED[1].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[1].iter().map(|x| (*x) as u64).sum::<u64>(),
             354
         );
         assert_eq!(
-            YEAR_SCHED[2].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[2].iter().map(|x| (*x) as u64).sum::<u64>(),
             355
         );
         assert_eq!(
-            YEAR_SCHED[3].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[3].iter().map(|x| (*x) as u64).sum::<u64>(),
             383
         );
         assert_eq!(
-            YEAR_SCHED[4].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[4].iter().map(|x| (*x) as u64).sum::<u64>(),
             384
         );
         assert_eq!(
-            YEAR_SCHED[5].into_iter().map(|x| (*x) as u64).sum::<u64>(),
+            YEAR_SCHED[5].iter().map(|x| (*x) as u64).sum::<u64>(),
             385
         );
     }
