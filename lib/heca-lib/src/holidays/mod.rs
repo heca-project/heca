@@ -842,7 +842,7 @@ mod test {
     #[test]
     fn check_shekalim_on_shabbos_mevorchim_or_rosh_chodesh() {
         use chrono::Duration;
-        for loc in [Location::Chul, Location::Israel].into_iter() {
+        for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
                 let y = HebrewYear::new(i).unwrap();
                 let date = if let Ok(date) =
@@ -867,7 +867,7 @@ mod test {
     #[test]
     fn check_hachodesh_on_shabbos_mevorchim_or_rosh_chodesh() {
         use chrono::Duration;
-        for loc in [Location::Chul, Location::Israel].into_iter() {
+        for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
                 let date = HebrewDate::from_ymd(i, HebrewMonth::Nissan, NonZeroI8::new(1).unwrap())
                     .unwrap()
@@ -887,7 +887,7 @@ mod test {
     #[test]
     fn check_zachor_on_shabbos_before_purim() {
         use chrono::Duration;
-        for loc in [Location::Chul, Location::Israel].into_iter() {
+        for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
                 let date = if let Ok(date) =
                     HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroI8::new(14).unwrap())
