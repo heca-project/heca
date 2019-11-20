@@ -3,7 +3,7 @@ use predicates::prelude::*;
 use std::process::Command;
 
 #[test]
-fn check_list1_broken() -> Result<(), Box<std::error::Error>> {
+fn check_list1_broken() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("list1").arg("9999");
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -13,7 +13,7 @@ fn check_list1_broken() -> Result<(), Box<std::error::Error>> {
     Ok(())
 }
 #[test]
-fn base_convert_english() -> Result<(), Box<std::error::Error>> {
+fn base_convert_english() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .env("JSON", "YES")
@@ -32,7 +32,7 @@ fn base_convert_english() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn verify_that_json_equals_yes_works() -> Result<(), Box<std::error::Error>> {
+fn verify_that_json_equals_yes_works() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .env("JSON", "YES")
@@ -49,7 +49,7 @@ fn verify_that_json_equals_yes_works() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn base_convert_hebrew() -> Result<(), Box<std::error::Error>> {
+fn base_convert_hebrew() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .env("JSON", "YES")
@@ -66,7 +66,7 @@ fn base_convert_hebrew() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_adar2_in_regular_year_no_json() -> Result<(), Box<std::error::Error>> {
+fn convert_adar2_in_regular_year_no_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
@@ -80,7 +80,7 @@ fn convert_adar2_in_regular_year_no_json() -> Result<(), Box<std::error::Error>>
 }
 
 #[test]
-fn convert_adar2_in_regular_year_json() -> Result<(), Box<std::error::Error>> {
+fn convert_adar2_in_regular_year_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .env("JSON", "YES")
@@ -97,7 +97,7 @@ fn convert_adar2_in_regular_year_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_regular_in_leap_year_json() -> Result<(), Box<std::error::Error>> {
+fn convert_regular_in_leap_year_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.env("JSON", "YES")
         .arg("--language")
@@ -114,7 +114,7 @@ fn convert_regular_in_leap_year_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_regular_in_leap_year_no_json() -> Result<(), Box<std::error::Error>> {
+fn convert_regular_in_leap_year_no_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
@@ -128,7 +128,7 @@ fn convert_regular_in_leap_year_no_json() -> Result<(), Box<std::error::Error>> 
 }
 
 #[test]
-fn convert_year_too_small_json() -> Result<(), Box<std::error::Error>> {
+fn convert_year_too_small_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.env("JSON", "YES")
         .arg("--language")
@@ -145,7 +145,7 @@ fn convert_year_too_small_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_year_too_small_no_json() -> Result<(), Box<std::error::Error>> {
+fn convert_year_too_small_no_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
@@ -159,7 +159,7 @@ fn convert_year_too_small_no_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_month_too_large_json() -> Result<(), Box<std::error::Error>> {
+fn convert_month_too_large_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.env("JSON", "YES")
         .arg("--language")
@@ -176,7 +176,7 @@ fn convert_month_too_large_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_month_too_large_no_json() -> Result<(), Box<std::error::Error>> {
+fn convert_month_too_large_no_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")
@@ -190,7 +190,7 @@ fn convert_month_too_large_no_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_day_too_large_json() -> Result<(), Box<std::error::Error>> {
+fn convert_day_too_large_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.env("JSON", "YES")
         .arg("--language")
@@ -207,7 +207,7 @@ fn convert_day_too_large_json() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn convert_day_too_large_no_json() -> Result<(), Box<std::error::Error>> {
+fn convert_day_too_large_no_json() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("--language")
         .arg("en_US")

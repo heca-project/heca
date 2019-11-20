@@ -1,1 +1,7 @@
-days = [["10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat"]]
+days = [
+    ["10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat"],
+    ["13 אדר", "Yahrtzeit of Reb Moshe Feinstein", "YahrtzeitRebMoshe"],
+    ["13 אדרב", "Yahrtzeit of Reb Moshe Feinstein", "YahrtzeitRebMoshe"],
+    ["30 כסלו", "Not Always Existing Day", "AnnoyingDay"],
+    ["31 תשרי", "Huh?", "HuhDay"]
+]
