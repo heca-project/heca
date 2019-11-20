@@ -12,13 +12,8 @@ readme = "README.md"
 maintenance = { status = "actively-maintained" }
 
 [dependencies]
-lazy_static = "1.4"
+
 chrono = {version = "0.4", features = ["serde"]}
-time = "0.1"
-enum_primitive = "0.1"
-num = "0.2"
-atoi = "0.3"
-chrono-english="0.1"
 clap = {version = "2.33", features = ["yaml"]}
 heca-lib = "1.0"
 either = {version = "1.5", features = ["serde"]}
@@ -33,11 +28,11 @@ toml = "0.5"
 [profile.release]
 lto = true
 debug = true
-overflow-checks = true
+#overflow-checks = true
 
 [dev-dependencies]
 assert_cmd = "0.11"
 predicates = "1"
-lazy_static = "1.3"
+once_cell = "1.2"
 
 

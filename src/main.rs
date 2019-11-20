@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use either::*;
 use heca_lib::prelude::*;
-use heca_lib::*;
+use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
@@ -396,10 +396,6 @@ fn print_hebrew_month_hebrew(h: HebrewMonth) -> &'static str {
     }
 }
 impl Printable for ListReturn {
-    fn print_json(&self) -> Result<(), AppError> {
-        println!("{}", serde_json::to_string(&self).unwrap());
-        Ok(())
-    }
     fn print(&self, args: MainArgs) -> Result<(), AppError> {
         use std::io::stdout;
         use std::io::BufWriter;
@@ -436,6 +432,10 @@ impl Printable for ListReturn {
             };
             lock.write_all(b"\n").unwrap();
         });
+        Ok(())
+    }
+    fn print_json(&self) -> Result<(), AppError> {
+        println!("{}", serde_json::to_string(&self).unwrap());
         Ok(())
     }
 }

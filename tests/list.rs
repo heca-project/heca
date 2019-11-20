@@ -1,203 +1,200 @@
 use assert_cmd::prelude::*;
 use chrono::prelude::*;
 use chrono::Duration;
+use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::process::Command;
-#[macro_use]
-extern crate lazy_static;
 
-lazy_static! {
-    static ref HEBCAL_TABLE: HashMap<&'static str, &'static str> = {
-        let mut m = HashMap::new();
-        m.insert("RoshHashanah1", "Rosh Hashana");
-        m.insert("RoshHashanah2", "Rosh Hashana II");
-        m.insert("YomKippur", "Yom Kippur");
-        m.insert("Sukkos1", "Sukkot I");
-        m.insert("Sukkos2", "Sukkot II");
-        m.insert("Sukkos3", "Sukkot III");
-        m.insert("Sukkos4", "Sukkot IV");
-        m.insert("Sukkos5", "Sukkot V");
-        m.insert("Sukkos6", "Sukkot VI");
-        m.insert("Sukkos7", "Sukkot VII");
-        m.insert("ShminiAtzeres", "Shmini Atzeret");
-        m.insert("SimchasTorah", "Simchat Torah");
-        m.insert("Pesach1", "Pesach I");
-        m.insert("Pesach2", "Pesach II");
-        m.insert("Pesach3", "Pesach III");
-        m.insert("Pesach4", "Pesach IV");
-        m.insert("Pesach5", "Pesach V");
-        m.insert("Pesach6", "Pesach VI");
-        m.insert("Pesach7", "Pesach VII");
-        m.insert("Pesach8", "Pesach VIII");
-        m.insert("Shavuos1", "Shavuot I");
-        m.insert("Shavuos2", "Shavuot II");
-        m.insert("Shekalim", "Shabbat Shekalim");
-        m.insert("Zachor", "Shabbat Zachor");
-        m.insert("Parah", "Shabbat Parah");
-        m.insert("HaChodesh", "Shabbat HaChodesh");
-        m.insert("TzomGedalia", "Tzom Gedaliah");
-        m.insert("RoshChodeshCheshvan1", "Rosh Chodesh Cheshvan");
-        m.insert("RoshChodeshCheshvan2", "Rosh Chodesh Cheshvan");
-        m.insert("Chanukah1", "Chanukah: 1 Candle");
-        m.insert("Chanukah2", "Chanukah: 2 Candle");
-        m.insert("Chanukah3", "Chanukah: 3 Candle");
-        m.insert("Chanukah4", "Chanukah: 4 Candle");
-        m.insert("Chanukah5", "Chanukah: 5 Candle");
-        m.insert("Chanukah6", "Chanukah: 6 Candle");
-        m.insert("Chanukah7", "Chanukah: 7 Candle");
-        m.insert("Chanukah8", "Chanukah: 8 Candle");
-        m.insert("TenTeves", "Asara B'Tevet");
-        m.insert("RoshChodeshShvat", "Rosh Chodesh Sh'vat");
-        m.insert("RoshChodeshNissan", "Rosh Chodesh Nisan");
-        m.insert("RoshChodeshIyar1", "Rosh Chodesh Iyyar");
-        m.insert("RoshChodeshIyar2", "Rosh Chodesh Iyyar");
-        m.insert("RoshChodeshSivan", "Rosh Chodesh Sivan");
-        m.insert("RoshChodeshTammuz1", "Rosh Chodesh Tamuz");
-        m.insert("RoshChodeshTammuz2", "Rosh Chodesh Tamuz");
-        m.insert("RoshChodeshAv", "Rosh Chodesh Av");
-        m.insert("RoshChodeshElul1", "Rosh Chodesh Elul");
-        m.insert("RoshChodeshElul2", "Rosh Chodesh Elul");
-        m.insert("RoshChodeshKislev1", "Rosh Chodesh Kislev");
-        m.insert("RoshChodeshKislev2", "Rosh Chodesh Kislev");
-        m.insert("RoshChodeshKislev", "Rosh Chodesh Kislev");
-        m.insert("RoshChodeshTeves1", "Rosh Chodesh Tevet");
-        m.insert("RoshChodeshTeves2", "Rosh Chodesh Tevet");
-        m.insert("RoshChodeshTeves", "Rosh Chodesh Tevet");
-        m.insert("RoshChodeshAdar1", "Rosh Chodesh Adar");
-        m.insert("RoshChodeshAdar2", "Rosh Chodesh Adar");
-        m.insert("TaanisEsther", "Ta'anit Esther");
-        m.insert("Purim", "Purim");
-        m.insert("ShushanPurim", "Shushan Purim");
-        m.insert("RoshChodeshAdarRishon1", "Rosh Chodesh Adar I");
-        m.insert("RoshChodeshAdarRishon2", "Rosh Chodesh Adar I");
-        m.insert("RoshChodeshAdarSheni1", "Rosh Chodesh Adar I");
-        m.insert("RoshChodeshAdarSheni2", "Rosh Chodesh Adar I");
-        m.insert("SeventeenTammuz", "Tzom Tammuz");
-        m.insert("NineAv", "Tish'a B'Av");
-        m.insert("Vayelech", "Parashat Vayeilech");
-        m.insert("Haazinu", "Parashat Ha'Azinu");
-        m.insert("Bereishis", "Parashat Bereshit");
-        m.insert("Noach", "Parashat Noach");
-        m.insert("LechLecha", "Parashat Lech-Lecha");
-        m.insert("Vayeira", "Parashat Vayera");
-        m.insert("ChayeiSara", "Parashat Chayei Sara");
-        m.insert("Toldos", "Parashat Toldot");
-        m.insert("Vayetzei", "Parashat Vayetzei");
-        m.insert("Vayishlach", "Parashat Vayishlach");
-        m.insert("Vayeshev", "Parashat Vayeshev");
-        m.insert("Miketz", "Parashat Miketz");
-        m.insert("Vayigash", "Parashat Vayigash");
-        m.insert("Vayechi", "Parashat Vayechi");
-        m.insert("Shemos", "Parashat Shemot");
-        m.insert("Vaeira", "Parashat Vaera");
-        m.insert("Bo", "Parashat Bo");
-        m.insert("Beshalach", "Parashat Beshalach");
-        m.insert("Yisro", "Parashat Yitro");
-        m.insert("Mishpatim", "Parashat Mishpatim");
-        m.insert("Terumah", "Parashat Terumah");
-        m.insert("Tetzaveh", "Parashat Tetzaveh");
-        m.insert("KiSisa", "Parashat Ki Tisa");
-        m.insert("VayakhelPikudei", "Parashat Vayakhel-Pekudei");
-        m.insert("Vayakhel", "Parashat Vayakhel");
-        m.insert("Pikudei", "Parashat Pekudei");
-        m.insert("Vayikra", "Parashat Vayikra");
-        m.insert("Tzav", "Parashat Tzav");
-        m.insert("Shemini", "Parashat Shmini");
-        m.insert("TazriyaMetzorah", "Parashat Tazria-Metzora");
-        m.insert("Tazriya", "Parashat Tazria");
-        m.insert("Metzorah", "Parashat Metzora");
-        m.insert("AchareiMosKedoshim", "Parashat Achrei Mot-Kedoshim");
-        m.insert("AchareiMos", "Parashat Achrei Mot");
-        m.insert("Kedoshim", "Parashat Kedoshim");
-        m.insert("Emor", "Parashat Emor");
-        m.insert("BeharBechukosai", "Parashat Behar-Bechukotai");
-        m.insert("Behar", "Parashat Behar");
-        m.insert("Bechukosai", "Parashat Bechukotai");
-        m.insert("Bamidbar", "Parashat Bamidbar");
-        m.insert("Naso", "Parashat Nasso");
-        m.insert("Behaaloscha", "Parashat Beha'alotcha");
-        m.insert("Shlach", "Parashat Sh'lach");
-        m.insert("Korach", "Parashat Korach");
-        m.insert("ChukasBalak", "Parashat Chukat-Balak");
-        m.insert("Chukas", "Parashat Chukat");
-        m.insert("Balak", "Parashat Balak");
-        m.insert("Pinchas", "Parashat Pinchas");
-        m.insert("MatosMaasei", "Parashat Matot-Masei");
-        m.insert("Matos", "Parashat Matot");
-        m.insert("Maasei", "Parashat Masei");
-        m.insert("Devarim", "Parashat Devarim");
-        m.insert("Vaeschanan", "Parashat Vaetchanan");
-        m.insert("Eikev", "Parashat Eikev");
-        m.insert("Reeh", "Parashat Re'eh");
-        m.insert("Shoftim", "Parashat Shoftim");
-        m.insert("KiSeitzei", "Parashat Ki Teitzei");
-        m.insert("KiSavoh", "Parashat Ki Tavo");
-        m.insert("NitzavimVayelech", "Parashat Nitzavim-Vayeilech");
-        m.insert("Nitzavim", "Parashat Nitzavim");
-        m.insert("ErevRoshHashanah", "Erev Rosh Hashana");
-        m.insert("ErevYomKippur", "Erev Yom Kippur");
-        m.insert("ErevSukkos", "Erev Sukkot");
-        m.insert("ErevPesach", "Erev Pesach");
-        m.insert("ErevShavuos", "Erev Shavuot");
-        m.insert("FifteenShvat", "Tu B'Shvat");
-        m.insert("FifteenAv", "");
-        m.insert("LagBaOmer", "Lag B'Omer");
-        m.insert("Omer1", "");
-        m.insert("Omer2", "");
-        m.insert("Omer3", "");
-        m.insert("Omer4", "");
-        m.insert("Omer5", "");
-        m.insert("Omer6", "");
-        m.insert("Omer7", "");
-        m.insert("Omer8", "");
-        m.insert("Omer9", "");
-        m.insert("Omer10", "");
-        m.insert("Omer11", "");
-        m.insert("Omer12", "");
-        m.insert("Omer13", "");
-        m.insert("Omer14", "");
-        m.insert("Omer15", "");
-        m.insert("Omer16", "");
-        m.insert("Omer17", "");
-        m.insert("Omer18", "");
-        m.insert("Omer19", "");
-        m.insert("Omer20", "");
-        m.insert("Omer21", "");
-        m.insert("Omer22", "");
-        m.insert("Omer23", "");
-        m.insert("Omer24", "");
-        m.insert("Omer25", "");
-        m.insert("Omer26", "");
-        m.insert("Omer27", "");
-        m.insert("Omer28", "");
-        m.insert("Omer29", "");
-        m.insert("Omer30", "");
-        m.insert("Omer31", "");
-        m.insert("Omer32", "");
-        m.insert("Omer33", "Lag B'Omer");
-        m.insert("Omer34", "");
-        m.insert("Omer35", "");
-        m.insert("Omer36", "");
-        m.insert("Omer37", "");
-        m.insert("Omer38", "");
-        m.insert("Omer39", "");
-        m.insert("Omer40", "");
-        m.insert("Omer41", "");
-        m.insert("Omer42", "");
-        m.insert("Omer43", "");
-        m.insert("Omer44", "");
-        m.insert("Omer45", "");
-        m.insert("Omer46", "");
-        m.insert("Omer47", "");
-        m.insert("Omer48", "");
-        m.insert("Omer49", "");
-        m.insert("PesachSheni", "");
+static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("RoshHashanah1", "Rosh Hashana");
+    m.insert("RoshHashanah2", "Rosh Hashana II");
+    m.insert("YomKippur", "Yom Kippur");
+    m.insert("Sukkos1", "Sukkot I");
+    m.insert("Sukkos2", "Sukkot II");
+    m.insert("Sukkos3", "Sukkot III");
+    m.insert("Sukkos4", "Sukkot IV");
+    m.insert("Sukkos5", "Sukkot V");
+    m.insert("Sukkos6", "Sukkot VI");
+    m.insert("Sukkos7", "Sukkot VII");
+    m.insert("ShminiAtzeres", "Shmini Atzeret");
+    m.insert("SimchasTorah", "Simchat Torah");
+    m.insert("Pesach1", "Pesach I");
+    m.insert("Pesach2", "Pesach II");
+    m.insert("Pesach3", "Pesach III");
+    m.insert("Pesach4", "Pesach IV");
+    m.insert("Pesach5", "Pesach V");
+    m.insert("Pesach6", "Pesach VI");
+    m.insert("Pesach7", "Pesach VII");
+    m.insert("Pesach8", "Pesach VIII");
+    m.insert("Shavuos1", "Shavuot I");
+    m.insert("Shavuos2", "Shavuot II");
+    m.insert("Shekalim", "Shabbat Shekalim");
+    m.insert("Zachor", "Shabbat Zachor");
+    m.insert("Parah", "Shabbat Parah");
+    m.insert("HaChodesh", "Shabbat HaChodesh");
+    m.insert("TzomGedalia", "Tzom Gedaliah");
+    m.insert("RoshChodeshCheshvan1", "Rosh Chodesh Cheshvan");
+    m.insert("RoshChodeshCheshvan2", "Rosh Chodesh Cheshvan");
+    m.insert("Chanukah1", "Chanukah: 1 Candle");
+    m.insert("Chanukah2", "Chanukah: 2 Candle");
+    m.insert("Chanukah3", "Chanukah: 3 Candle");
+    m.insert("Chanukah4", "Chanukah: 4 Candle");
+    m.insert("Chanukah5", "Chanukah: 5 Candle");
+    m.insert("Chanukah6", "Chanukah: 6 Candle");
+    m.insert("Chanukah7", "Chanukah: 7 Candle");
+    m.insert("Chanukah8", "Chanukah: 8 Candle");
+    m.insert("TenTeves", "Asara B'Tevet");
+    m.insert("RoshChodeshShvat", "Rosh Chodesh Sh'vat");
+    m.insert("RoshChodeshNissan", "Rosh Chodesh Nisan");
+    m.insert("RoshChodeshIyar1", "Rosh Chodesh Iyyar");
+    m.insert("RoshChodeshIyar2", "Rosh Chodesh Iyyar");
+    m.insert("RoshChodeshSivan", "Rosh Chodesh Sivan");
+    m.insert("RoshChodeshTammuz1", "Rosh Chodesh Tamuz");
+    m.insert("RoshChodeshTammuz2", "Rosh Chodesh Tamuz");
+    m.insert("RoshChodeshAv", "Rosh Chodesh Av");
+    m.insert("RoshChodeshElul1", "Rosh Chodesh Elul");
+    m.insert("RoshChodeshElul2", "Rosh Chodesh Elul");
+    m.insert("RoshChodeshKislev1", "Rosh Chodesh Kislev");
+    m.insert("RoshChodeshKislev2", "Rosh Chodesh Kislev");
+    m.insert("RoshChodeshKislev", "Rosh Chodesh Kislev");
+    m.insert("RoshChodeshTeves1", "Rosh Chodesh Tevet");
+    m.insert("RoshChodeshTeves2", "Rosh Chodesh Tevet");
+    m.insert("RoshChodeshTeves", "Rosh Chodesh Tevet");
+    m.insert("RoshChodeshAdar1", "Rosh Chodesh Adar");
+    m.insert("RoshChodeshAdar2", "Rosh Chodesh Adar");
+    m.insert("TaanisEsther", "Ta'anit Esther");
+    m.insert("Purim", "Purim");
+    m.insert("ShushanPurim", "Shushan Purim");
+    m.insert("RoshChodeshAdarRishon1", "Rosh Chodesh Adar I");
+    m.insert("RoshChodeshAdarRishon2", "Rosh Chodesh Adar I");
+    m.insert("RoshChodeshAdarSheni1", "Rosh Chodesh Adar I");
+    m.insert("RoshChodeshAdarSheni2", "Rosh Chodesh Adar I");
+    m.insert("SeventeenTammuz", "Tzom Tammuz");
+    m.insert("NineAv", "Tish'a B'Av");
+    m.insert("Vayelech", "Parashat Vayeilech");
+    m.insert("Haazinu", "Parashat Ha'Azinu");
+    m.insert("Bereishis", "Parashat Bereshit");
+    m.insert("Noach", "Parashat Noach");
+    m.insert("LechLecha", "Parashat Lech-Lecha");
+    m.insert("Vayeira", "Parashat Vayera");
+    m.insert("ChayeiSara", "Parashat Chayei Sara");
+    m.insert("Toldos", "Parashat Toldot");
+    m.insert("Vayetzei", "Parashat Vayetzei");
+    m.insert("Vayishlach", "Parashat Vayishlach");
+    m.insert("Vayeshev", "Parashat Vayeshev");
+    m.insert("Miketz", "Parashat Miketz");
+    m.insert("Vayigash", "Parashat Vayigash");
+    m.insert("Vayechi", "Parashat Vayechi");
+    m.insert("Shemos", "Parashat Shemot");
+    m.insert("Vaeira", "Parashat Vaera");
+    m.insert("Bo", "Parashat Bo");
+    m.insert("Beshalach", "Parashat Beshalach");
+    m.insert("Yisro", "Parashat Yitro");
+    m.insert("Mishpatim", "Parashat Mishpatim");
+    m.insert("Terumah", "Parashat Terumah");
+    m.insert("Tetzaveh", "Parashat Tetzaveh");
+    m.insert("KiSisa", "Parashat Ki Tisa");
+    m.insert("VayakhelPikudei", "Parashat Vayakhel-Pekudei");
+    m.insert("Vayakhel", "Parashat Vayakhel");
+    m.insert("Pikudei", "Parashat Pekudei");
+    m.insert("Vayikra", "Parashat Vayikra");
+    m.insert("Tzav", "Parashat Tzav");
+    m.insert("Shemini", "Parashat Shmini");
+    m.insert("TazriyaMetzorah", "Parashat Tazria-Metzora");
+    m.insert("Tazriya", "Parashat Tazria");
+    m.insert("Metzorah", "Parashat Metzora");
+    m.insert("AchareiMosKedoshim", "Parashat Achrei Mot-Kedoshim");
+    m.insert("AchareiMos", "Parashat Achrei Mot");
+    m.insert("Kedoshim", "Parashat Kedoshim");
+    m.insert("Emor", "Parashat Emor");
+    m.insert("BeharBechukosai", "Parashat Behar-Bechukotai");
+    m.insert("Behar", "Parashat Behar");
+    m.insert("Bechukosai", "Parashat Bechukotai");
+    m.insert("Bamidbar", "Parashat Bamidbar");
+    m.insert("Naso", "Parashat Nasso");
+    m.insert("Behaaloscha", "Parashat Beha'alotcha");
+    m.insert("Shlach", "Parashat Sh'lach");
+    m.insert("Korach", "Parashat Korach");
+    m.insert("ChukasBalak", "Parashat Chukat-Balak");
+    m.insert("Chukas", "Parashat Chukat");
+    m.insert("Balak", "Parashat Balak");
+    m.insert("Pinchas", "Parashat Pinchas");
+    m.insert("MatosMaasei", "Parashat Matot-Masei");
+    m.insert("Matos", "Parashat Matot");
+    m.insert("Maasei", "Parashat Masei");
+    m.insert("Devarim", "Parashat Devarim");
+    m.insert("Vaeschanan", "Parashat Vaetchanan");
+    m.insert("Eikev", "Parashat Eikev");
+    m.insert("Reeh", "Parashat Re'eh");
+    m.insert("Shoftim", "Parashat Shoftim");
+    m.insert("KiSeitzei", "Parashat Ki Teitzei");
+    m.insert("KiSavoh", "Parashat Ki Tavo");
+    m.insert("NitzavimVayelech", "Parashat Nitzavim-Vayeilech");
+    m.insert("Nitzavim", "Parashat Nitzavim");
+    m.insert("ErevRoshHashanah", "Erev Rosh Hashana");
+    m.insert("ErevYomKippur", "Erev Yom Kippur");
+    m.insert("ErevSukkos", "Erev Sukkot");
+    m.insert("ErevPesach", "Erev Pesach");
+    m.insert("ErevShavuos", "Erev Shavuot");
+    m.insert("FifteenShvat", "Tu B'Shvat");
+    m.insert("FifteenAv", "");
+    m.insert("LagBaOmer", "Lag B'Omer");
+    m.insert("Omer1", "");
+    m.insert("Omer2", "");
+    m.insert("Omer3", "");
+    m.insert("Omer4", "");
+    m.insert("Omer5", "");
+    m.insert("Omer6", "");
+    m.insert("Omer7", "");
+    m.insert("Omer8", "");
+    m.insert("Omer9", "");
+    m.insert("Omer10", "");
+    m.insert("Omer11", "");
+    m.insert("Omer12", "");
+    m.insert("Omer13", "");
+    m.insert("Omer14", "");
+    m.insert("Omer15", "");
+    m.insert("Omer16", "");
+    m.insert("Omer17", "");
+    m.insert("Omer18", "");
+    m.insert("Omer19", "");
+    m.insert("Omer20", "");
+    m.insert("Omer21", "");
+    m.insert("Omer22", "");
+    m.insert("Omer23", "");
+    m.insert("Omer24", "");
+    m.insert("Omer25", "");
+    m.insert("Omer26", "");
+    m.insert("Omer27", "");
+    m.insert("Omer28", "");
+    m.insert("Omer29", "");
+    m.insert("Omer30", "");
+    m.insert("Omer31", "");
+    m.insert("Omer32", "");
+    m.insert("Omer33", "Lag B'Omer");
+    m.insert("Omer34", "");
+    m.insert("Omer35", "");
+    m.insert("Omer36", "");
+    m.insert("Omer37", "");
+    m.insert("Omer38", "");
+    m.insert("Omer39", "");
+    m.insert("Omer40", "");
+    m.insert("Omer41", "");
+    m.insert("Omer42", "");
+    m.insert("Omer43", "");
+    m.insert("Omer44", "");
+    m.insert("Omer45", "");
+    m.insert("Omer46", "");
+    m.insert("Omer47", "");
+    m.insert("Omer48", "");
+    m.insert("Omer49", "");
+    m.insert("PesachSheni", "");
 
-        m
-    };
-}
+    m
+});
 
 #[test]
 fn erev_rosh_hashana_check() {
@@ -220,24 +217,22 @@ fn erev_rosh_hashana_check() {
     }
 }
 
-lazy_static! {
-    static ref HEBCAL: HashMap<chrono::NaiveDate, Vec<String>> = {
-        let mut hebcal = HashMap::new();
-        let holidays = include_str!("holidays_1980_9999");
+static HEBCAL: Lazy<HashMap<chrono::NaiveDate, Vec<String>>> = Lazy::new(|| {
+    let mut hebcal = HashMap::new();
+    let holidays = include_str!("holidays_1980_9999");
 
-        holidays.lines().for_each(|line| {
-            let (str_date, name) = line.split_at(line.chars().position(|c| c == ' ').unwrap());
-            let date = NaiveDate::parse_from_str(str_date, "%-m/%-d/%Y").unwrap();
-            if !hebcal.contains_key(&date) {
-                hebcal.insert(date, vec![String::from(name)]);
-            } else {
-                hebcal.get_mut(&date).unwrap().push(String::from(name));
-            }
-        });
+    holidays.lines().for_each(|line| {
+        let (str_date, name) = line.split_at(line.chars().position(|c| c == ' ').unwrap());
+        let date = NaiveDate::parse_from_str(str_date, "%-m/%-d/%Y").unwrap();
+        if !hebcal.contains_key(&date) {
+            hebcal.insert(date, vec![String::from(name)]);
+        } else {
+            hebcal.get_mut(&date).unwrap().push(String::from(name));
+        }
+    });
 
-        hebcal
-    };
-}
+    hebcal
+});
 
 #[test]
 fn hebcal_check() {
@@ -409,7 +404,7 @@ fn custom_day_check() {
         Some(Res {
             day: "1990-02-04T18:00:00Z".into(),
             name: "YudShvat".into(),
-            r#type: "CustomHoliday".into()
+            r#type: "CustomHoliday".into(),
         })
     );
 }

@@ -13,7 +13,7 @@ pub struct MainArgs {
     pub command: Command,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub enum Language {
     English,
     Hebrew,
@@ -196,6 +196,7 @@ type Day = u32;
 type Year = i32;
 #[derive(Debug)]
 pub enum AppError {
+    LocationError(String),
     DateSyntaxError(String),
     ConversionError(ConversionError),
     ArgError(clap::Error),
@@ -314,6 +315,10 @@ impl Serialize for AppError {
                 ErrorKind::Io => state.serialize_field("type", "Io")?,
                 ErrorKind::Format => state.serialize_field("type", "Format")?,
             },
+            AppError::LocationError(e) => {
+                state.serialize_field("type", "LocationError")?;
+                state.serialize_field("error", e)?;
+            }
         };
         state.end()
     }
@@ -330,7 +335,7 @@ impl fmt::Display for AppError {
             ),
             AppError::TypeError(err) => write!(
                 f,
-                r#"Cannot understand output format: {}. Options are ["regular", "pretty", json"]"#,
+                r#"Cannot understand output format: {}. Options are ["regular", "pretty", "json"]"#,
                 err
             ),
             AppError::ReadError(err) => write!(f, "Read error: {}", err),
@@ -357,6 +362,7 @@ impl fmt::Display for AppError {
             AppError::ArgUndefinedError(ce) => write!(f, "{}", ce),
             AppError::ConversionError(ce) => write!(f, "{}", ce),
             AppError::ArgError(err) => write!(f, "{}", err),
+            AppError::LocationError(e) => {write!(f,"{} is not a valid location. Must be either \"Chul\" or \"Israel\"",e)}
         }
     }
 }
