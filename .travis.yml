@@ -3,15 +3,12 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y google-perftools  libgoogle-perftools-dev
 
-before_script:
-  - cd lib/heca-lib
-
 rust:
   - nightly
   - stable
 
 deploy:
   provider: script
-  script: bash testing/run_tests.sh
+  script: cargo test
   on:
     tags: true

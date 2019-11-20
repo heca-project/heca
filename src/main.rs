@@ -61,7 +61,7 @@ where
     T: Into<std::ffi::OsString> + Clone,
 {
     let args = args::build_args(args, output_type)?;
-    let res: Box<Printable> = match args.command {
+    let res: Box<dyn Printable> = match args.command {
         Command::List(ref sub_args) => Box::new(sub_args.run(&args)?),
         Command::Convert(ref sub_args) => Box::new(sub_args.run(&args)?),
     };
@@ -166,7 +166,7 @@ impl Runnable<ListReturn> for ListArgs {
                         {
                             ret.extend(get_minor_holidays(&year));
                         }
-                        if custom_events.len() > 0 {
+                        if !custom_events.is_empty() {
                             custom_events
                                 .iter()
                                 .map(|x| {
@@ -189,10 +189,7 @@ impl Runnable<ListReturn> for ListArgs {
                     })
                     .collect_into_vec(&mut part1);
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
-                part1
-                    .into_iter()
-                    .flat_map(|x| x)
-                    .for_each(|x| part2.push(x));
+                part1.into_iter().flatten().for_each(|x| part2.push(x));
                 Ok(ListReturn { list: part2 })
             }
 
@@ -227,7 +224,7 @@ impl Runnable<ListReturn> for ListArgs {
                         {
                             ret.extend(get_minor_holidays(&heb_year));
                         }
-                        if custom_events.len() > 0 {
+                        if !custom_events.is_empty() {
                             custom_events
                                 .iter()
                                 .map(|x| {
@@ -252,7 +249,7 @@ impl Runnable<ListReturn> for ListArgs {
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
                 part1
                     .into_iter()
-                    .flat_map(|x| x)
+                    .flatten()
                     .filter(|x| x.day > Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0))
                     .filter(|x| {
                         x.day
@@ -422,12 +419,12 @@ impl Printable for ListReturn {
             let count_y = itoa::write(&mut year_arr[..], year).unwrap();
             let count_m = itoa::write(&mut month_arr[..], month).unwrap();
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
-            lock.write(&year_arr[..count_y as usize]).ok();
-            lock.write(b"/").ok();
-            lock.write(&month_arr[..count_m as usize]).ok();
-            lock.write(b"/").ok();
-            lock.write(&day_arr[..count_d as usize]).ok();
-            lock.write(b" ").ok();
+            lock.write_all(&year_arr[..count_y as usize]).ok();
+            lock.write_all(b"/").ok();
+            lock.write_all(&month_arr[..count_m as usize]).ok();
+            lock.write_all(b"/").ok();
+            lock.write_all(&day_arr[..count_d as usize]).ok();
+            lock.write_all(b" ").ok();
             match name {
                 Name::TorahReading(name) => {
                     lock.write(print_tr(name, &args.language).as_bytes()).ok()
@@ -437,7 +434,7 @@ impl Printable for ListReturn {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
             };
-            lock.write(b"\n").unwrap();
+            lock.write_all(b"\n").unwrap();
         });
         Ok(())
     }
