@@ -1,8 +1,8 @@
 days = [
-  ["10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat"],
-  ["1 אדר", "First of Adar", "1Adar"],
-  ["1 אדרא", "First of Adar I", "1AdarI"],
-  ["1 אדרב", "First of Adar II", "1AdarII"],
-  ["30 כסלו", "30th of Kislev", "30Kislev"],
-  ["30 חשוון", "30th of Cheshvan", "30 Cheshvan"],
+  { date = "10 שבט", title = "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", json = "YudShvat" },
+  { date = "2 אדר", ifNotExists = ["2 אדרב"], title = "Second of Adar", json = "2Adar" },
+  { date = "1 אדרא", ifNotExists = ["1 אדר"], title = "First of Adar I", json = "1AdarI" },
+  { date = "3 אדרב", ifNotExists = ["3 אדר"], title = "Third of Adar II", json = "3AdarII" },
+  { date = "30 Kislev", ifNotExists = ["1 Teves","29 כסלו"], title = "30th of Kislev", json = "30Kislev"},
+  { date = "30 חשוון", ifNotExists =["29 חשוון", "1 כסלו"], title = "30th of Cheshvan", json = "30Cheshvan"}
 ]

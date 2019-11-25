@@ -33,6 +33,7 @@ pub enum OutputType {
 
 pub struct ConvertArgs {
     pub date: ConvertType,
+    pub language: Language,
 }
 
 pub enum ConvertType {
@@ -58,6 +59,12 @@ pub enum Event {
 pub struct CustomHoliday {
     pub printable: String,
     pub json: String,
+    pub date: DayMonth,
+    pub if_not_exists: Option<Vec<DayMonth>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DayMonth {
     pub month: HebrewMonth,
     pub day: NonZeroI8,
 }

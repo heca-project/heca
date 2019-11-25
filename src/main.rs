@@ -170,7 +170,8 @@ impl Runnable<ListReturn> for ListArgs {
                             custom_events
                                 .iter()
                                 .map(|x| {
-                                    let day = if let Ok(day) = year.get_hebrew_date(x.month, x.day)
+                                    let day = if let Ok(day) =
+                                        year.get_hebrew_date(x.date.month, x.date.day)
                                     {
                                         Some(day.into())
                                     } else {
@@ -228,12 +229,13 @@ impl Runnable<ListReturn> for ListArgs {
                             custom_events
                                 .iter()
                                 .map(|x| {
-                                    let day =
-                                        if let Ok(day) = heb_year.get_hebrew_date(x.month, x.day) {
-                                            Some(day.into())
-                                        } else {
-                                            None
-                                        };
+                                    let day = if let Ok(day) =
+                                        heb_year.get_hebrew_date(x.date.month, x.date.day)
+                                    {
+                                        Some(day.into())
+                                    } else {
+                                        None
+                                    };
                                     (Name::CustomHoliday(x.clone()), day)
                                 })
                                 .filter(|x| x.1.is_some())
