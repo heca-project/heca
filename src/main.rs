@@ -11,6 +11,7 @@ use std::convert::TryInto;
 use std::num::NonZeroI8;
 
 mod args;
+
 use crate::args::types;
 use crate::args::types::AppError;
 use crate::args::types::*;
@@ -103,6 +104,7 @@ impl Runnable<ConvertReturn> for ConvertArgs {
         }
     }
 }
+
 impl Runnable<ListReturn> for ListArgs {
     fn run(&self, _args: &MainArgs) -> Result<ListReturn, AppError> {
         let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
@@ -124,21 +126,19 @@ impl Runnable<ListReturn> for ListArgs {
         let custom_events = self
             .events
             .iter()
-            .map(|x| {
+            .filter_map(|x| {
                 if let Event::CustomHoliday(custom_holiday) = x {
-                    Some(custom_holiday)
+                    Some(custom_holiday.clone())
                 } else {
                     None
                 }
             })
-            .filter(|x| x.is_some())
-            .map(|x| x.unwrap().clone())
             .collect::<Vec<CustomHoliday>>();
-
         let result: Result<ListReturn, AppError> = match self.year {
             YearType::Hebrew(year) => {
                 HebrewYear::new(year)?;
                 HebrewYear::new(year + self.amnt_years)?;
+
                 (0 as u32..(self.amnt_years as u32))
                     .into_par_iter()
                     .map(|x| {
@@ -166,26 +166,28 @@ impl Runnable<ListReturn> for ListArgs {
                         {
                             ret.extend(get_minor_holidays(&year));
                         }
-                        if !custom_events.is_empty() {
-                            custom_events
-                                .iter()
-                                .map(|x| {
-                                    let day = if let Ok(day) =
-                                        year.get_hebrew_date(x.date.month, x.date.day)
+                        custom_events.iter().for_each(|x| {
+                            if let Ok(day) = year.get_hebrew_date(x.date.month, x.date.day) {
+                                let d = DayVal {
+                                    name: Name::CustomHoliday(x.clone()),
+                                    day: day.try_into().unwrap(),
+                                };
+                                ret.push(d);
+                            } else if let Some(not_exists) = &x.if_not_exists {
+                                not_exists.iter().for_each(|day_month| {
+                                    if let Ok(day) =
+                                        year.get_hebrew_date(day_month.month, day_month.day)
                                     {
-                                        Some(day.into())
-                                    } else {
-                                        None
-                                    };
-                                    (Name::CustomHoliday(x.clone()), day)
-                                })
-                                .filter(|x| x.1.is_some())
-                                .map(|x| DayVal {
-                                    day: x.1.unwrap(),
-                                    name: x.0,
-                                })
-                                .for_each(|x| ret.push(x));
-                        }
+                                        let d = DayVal {
+                                            name: Name::CustomHoliday(x.clone()),
+                                            day: day.into(),
+                                        };
+                                        ret.push(d);
+                                    }
+                                });
+                            }
+                        });
+
                         ret
                     })
                     .collect_into_vec(&mut part1);
@@ -225,26 +227,27 @@ impl Runnable<ListReturn> for ListArgs {
                         {
                             ret.extend(get_minor_holidays(&heb_year));
                         }
-                        if !custom_events.is_empty() {
-                            custom_events
-                                .iter()
-                                .map(|x| {
-                                    let day = if let Ok(day) =
-                                        heb_year.get_hebrew_date(x.date.month, x.date.day)
+                        custom_events.iter().for_each(|x| {
+                            if let Ok(day) = heb_year.get_hebrew_date(x.date.month, x.date.day) {
+                                let d = DayVal {
+                                    name: Name::CustomHoliday(x.clone()),
+                                    day: day.try_into().unwrap(),
+                                };
+                                ret.push(d);
+                            } else if let Some(not_exists) = &x.if_not_exists {
+                                not_exists.iter().for_each(|day_month| {
+                                    if let Ok(day) =
+                                        heb_year.get_hebrew_date(day_month.month, day_month.day)
                                     {
-                                        Some(day.into())
-                                    } else {
-                                        None
-                                    };
-                                    (Name::CustomHoliday(x.clone()), day)
-                                })
-                                .filter(|x| x.1.is_some())
-                                .map(|x| DayVal {
-                                    day: x.1.unwrap(),
-                                    name: x.0,
-                                })
-                                .for_each(|x| ret.push(x));
-                        }
+                                        let d = DayVal {
+                                            name: Name::CustomHoliday(x.clone()),
+                                            day: day.into(),
+                                        };
+                                        ret.push(d);
+                                    }
+                                });
+                            }
+                        });
                         ret
                     })
                     .collect_into_vec(&mut part1);
@@ -271,11 +274,13 @@ impl Runnable<ListReturn> for ListArgs {
         Ok(result1)
     }
 }
+
 #[derive(Debug)]
 struct ConvertReturn {
     pub day: Either<[chrono::DateTime<Utc>; 2], [HebrewDate; 2]>,
     pub orig_day: Either<HebrewDate, chrono::DateTime<Utc>>,
 }
+
 impl Serialize for ConvertReturn {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -379,6 +384,7 @@ fn print_hebrew_month_english(h: HebrewMonth) -> &'static str {
         HebrewMonth::Elul => "Elul",
     }
 }
+
 fn print_hebrew_month_hebrew(h: HebrewMonth) -> &'static str {
     match h {
         HebrewMonth::Tishrei => "תשרי",
@@ -397,6 +403,7 @@ fn print_hebrew_month_hebrew(h: HebrewMonth) -> &'static str {
         HebrewMonth::Elul => "אלול",
     }
 }
+
 impl Printable for ListReturn {
     fn print(&self, args: MainArgs) -> Result<(), AppError> {
         use std::io::stdout;
@@ -425,9 +432,9 @@ impl Printable for ListReturn {
             lock.write_all(b" ").ok();
             match name {
                 Name::TorahReading(name) => {
-                    lock.write(print_tr(name, &args.language).as_bytes()).ok()
+                    lock.write(print_tr(name, args.language).as_bytes()).ok()
                 }
-                Name::MinorDays(day) => lock.write(print_md(day, &args.language).as_bytes()).ok(),
+                Name::MinorDays(day) => lock.write(print_md(day, args.language).as_bytes()).ok(),
                 Name::CustomHoliday(custom_holiday) => {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
@@ -441,7 +448,8 @@ impl Printable for ListReturn {
         Ok(())
     }
 }
-fn print_md(tr: MinorDays, language: &types::Language) -> &'static str {
+
+fn print_md(tr: MinorDays, language: types::Language) -> &'static str {
     match language {
         Language::English => match tr {
             //Generated from https://play.golang.org/p/HtWEMOgflMt
@@ -571,7 +579,8 @@ fn print_md(tr: MinorDays, language: &types::Language) -> &'static str {
         },
     }
 }
-fn print_tr(tr: TorahReading, language: &types::Language) -> &'static str {
+
+fn print_tr(tr: TorahReading, language: types::Language) -> &'static str {
     match language {
         Language::English => match tr {
             TorahReading::YomTov(yt) => match yt {

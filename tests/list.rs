@@ -1,10 +1,12 @@
 use assert_cmd::prelude::*;
 use chrono::prelude::*;
 use chrono::Duration;
+use heca_lib::prelude::HebrewMonth;
+use heca_lib::HebrewDate;
 use once_cell::sync::Lazy;
-use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::process::Command;
 
 static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
@@ -197,7 +199,28 @@ static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
 });
 
 #[test]
-fn erev_rosh_hashana_check() {
+fn erev_rosh_hashana_check_gregorian() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1990")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    for i in res {
+        if i.name == "ErevRoshHashanah" {
+            if i.day != "1990-09-18T18:00:00Z" {
+                panic!("Erev Rosh Hashana is on the wrong day.")
+            }
+        }
+    }
+}
+
+#[test]
+fn erev_rosh_hashana_check_hebrew() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")
         .arg("en_US")
@@ -385,7 +408,32 @@ fn custom_day_check_file_does_not_exist() {
 }
 
 #[test]
-fn custom_day_check() {
+fn custom_day_check_gregorian() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/sample_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1990")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+
+    assert_eq!(
+        res.into_iter().find(|x| x.name == "YudShvat"),
+        Some(Res {
+            day: "1990-02-04T18:00:00Z".into(),
+            name: "YudShvat".into(),
+            r#type: "CustomHoliday".into(),
+        })
+    );
+}
+
+#[test]
+fn custom_day_check_hebrew() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")
         .arg("en_US")
@@ -407,6 +455,160 @@ fn custom_day_check() {
             r#type: "CustomHoliday".into(),
         })
     );
+}
+
+#[test]
+fn check_month_not_parsed_hebrew() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/bad_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5749")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let err: Err =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stderr).unwrap()).unwrap();
+
+    assert_eq!(
+        err,
+        Err {
+            r#type: "MonthNotParsed".into(),
+            error: "AdarII".into(),
+        }
+    );
+}
+
+#[test]
+fn check_month_not_parsed_gregorian_1() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/bad_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1988")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let err: Err =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stderr).unwrap()).unwrap();
+
+    assert_eq!(
+        err,
+        Err {
+            r#type: "MonthNotParsed".into(),
+            error: "AdarII".into(),
+        }
+    );
+}
+
+#[test]
+fn check_month_not_parsed_gregorian_2() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/bad_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1989")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    let err: Err =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stderr).unwrap()).unwrap();
+
+    assert_eq!(
+        err,
+        Err {
+            r#type: "MonthNotParsed".into(),
+            error: "AdarII".into(),
+        }
+    );
+}
+
+#[test]
+fn ensure_days_not_found_in_every_year_gregorian() {
+    for x in 5..10000 {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.arg("--language")
+            .arg("en_US")
+            .arg("--config")
+            .arg("./tests/sample_config.toml")
+            .arg("--print")
+            .arg("json")
+            .arg("list")
+            .arg(x.to_string())
+            .arg("--type=gregorian")
+            .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+        let out = cmd.output().unwrap();
+        if !out.status.success() {
+            eprintln!("{}", &String::from_utf8(out.stderr).unwrap());
+        }
+        let ret = String::from_utf8(out.stdout).unwrap();
+
+        let res: Vec<Res> = serde_json::from_str(&ret).expect(&ret);
+
+        res.iter()
+            .filter(|x| x.name == "AnnoyingDay")
+            .for_each(|x| {
+                let e_day = DateTime::parse_from_rfc3339(&x.day).unwrap();
+                let e_day = e_day.with_timezone(&Utc);
+                let h_day = HebrewDate::try_from(e_day).unwrap();
+                if !(h_day.month() == HebrewMonth::Kislev || h_day.month() == HebrewMonth::Teves) {
+                    panic!("Wrong time of AnnoyingDay");
+                }
+            });
+        res.iter().filter(|x| x.name == "YudShvat").for_each(|x| {
+            let e_day = DateTime::parse_from_rfc3339(&x.day).unwrap();
+            let e_day = e_day.with_timezone(&Utc);
+            let h_day = HebrewDate::try_from(e_day).unwrap();
+            assert_eq!(
+                h_day,
+                HebrewDate::from_ymd(h_day.year(), HebrewMonth::Shvat, std::num::NonZeroI8::new(10).unwrap()).unwrap()
+            );
+        });
+        res.iter()
+            .filter(|x| x.name == "YahrtzeitRebMoshe")
+            .for_each(|x| {
+                let e_day = DateTime::parse_from_rfc3339(&x.day).unwrap();
+                let e_day = e_day.with_timezone(&Utc);
+                let h_day = HebrewDate::try_from(e_day).unwrap();
+                if !(h_day.month() == HebrewMonth::Adar || h_day.month() == HebrewMonth::Adar2) {
+                    panic!("Wrong time of YahrtzeitRebMoshe");
+                }
+            });
+
+        assert_eq!(res.iter().filter(|x| x.name == "HuhDay").count(), 0);
+    }
+}
+
+#[test]
+fn ensure_days_not_found_in_every_year_hebrew() {
+    for x in 5750..10000 {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.arg("--language")
+            .arg("en_US")
+            .arg("--config")
+            .arg("./tests/sample_config.toml")
+            .arg("--print")
+            .arg("json")
+            .arg("list")
+            .arg(x.to_string())
+            .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+        let ret = String::from_utf8(cmd.output().unwrap().stdout).unwrap();
+        let res: Vec<Res> = serde_json::from_str(&ret).unwrap();
+        eprintln!("{}", x);
+        assert_ne!(res.iter().filter(|x| x.name == "AnnoyingDay").count(), 0);
+        assert_eq!(res.iter().filter(|x| x.name == "YudShvat").count(), 1);
+        assert_eq!(
+            res.iter().filter(|x| x.name == "YahrtzeitRebMoshe").count(),
+            1
+        );
+        assert_eq!(res.iter().filter(|x| x.name == "HuhDay").count(), 0);
+    }
 }
 
 #[test]
@@ -450,9 +652,59 @@ fn custom_day_check_of_edge_cases_and_avoid_crash() {
 }
 
 #[test]
-fn just_shabbos_works() {
+fn check_double_days_hebrew() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5778")
+        .arg("--show=custom-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    let thirty_cheshvan: Vec<&Res> = res.iter().filter(|x| x.name == "30Cheshvan").collect();
+    assert_eq!(thirty_cheshvan.iter().count(), 2);
+    assert_eq!(thirty_cheshvan[0].day, "2017-11-17T18:00:00Z");
+    assert_eq!(thirty_cheshvan[1].day, "2017-11-18T18:00:00Z");
+}
+
+#[test]
+fn check_double_days_gregorian() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("2017")
+        .arg("--show=custom-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    let thirty_cheshvan: Vec<&Res> = res.iter().filter(|x| x.name == "30Cheshvan").collect();
+    assert_eq!(thirty_cheshvan.iter().count(), 2);
+    assert_eq!(thirty_cheshvan[0].day, "2017-11-17T18:00:00Z");
+    assert_eq!(thirty_cheshvan[1].day, "2017-11-18T18:00:00Z");
+}
+
+#[test]
+fn just_shabbos_works_hebrew() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("list").arg("5750").arg("--show=shabbos");
+    assert_eq!(
+        &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+        ""
+    );
+}
+
+#[test]
+fn just_shabbos_works_gregorian() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("list").arg("1990").arg("--show=shabbos");
     assert_eq!(
         &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
         ""

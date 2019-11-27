@@ -35,7 +35,7 @@ pub struct ConvertArgs {
     pub date: ConvertType,
     pub language: Language,
 }
-
+#[derive(Debug)]
 pub enum ConvertType {
     Gregorian(chrono::Date<Utc>),
     Hebrew(HebrewDate),
