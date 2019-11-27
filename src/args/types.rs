@@ -35,7 +35,7 @@ pub struct ConvertArgs {
     pub date: ConvertType,
     pub language: Language,
 }
-
+#[derive(Debug)]
 pub enum ConvertType {
     Gregorian(chrono::Date<Utc>),
     Hebrew(HebrewDate),
@@ -333,7 +333,7 @@ impl Serialize for AppError {
 
 use std::fmt;
 impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AppError::DateSyntaxError(err) => write!(
                 f,
