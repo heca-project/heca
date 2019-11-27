@@ -108,7 +108,7 @@ fn get_language(config_language: Option<Language>, passed_language: Option<&str>
     }
 }
 
-fn parse_args(matches: ArgMatches, output_type: OutputType) -> Result<MainArgs, AppError> {
+fn parse_args(matches: ArgMatches<'_>, output_type: OutputType) -> Result<MainArgs, AppError> {
     let config_file = Config::from_location(matches.value_of("configfile"))?;
 
     let _ = match matches.value_of("type") {

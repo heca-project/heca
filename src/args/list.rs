@@ -7,7 +7,7 @@ use heca_lib::prelude::{Location, TorahReadingType};
 use std::env;
 
 pub fn parse_options(
-    matches: &ArgMatches,
+    matches: &ArgMatches<'_>,
     config: &Config,
     language: Language,
     custom_days: &[CustomHoliday],

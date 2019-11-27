@@ -58,6 +58,25 @@ impl Config {
                     let date = e.date;
                     let printable = e.title;
                     let json = e.json;
+                    let if_not_exists: Option<Result<Vec<DayMonth>, AppError>> =
+                        e.if_not_exists.and_then(|e| {
+                            e.into_iter()
+                                .map(|x| {
+                                    let inner_date =
+                                        x.split(&DATE_TOKEN[..]).collect::<Vec<&str>>();
+                                    let r = parse_hebrew(&inner_date).map_err(|x| Some(Err(x)));
+                                    if let Err(e) = r {
+                                        return e;
+                                    }
+                                    let (day, month, _) = r.unwrap();
+                                    if inner_date.len() != 2 {
+                                        return Some(Err(AppError::DateSyntaxError(x)));
+                                    }
+                                    Some(Ok(DayMonth { month, day }))
+                                })
+                                .collect()
+                        });
+                    let if_not_exists = if_not_exists.map_or(Ok(None), |v| v.map(Some))?;
                     let h_date = date.split(&DATE_TOKEN[..]).collect::<Vec<&str>>();
 
                     if h_date.len() != 2 {
@@ -77,7 +96,7 @@ impl Config {
                         },
                         printable,
                         json,
-                        if_not_exists: None,
+                        if_not_exists,
                     });
                 }
             }
