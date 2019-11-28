@@ -1,0 +1,8 @@
+days = [
+  [ "10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat" ],
+  [ "2 אדר", "Second of Adar",  "2Adar" ],
+  [ "1 אדרא", "First of Adar I", "1AdarI" ],
+  [ "3 אדרב", "Third of Adar II", "3AdarII" ],
+  [ "30 Kislev", "30th of Kislev", "30Kislev"],
+  [ "30 חשוון", "30th of Cheshvan", "30Cheshvan"]
+]

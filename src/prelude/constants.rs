@@ -1,11 +1,10 @@
-use crate::args::types::{DayVal, Name, MinorDays};
+use crate::args::types::{DayVal, MinorDays, Name};
 use heca_lib::HebrewYear;
 
-use heca_lib::prelude::{HebrewMonth};
+use heca_lib::prelude::HebrewMonth;
 
-
-use std::num::NonZeroI8;
 use smallvec::{smallvec, SmallVec};
+use std::num::NonZeroI8;
 
 pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
     let mut holidays = smallvec![

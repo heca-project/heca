@@ -1,14 +1,17 @@
-use crate::{Runnable, Printable};
-use crate::args::types::{ListArgs, MainArgs, AppError, DayVal, Event, CustomHoliday, YearType, Name, MinorHoliday, OutputType};
-use heca_lib::prelude::TorahReadingType;
-use heca_lib::HebrewYear;
-use rayon::prelude::*;
-use std::convert::TryInto;
-use chrono::prelude::*;
+use crate::args::types::{
+    AppError, CustomHoliday, DayVal, Event, ListArgs, MainArgs, MinorHoliday, Name, OutputType,
+    YearType,
+};
 use crate::prelude::constants::get_minor_holidays;
 use crate::prelude::get_omer::get_omer;
 use crate::prelude::print;
+use crate::{Printable, Runnable};
+use chrono::prelude::*;
+use heca_lib::prelude::TorahReadingType;
+use heca_lib::HebrewYear;
+use rayon::prelude::*;
 use serde::Serialize;
+use std::convert::TryInto;
 
 #[derive(Debug, Serialize)]
 #[serde(transparent)]
@@ -17,8 +20,7 @@ pub struct Return {
 }
 
 impl Return {
-    fn pretty_print(&self, args:MainArgs) -> Result<(), AppError> {
-
+    fn pretty_print(&self, args: MainArgs) -> Result<(), AppError> {
         use std::io::stdout;
         use std::io::BufWriter;
         use std::io::Write;
@@ -44,10 +46,12 @@ impl Return {
             lock.write_all(&day_arr[..count_d as usize]).ok();
             lock.write_all(b" ").ok();
             match name {
-                Name::TorahReading(name) => {
-                    lock.write(print::torah_reading(name, args.language).as_bytes()).ok()
-                }
-                Name::MinorDays(day) => lock.write(print::minor_holidays(day, args.language).as_bytes()).ok(),
+                Name::TorahReading(name) => lock
+                    .write(print::torah_reading(name, args.language).as_bytes())
+                    .ok(),
+                Name::MinorDays(day) => lock
+                    .write(print::minor_holidays(day, args.language).as_bytes())
+                    .ok(),
                 Name::CustomHoliday(custom_holiday) => {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
@@ -141,7 +145,7 @@ impl Runnable<Return> for ListArgs {
                             } else if let Some(not_exists) = &x.if_not_exists {
                                 not_exists.iter().for_each(|day_month| {
                                     if let Ok(day) =
-                                    year.get_hebrew_date(day_month.month, day_month.day)
+                                        year.get_hebrew_date(day_month.month, day_month.day)
                                     {
                                         let d = DayVal {
                                             name: Name::CustomHoliday(x.clone()),
@@ -202,7 +206,7 @@ impl Runnable<Return> for ListArgs {
                             } else if let Some(not_exists) = &x.if_not_exists {
                                 not_exists.iter().for_each(|day_month| {
                                     if let Ok(day) =
-                                    heb_year.get_hebrew_date(day_month.month, day_month.day)
+                                        heb_year.get_hebrew_date(day_month.month, day_month.day)
                                     {
                                         let d = DayVal {
                                             name: Name::CustomHoliday(x.clone()),
@@ -224,8 +228,8 @@ impl Runnable<Return> for ListArgs {
                     .filter(|x| {
                         x.day
                             < Utc
-                            .ymd((year + self.amnt_years) as i32, 1, 1)
-                            .and_hms(0, 0, 0)
+                                .ymd((year + self.amnt_years) as i32, 1, 1)
+                                .and_hms(0, 0, 0)
                     })
                     .for_each(|x| part2.push(x));
 

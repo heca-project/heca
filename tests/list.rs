@@ -567,7 +567,12 @@ fn ensure_days_not_found_in_every_year_gregorian() {
             let h_day = HebrewDate::try_from(e_day).unwrap();
             assert_eq!(
                 h_day,
-                HebrewDate::from_ymd(h_day.year(), HebrewMonth::Shvat, std::num::NonZeroI8::new(10).unwrap()).unwrap()
+                HebrewDate::from_ymd(
+                    h_day.year(),
+                    HebrewMonth::Shvat,
+                    std::num::NonZeroI8::new(10).unwrap()
+                )
+                .unwrap()
             );
         });
         res.iter()
@@ -618,6 +623,26 @@ fn custom_day_check_and_avoid_crash() {
         .arg("en_US")
         .arg("--config")
         .arg("./tests/sample_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("--years")
+        .arg("500")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
+    assert_eq!(
+        &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+        ""
+    );
+}
+
+#[test]
+fn custom_day_check_and_avoid_crash_v1() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config_v1.toml")
         .arg("--print")
         .arg("json")
         .arg("list")

@@ -1,13 +1,13 @@
-use crate::args::types::{ConvertArgs, MainArgs, AppError, ConvertType, Language, OutputType};
-use crate::{Runnable};
-use std::convert::TryInto;
-use either::Either;
+use crate::args::types::{AppError, ConvertArgs, ConvertType, Language, MainArgs, OutputType};
+use crate::prelude::{print, Printable};
+use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
+use either::Either;
 use heca_lib::HebrewDate;
-use serde::{Serialize, Serializer};
-use crate::prelude::{Printable, print};
 use serde::ser::SerializeSeq;
+use serde::{Serialize, Serializer};
+use std::convert::TryInto;
 
 #[derive(Debug)]
 pub struct Return {
@@ -17,8 +17,8 @@ pub struct Return {
 
 impl Serialize for Return {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         match self.day {
             Either::Left(val) => serialize_array(val, serializer),
@@ -28,9 +28,9 @@ impl Serialize for Return {
 }
 
 fn serialize_array<S, A>(cv: [A; 2], serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        A: Serialize,
+where
+    S: Serializer,
+    A: Serialize,
 {
     let mut seq = serializer.serialize_seq(Some(2))?;
     for e in &cv {

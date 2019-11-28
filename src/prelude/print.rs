@@ -1,6 +1,6 @@
-use heca_lib::prelude::{TorahReading, SpecialParsha, Parsha, Chol, YomTov, HebrewMonth};
-use crate::args::types::{Language, MinorDays};
 use crate::args::types;
+use crate::args::types::{Language, MinorDays};
+use heca_lib::prelude::{Chol, HebrewMonth, Parsha, SpecialParsha, TorahReading, YomTov};
 
 pub fn minor_holidays(tr: MinorDays, language: types::Language) -> &'static str {
     match language {
@@ -170,7 +170,6 @@ pub fn hebrew_month_english(h: HebrewMonth) -> &'static str {
         HebrewMonth::Elul => "Elul",
     }
 }
-
 
 pub fn torah_reading(tr: TorahReading, language: types::Language) -> &'static str {
     match language {

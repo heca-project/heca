@@ -38,7 +38,34 @@ impl Config {
         let mut location = None;
         if let Some(ref file) = config_file {
             let f = &fs::read_to_string(file)?;
-            let config: ConfigFile = toml::from_str(f)?;
+            let config_attempt = toml::from_str(f);
+            let config: ConfigFile = match config_attempt {
+                Ok(config) => config,
+                Err(err) => {
+                    let config_v2: Result<ConfigFileV1, _> = toml::from_str(f);
+                    match config_v2 {
+                        Ok(c) => ConfigFile {
+                            days: c.days.and_then(|c| {
+                                Some(
+                                    c.into_iter()
+                                        .map(|(date, title, json)| InnerDate {
+                                            date,
+                                            title,
+                                            json,
+                                            if_not_exists: None,
+                                        })
+                                        .collect(),
+                                )
+                            }),
+                            language: c.language,
+                            location: c.location,
+                        },
+                        Err(_) => {
+                            return Err(err.into());
+                        }
+                    }
+                }
+            };
             if let Some(loc) = &config.location {
                 location = Some(str_to_location(loc.as_ref())?);
             }
@@ -174,12 +201,17 @@ fn str_to_month(text: &str) -> Option<HebrewMonth> {
 }
 
 #[derive(Deserialize)]
+struct ConfigFileV1 {
+    days: Option<Vec<(String, String, String)>>,
+    language: Option<String>,
+    location: Option<String>,
+}
+#[derive(Deserialize)]
 struct ConfigFile {
     days: Option<Vec<InnerDate>>,
     language: Option<String>,
     location: Option<String>,
 }
-
 #[derive(Deserialize)]
 struct InnerDate {
     date: String,
