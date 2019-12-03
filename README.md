@@ -1,4 +1,4 @@
-#heca
+# heca
 
 Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back and list Jewish holidays.
 
