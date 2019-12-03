@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cargo build --release --target-dir=/tmp/heca
+cargo build --release --target-dir=/tmp/heca >/dev/null
 
 set -e
 for i in `seq 1 5`; do

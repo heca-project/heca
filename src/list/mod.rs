@@ -25,7 +25,7 @@ impl Return {
         use std::io::BufWriter;
         use std::io::Write;
         let stdout = stdout();
-        let mut lock = BufWriter::with_capacity(1024, stdout.lock());
+        let mut lock = BufWriter::with_capacity(1024*1024, stdout.lock());
         self.list.iter().for_each(|d| {
             let ret = d.day;
             let year = ret.year();
