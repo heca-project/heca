@@ -25,7 +25,7 @@ impl Return {
         use std::io::BufWriter;
         use std::io::Write;
         let stdout = stdout();
-        let mut lock = BufWriter::with_capacity(100, stdout.lock());
+        let mut lock = BufWriter::with_capacity(1024, stdout.lock());
         self.list.iter().for_each(|d| {
             let ret = d.day;
             let year = ret.year();
@@ -39,12 +39,12 @@ impl Return {
             let count_y = itoa::write(&mut year_arr[..], year).unwrap();
             let count_m = itoa::write(&mut month_arr[..], month).unwrap();
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
-            lock.write_all(&year_arr[..count_y as usize]).ok();
-            lock.write_all(b"/").ok();
-            lock.write_all(&month_arr[..count_m as usize]).ok();
-            lock.write_all(b"/").ok();
-            lock.write_all(&day_arr[..count_d as usize]).ok();
-            lock.write_all(b" ").ok();
+            lock.write(&year_arr[..count_y as usize]).ok();
+            lock.write(b"/").ok();
+            lock.write(&month_arr[..count_m as usize]).ok();
+            lock.write(b"/").ok();
+            lock.write(&day_arr[..count_d as usize]).ok();
+            lock.write(b" ").ok();
             match name {
                 Name::TorahReading(name) => lock
                     .write(print::torah_reading(name, args.language).as_bytes())
@@ -56,7 +56,7 @@ impl Return {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
             };
-            lock.write_all(b"\n").unwrap();
+            lock.write(b"\n").unwrap();
         });
         Ok(())
     }
