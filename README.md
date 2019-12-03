@@ -1,6 +1,6 @@
-# heca
---------
-Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back, and list Jewish holidays.
+#heca
+
+Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back and list Jewish holidays.
 
 [![Crates.io](https://img.shields.io/crates/v/heca.svg)](https://crates.io/crates/heca)
 [![Build Status](https://travis-ci.org/heca-project/heca.svg?branch=master)](https://travis-ci.org/heca-project/heca)
@@ -24,7 +24,7 @@ $ cargo install heca
 ### Options
 
 1. `--config`: Sets the config file. See the Config section for more information. If not set, it tries to read `$XDG_CONFIG_HOME/heca/config.toml`).
-2. `--language`: Sets the output language. The options are Hebrew (he_IL) or English (en_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL.UTF-8`), it outputs to English.
+2. `--language`: Sets the output language. The options are Hebrew (he_IL) or English (en_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL`), it outputs to English.
 3. `--print`: Prints the result as JSON, regular or pretty-printed (is currently aliased to regular).
 
 ### Subcommands
@@ -44,7 +44,7 @@ $ cargo install heca
 
 ##### Important point
  
-Since the Jewish day starts at night-time, unlike most calendars, the days listed are the _starting_ day, not the ending day. So if the first night of Pesach starts on Friday night, I'll output that day of the first day of Pesach as that Friday, not the next morning.
+Since the Jewish day starts at night-time, unlike most calendars, the days listed are the _starting_ day, not the ending day. So if the first Seder is on Friday night, I'll output that the first day of Pesach is Friday, not Shabbos.
 
 ##### Options
 
@@ -56,102 +56,117 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
 
 ## Config file
 
-The config is a TOML file, with one option: 
+The config is a TOML file, with several options:
 
-1. days - An array made up of arrays of strings. It looks like this:
+1. days - An array. Can be made out of:
 
-    
-    days = [
-      ["10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat"],
-      ["1 אדר", "First of Adar", "1Adar"],
-      ["1 אדרא", "First of Adar I", "1AdarI"],
-      ["1 אדרב", "First of Adar II", "1AdarII"],
-      ["30 כסלו", "30th of Kislev", "30Kislev"],
-      ["30 חשוון", "30th of Cheshvan", "30 Cheshvan"],
-    ]
+   a. A three-element array. The first is the Hebrew day, the second is the string to output when pretty printing and, and 
+   the third is the string to output when JSON printing). If the date doesn't exist in a certain year (For example, 
+   not all years have an Adar Beis, 30th of Cheshvan or 30th of Kislev), that date is ignored. 
 
-  The first element is the Hebrew date - day followed by month (in Hebrew), the second is the printable form, and the third is the JSON form. **Note** If the date doesn't exist in a given year (for example, if it's a leap year and you only put the date in Adar1, or if the Cheshvan of that year doesn't have a 30th day), **It doesn't output that day at all**. So if you want a day in Adar to be printed in all years, you have to add two days, one day in the regular Adar and one in Adar1 or Adar2, depending on your need).
+   b. An object of: `date`, `title`, `json`, and (optionally) `ifNotExists`. If `date` doesn't exist,
+    then print it on all dates in `ifNotExist`. 
 
+2. language - The default language (options: `en_US` or `he_IL`).
+3. location - The default location (options: `chul` or `israel`).
+
+### Examples:
+```
+days = [
+         ["10 שבט", "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", "YudShvat"],
+         ["1 אדר", "First of Adar", "1Adar"],
+         ["1 אדרא", "First of Adar I", "1AdarI"],
+         ["1 אדרב", "First of Adar II", "1AdarII"],
+         ["30 כסלו", "30th of Kislev", "30Kislev"],
+         ["30 חשוון", "30th of Cheshvan", "30 Cheshvan"],
+       ]
+```
+```
+days = [
+   { date = "10 שבט", title = "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", json = "YudShvat" },
+   { date = "10 Adar2", ifNotExists = ["10 Adar"], title = "Yahrtzeit of Reb Moshe", json = "YahrtzeitRebMoshe" },
+   { date = "30 Kislev", ifNotExists = ["29 Kislev", "1 Teves"], title = "This day doesn't always exist", json = "AnnoyingDay" },
+   { date = "31 תשרי", ifNotExists = ["32 Adar2"], title = "Huh?", json = "HuhDay" }
+]
+```
 
 
 ## Examples
 
 ### What's the difference between Israeli Torah reading and Diaspora?
 
-    diff  <(./target/release/heca list 2019 --show shabbos) <(./target/release/heca list 2019 --location Israel --show shabbos)
+```
+diff  <(./target/release/heca list 2019 --show shabbos) <(./target/release/heca list 2019 --location Israel --show shabbos)
 
-    16,29c16,30
-    < 2019/5/3 Acharei Mos
-    < 2019/5/10 Kedoshim
-    < 2019/5/17 Emor
-    < 2019/5/24 Behar
-    < 2019/5/31 Bechukosai
-    < 2019/6/7 Bamidbar
-    < 2019/6/14 Naso
-    < 2019/6/21 Behaaloscha
-    < 2019/6/28 Shlach
-    < 2019/7/5 Korach
-    < 2019/7/12 Chukas
-    < 2019/7/19 Balak
-    < 2019/7/26 Pinchas
-    < 2019/8/2 Matos/Maasei
-    ---
-    > 2019/4/26 Acharei Mos
-    > 2019/5/3 Kedoshim
-    > 2019/5/10 Emor
-    > 2019/5/17 Behar
-    > 2019/5/24 Bechukosai
-    > 2019/5/31 Bamidbar
-    > 2019/6/7 Naso
-    > 2019/6/14 Behaaloscha
-    > 2019/6/21 Shlach
-    > 2019/6/28 Korach
-    > 2019/7/5 Chukas
-    > 2019/7/12 Balak
-    > 2019/7/19 Pinchas
-    > 2019/7/26 Matos
-    > 2019/8/2 Maasei
+16,29c16,30
+< Night of 2019/5/3: Acharei Mos
+< Night of 2019/5/10: Kedoshim
+< Night of 2019/5/17: Emor
+< Night of 2019/5/24: Behar
+< Night of 2019/5/31: Bechukosai
+< Night of 2019/6/7: Bamidbar
+< Night of 2019/6/14: Naso
+< Night of 2019/6/21: Behaaloscha
+< Night of 2019/6/28: Shlach
+< Night of 2019/7/5: Korach
+< Night of 2019/7/12: Chukas
+< Night of 2019/7/19: Balak
+< Night of 2019/7/26: Pinchas
+< Night of 2019/8/2: Matos/Maasei
+---
+> Night of 2019/4/26: Acharei Mos
+> Night of 2019/5/3: Kedoshim
+> Night of 2019/5/10: Emor
+> Night of 2019/5/17: Behar
+> Night of 2019/5/24: Bechukosai
+> Night of 2019/5/31: Bamidbar
+> Night of 2019/6/7: Naso
+> Night of 2019/6/14: Behaaloscha
+> Night of 2019/6/21: Shlach
+> Night of 2019/6/28: Korach
+> Night of 2019/7/5: Chukas
+> Night of 2019/7/12: Balak
+> Night of 2019/7/19: Pinchas
+> Night of 2019/7/26: Matos
+> Night of 2019/8/2: Maasei
+```
 
-### When's the next time Erev Pesach will be on a Shabbos?
+### When's the next time the first Seder will be on a Friday night?
 
-    for i in `seq 5779 5900`; do echo "$i-$(date -d $(./target/release/heca --print json list $i --show minor-holidays |jq '.|.[] | select(.name == "ErevPesach") | .day' | tr -d \") '+%a')" ; done | grep "Fri"
+```
+for i in `seq 5779 5900`; do echo "$i-$(date -d $(./target/release/heca --print json list $i --show minor-holidays |jq '.|.[] | select(.name == "ErevPesach") | .day' | tr -d \") '+%a')" ; done | grep "Fri"
 
-    5781-Fri
-    5785-Fri
-    5805-Fri
-    5808-Fri
-    5812-Fri
-    5832-Fri
-    5835-Fri
-    5839-Fri
-    5859-Fri
-    5863-Fri
-    5883-Fri
-    5890-Fri
-
+5781-Fri
+5785-Fri
+5805-Fri
+5808-Fri
+5812-Fri
+5832-Fri
+5835-Fri
+5839-Fri
+5859-Fri
+5863-Fri
+5883-Fri
+5890-Fri
+```
 ## Benchmarks
 
-In my _totally not scientific benchmarks_ done on my main computer (Intel quad-core):
+In my _totally not scientific benchmarks_:
 
-Heca:
+```
+./benchmark/bench.sh
 
-    time for i in `seq 1 10`; do ./target/release/heca list 5 --years 9999 --show shabbos,special-parshas,chol,minor-holidays,omer >/dev/null ; done
+heca  | multithreaded   | unsorted   | 1.786
+heca  | multithreaded   | sorted     | 2.189
+heca  | singlethreaded  | unsorted   | 2.454
+heca  | singlethreaded  | sorted     | 3.247
+hebcal                               | 5.243
+```
 
-    real  0m7.559s
-    user  0m11.177s
-    sys   0m3.796s
-
-Hebcal:
-
-    time for i in `seq 1 10`; do hebcal 5 --years 9999 -ors >/dev/null; done
-
-    real  0m8.940s
-    user  0m8.252s
-    sys   0m0.518s
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning of JSON output. All other output may change at any time.
+We use [SemVer](http://semver.org/) for versioning of JSON output (although we may add new holidays in minor releases). All other output may change at any time.
 
 ## License 
 
