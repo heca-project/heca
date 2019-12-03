@@ -1,7 +1,4 @@
-use crate::args::types::{
-    AppError, CustomHoliday, DayVal, Event, ListArgs, MainArgs, MinorHoliday, Name, OutputType,
-    YearType,
-};
+use crate::args::types::{AppError, CustomHoliday, DayVal, Event, ListArgs, MainArgs, MinorHoliday, Name, OutputType, YearType, Language};
 use crate::prelude::constants::get_minor_holidays;
 use crate::prelude::get_omer::get_omer;
 use crate::prelude::print;
@@ -39,12 +36,16 @@ impl Return {
             let count_y = itoa::write(&mut year_arr[..], year).unwrap();
             let count_m = itoa::write(&mut month_arr[..], month).unwrap();
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
+            match args.language {
+                Language::English => lock.write(b"Night of ").ok(),
+                Language::Hebrew => lock.write( "לילה של ".as_bytes()).ok(),
+            };
             lock.write(&year_arr[..count_y as usize]).ok();
             lock.write(b"/").ok();
             lock.write(&month_arr[..count_m as usize]).ok();
             lock.write(b"/").ok();
             lock.write(&day_arr[..count_d as usize]).ok();
-            lock.write(b" ").ok();
+            lock.write(b": ").ok();
             match name {
                 Name::TorahReading(name) => lock
                     .write(print::torah_reading(name, args.language).as_bytes())
