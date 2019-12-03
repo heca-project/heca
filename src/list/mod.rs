@@ -1,4 +1,7 @@
-use crate::args::types::{AppError, CustomHoliday, DayVal, Event, ListArgs, MainArgs, MinorHoliday, Name, OutputType, YearType, Language};
+use crate::args::types::{
+    AppError, CustomHoliday, DayVal, Event, Language, ListArgs, MainArgs, MinorHoliday, Name,
+    OutputType, YearType,
+};
 use crate::prelude::constants::get_minor_holidays;
 use crate::prelude::get_omer::get_omer;
 use crate::prelude::print;
@@ -22,7 +25,7 @@ impl Return {
         use std::io::BufWriter;
         use std::io::Write;
         let stdout = stdout();
-        let mut lock = BufWriter::with_capacity(1024*1024, stdout.lock());
+        let mut lock = BufWriter::with_capacity(1024 * 1024, stdout.lock());
         self.list.iter().for_each(|d| {
             let ret = d.day;
             let year = ret.year();
@@ -38,7 +41,7 @@ impl Return {
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
             match args.language {
                 Language::English => lock.write(b"Night of ").ok(),
-                Language::Hebrew => lock.write( "לילה של ".as_bytes()).ok(),
+                Language::Hebrew => lock.write("לילה של ".as_bytes()).ok(),
             };
             lock.write(&year_arr[..count_y as usize]).ok();
             lock.write(b"/").ok();
