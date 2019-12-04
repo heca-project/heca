@@ -38,4 +38,4 @@ deploy:
   edge: true
   draft: true
   on:
-    tags: false 
+    tags: true
