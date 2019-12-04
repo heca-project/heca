@@ -2,6 +2,7 @@
 
 set -e
 cargo build --target "$TARGET" --release --target-dir=/tmp/heca
+cargo publish
 strip "/tmp/heca/$TARGET/release/heca"
 name="heca-${TRAVIS_TAG}-${TARGET}"
 mkdir -p /tmp/heca-staging
