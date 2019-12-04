@@ -18,7 +18,7 @@ matrix:
 
     - os: osx 
       rust: stable
-      env: TARGET=x86_64_apple_darwin
+      env: TARGET=x86_64-apple-darwin
 
 
 scipt: cargo test --target "$TARGET" --target-dir=/tmp/heca
