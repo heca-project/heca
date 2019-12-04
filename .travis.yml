@@ -1,14 +1,20 @@
 language: rust
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y google-perftools  libgoogle-perftools-dev
+  - sudo apt-get install -y google-perftools  libgoogle-perftools-dev musl-tools
 
-rust:
-  - nightly
-  - stable
+matrix:
+  include:
+    - os: linux 
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
+
+scipt: cargo test --target "$TARGET"
+
+before_deploy: cargo build --target "$TARGET" --release
 
 deploy:
-  provider: script
-  script: cargo test
+  provider: releases
+  draft: true
   on:
-    tags: true
+    tags: false
