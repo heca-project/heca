@@ -1,10 +1,14 @@
 language: rust
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y google-perftools  libgoogle-perftools-dev musl-tools
   - rustup target add x86_64-unknown-linux-musl
   - rustup target add i686-unknown-linux-musl
   - rustup target add x86_64-apple-darwin
+
+addons:
+  apt:
+    packages:
+      musl-tools
+      xz-utils
 
 matrix:
   include:
