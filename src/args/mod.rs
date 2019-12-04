@@ -16,9 +16,9 @@ where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
 {
-    parse_args(App::new("Hebrew Calendar Manipulator")
-                   .version("0.2.0")
-                   .about("This program is a fast utility to convert and analyze dates in the Hebrew Calendar.")
+    parse_args(App::new("Hebrew calendar program")
+                   .version("1.1.0")
+                   .about("Heca program is a fast utility to convert and list dates in the Hebrew Calendar.")
                    .arg(Arg::with_name("configfile")
                        .long("config")
                        .help("Sets a custom config file (default: $XDG_CONFIG_HOME/heca/config.toml)")
