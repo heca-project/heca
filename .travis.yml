@@ -17,6 +17,7 @@ before_deploy: cargo build --target "$TARGET" --release
 deploy:
   skip_cleanup: true
   provider: releases
+  edge: true
   draft: true
   on:
     tags: false
