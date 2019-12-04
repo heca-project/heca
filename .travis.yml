@@ -1,14 +1,41 @@
 language: rust
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y google-perftools  libgoogle-perftools-dev
+  - rustup target add x86_64-unknown-linux-musl
+  - rustup target add i686-unknown-linux-musl
+  - rustup target add x86_64-apple-darwin
 
-rust:
-  - nightly
-  - stable
+addons:
+  apt:
+    packages:
+      musl-tools
+      xz-utils
+
+matrix:
+  include:
+    - os: linux 
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
+ 
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-musl
+
+    - os: osx 
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
+
+
+scipt: cargo test --target "$TARGET" --target-dir=/tmp/heca
+
+before_deploy: ./ci/before_deploy.sh
 
 deploy:
-  provider: script
-  script: cargo test
+  skip_cleanup: true
+  file:
+    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
+    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
+  provider: releases
+  edge: true
+  draft: true
   on:
     tags: true
