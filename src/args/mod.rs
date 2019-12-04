@@ -17,8 +17,8 @@ where
     T: Into<std::ffi::OsString> + Clone,
 {
     parse_args(App::new("Hebrew calendar program")
-                   .version("1.1.0")
-                   .about("Heca program is a fast utility to convert and list dates in the Hebrew Calendar.")
+                   .version(env!("CARGO_PKG_VERSION"))
+                   .about("Heca is a fast utility to convert and list dates in the Hebrew Calendar.")
                    .arg(Arg::with_name("configfile")
                        .long("config")
                        .help("Sets a custom config file (default: $XDG_CONFIG_HOME/heca/config.toml)")
