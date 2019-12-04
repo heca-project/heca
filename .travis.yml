@@ -32,8 +32,8 @@ before_deploy: ./ci/before_deploy.sh
 deploy:
   skip_cleanup: true
   file:
-    - "/tmp/heca-staging/${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}"
-    - "/tmp/heca-staging/${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}.xz"
+    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
+    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
   provider: releases
   edge: true
   draft: true
