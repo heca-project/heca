@@ -10,12 +10,13 @@ matrix:
       rust: stable
       env: TARGET=x86_64-unknown-linux-musl
 
-scipt: cargo test --target "$TARGET"
+scipt: cargo test --target "$TARGET" --target-dir=/tmp/heca
 
-before_deploy: cargo build --target "$TARGET" --release
+before_deploy: cargo build --target "$TARGET" --release --target-dir=/tmp/heca
 
 deploy:
   skip_cleanup: true
+  file: "/tmp/heca/x86_64-unknown-linux-musl/release/heca"
   provider: releases
   edge: true
   draft: true
