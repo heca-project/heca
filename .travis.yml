@@ -3,20 +3,31 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y google-perftools  libgoogle-perftools-dev musl-tools
   - rustup target add x86_64-unknown-linux-musl
+  - rustup target add i686-unknown-linux-musl
+  - rustup target add x86-64-apple-darwin
 
 matrix:
   include:
     - os: linux 
       rust: stable
       env: TARGET=x86_64-unknown-linux-musl
+ 
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-musl
+
+    - os: osx 
+      rust: stable
+      env: TARGET=x86_64_apple_darwin
+
 
 scipt: cargo test --target "$TARGET" --target-dir=/tmp/heca
 
-before_deploy: cargo build --target "$TARGET" --release --target-dir=/tmp/heca
+before_deploy: ./ci/before_deploy.sh
 
 deploy:
   skip_cleanup: true
-  file: "/tmp/heca/x86_64-unknown-linux-musl/release/heca"
+  file: "/tmp/heca-staging/${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}"
   provider: releases
   edge: true
   draft: true
