@@ -258,7 +258,42 @@ static HEBCAL: Lazy<HashMap<chrono::NaiveDate, Vec<String>>> = Lazy::new(|| {
 });
 
 #[test]
-fn hebcal_check() {
+fn hebcal_to_cmd_check() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1990")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    HEBCAL_TABLE.keys().for_each(|k| {
+        assert_ne!(
+            res.iter().find(|x| {
+                if &x.name == k
+                    || x.name.contains("Tazriya")
+                    || x.name.contains("Metzorah")
+                    || x.name.contains("Acharei Mos")
+                    || x.name.contains("Kedoshim")
+                    || x.name.contains("Behar")
+                    || x.name.contains("Bechukosai")
+                    || x.name.contains("Vayakhel")
+                    || x.name.contains("Pikudei")
+                {
+                    true
+                } else {
+                    eprintln!("{}", k);
+                    false
+                }
+            }),
+            None
+        );
+    });
+}
+#[test]
+fn cmd_to_hebcal_check() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")
         .arg("en_US")
