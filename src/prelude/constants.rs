@@ -110,5 +110,23 @@ pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosHaGadol),
     });
+
+    let day_of_taanis_bechoros = if first_day_of_pesach != Weekday::Sat {
+        14
+    } else {
+        12
+    };
+
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(
+                HebrewMonth::Nissan,
+                NonZeroI8::new(day_of_taanis_bechoros).unwrap(),
+            )
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::TaanisBechoros),
+    });
+
     holidays
 }

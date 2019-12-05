@@ -191,6 +191,7 @@ pub enum MinorDays {
     PurimKattan,
     ShushanPurimKattan,
     ShabbosHaGadol,
+    TaanisBechoros,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]

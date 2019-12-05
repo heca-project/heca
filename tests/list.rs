@@ -4,9 +4,10 @@ use chrono::Duration;
 use heca_lib::prelude::HebrewMonth;
 use heca_lib::HebrewDate;
 use once_cell::sync::Lazy;
+use q::NonZeroI8;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::process::Command;
 
 static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
@@ -24,6 +25,7 @@ static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("ShminiAtzeres", "Shmini Atzeret");
     m.insert("SimchasTorah", "Simchat Torah");
     m.insert("ShabbosHaGadol", "Shabbat HaGadol");
+    m.insert("TaanisBechoros", "Ta'anit Bechorot");
     m.insert("Pesach1", "Pesach I");
     m.insert("Pesach2", "Pesach II");
     m.insert("Pesach3", "Pesach III");
@@ -606,7 +608,7 @@ fn ensure_days_not_found_in_every_year_gregorian() {
                 HebrewDate::from_ymd(
                     h_day.year(),
                     HebrewMonth::Shvat,
-                    std::num::NonZeroI8::new(10).unwrap()
+                    NonZeroI8::new(10).unwrap()
                 )
                 .unwrap()
             );
@@ -732,6 +734,39 @@ fn check_shabbos_hagadol_always_is_shabbos() {
         if i.name == "ShabbosHaGadol" {
             let day = DateTime::parse_from_rfc3339(&i.day).expect(&i.day);
             assert_eq!(day.weekday(), Weekday::Fri);
+        }
+    }
+}
+
+#[test]
+fn check_taanis_bechoros_is_either_erev_pesach_or_thursday() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5778")
+        .arg("--years")
+        .arg("7000")
+        .arg("--show=minor-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    for i in res {
+        if i.name == "TaanisBechoros" {
+            let day = DateTime::parse_from_rfc3339(&i.day).expect(&i.day);
+            let h_day: HebrewDate = day.with_timezone(&Utc).try_into().unwrap();
+            let h_day: DateTime<Utc> =
+                HebrewDate::from_ymd(h_day.year(), h_day.month(), NonZeroI8::new(15).unwrap())
+                    .unwrap()
+                    .try_into()
+                    .unwrap();
+            if h_day.weekday() == Weekday::Sat {
+                assert_eq!(day.weekday(), Weekday::Wed);
+            }
+            assert_ne!(day.weekday(), Weekday::Fri);
         }
     }
 }
