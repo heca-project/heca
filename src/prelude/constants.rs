@@ -128,5 +128,39 @@ pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
         name: Name::MinorDays(MinorDays::TaanisBechoros),
     });
 
+    let day_of_tisha_beav: DateTime<Utc> = year
+        .get_hebrew_date(HebrewMonth::Av, NonZeroI8::new(9).unwrap())
+        .unwrap()
+        .into();
+    let day_of_month_of_shabbos_chazon = match day_of_tisha_beav.weekday() {
+        Weekday::Sat => 8,
+        Weekday::Mon => 6,
+        Weekday::Wed => 4,
+        Weekday::Fri => 9,
+        x => panic!("Tisha Beav shouldn't be on {}", x),
+    };
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(
+                HebrewMonth::Av,
+                NonZeroI8::new(day_of_month_of_shabbos_chazon).unwrap(),
+            )
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::ShabbosChazon),
+    });
+
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(
+                HebrewMonth::Av,
+                NonZeroI8::new(day_of_month_of_shabbos_chazon+7).unwrap(),
+            )
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::ShabbosNachamu),
+    });
+
+
     holidays
 }

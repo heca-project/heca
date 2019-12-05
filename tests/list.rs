@@ -197,6 +197,8 @@ static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("Omer48", "");
     m.insert("Omer49", "");
     m.insert("PesachSheni", "");
+    m.insert("ShabbosNachamu", "Shabbat Nachamu");
+    m.insert("ShabbosChazon", "Shabbat Hazon");
 
     m
 });

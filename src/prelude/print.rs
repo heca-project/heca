@@ -68,6 +68,8 @@ pub fn minor_holidays(tr: MinorDays, language: types::Language) -> &'static str 
             MinorDays::ShushanPurimKattan => "Shushan Purim Kattan",
             MinorDays::ShabbosHaGadol => "Shabbos HaGadol",
             MinorDays::TaanisBechoros => "Taanis Bechoros",
+            MinorDays::ShabbosChazon => "Shabbos Chazon",
+            MinorDays::ShabbosNachamu => "Shabbos Nachamu",
         },
         Language::Hebrew => match tr {
             //generated from https://play.golang.org/p/LH0qQmYxZsP
@@ -133,6 +135,8 @@ pub fn minor_holidays(tr: MinorDays, language: types::Language) -> &'static str 
             MinorDays::ShushanPurimKattan => "שושן פורים קטן",
             MinorDays::ShabbosHaGadol => "שבת הגדול",
             MinorDays::TaanisBechoros => "תענית בכורות",
+            MinorDays::ShabbosChazon => "שבת חזון",
+            MinorDays::ShabbosNachamu => "שבת נחמו",
         },
     }
 }
