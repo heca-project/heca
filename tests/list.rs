@@ -23,6 +23,7 @@ static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("Sukkos7", "Sukkot VII");
     m.insert("ShminiAtzeres", "Shmini Atzeret");
     m.insert("SimchasTorah", "Simchat Torah");
+    m.insert("ShabbosHaGadol", "Shabbat HaGadol");
     m.insert("Pesach1", "Pesach I");
     m.insert("Pesach2", "Pesach II");
     m.insert("Pesach3", "Pesach III");
@@ -709,6 +710,30 @@ fn custom_day_check_of_edge_cases_and_avoid_crash() {
         &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
         ""
     );
+}
+
+#[test]
+fn check_shabbos_hagadol_always_is_shabbos() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--config")
+        .arg("./tests/edge_cases_config.toml")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5778")
+        .arg("--years")
+        .arg("7000")
+        .arg("--show=minor-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    for i in res {
+        if i.name == "ShabbosHaGadol" {
+            let day = DateTime::parse_from_rfc3339(&i.day).expect(&i.day);
+            assert_eq!(day.weekday(), Weekday::Fri);
+        }
+    }
 }
 
 #[test]

@@ -3,6 +3,8 @@ use heca_lib::HebrewYear;
 
 use heca_lib::prelude::HebrewMonth;
 
+use chrono::prelude::*;
+use chrono::DateTime;
 use smallvec::{smallvec, SmallVec};
 use std::num::NonZeroI8;
 
@@ -89,6 +91,24 @@ pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
             name: Name::MinorDays(MinorDays::ShushanPurimKattan),
         });
     }
-
+    let first_day_of_pesach: DateTime<Utc> = year
+        .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(15).unwrap())
+        .unwrap()
+        .into();
+    let first_day_of_pesach = first_day_of_pesach.weekday();
+    let day_in_nissan = match first_day_of_pesach {
+        Weekday::Sat => 14,
+        Weekday::Mon => 12,
+        Weekday::Wed => 10,
+        Weekday::Fri => 8,
+        _ => panic!("Pesach shouldn't fall out on a {}", first_day_of_pesach),
+    };
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(day_in_nissan).unwrap())
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::ShabbosHaGadol),
+    });
     holidays
 }
