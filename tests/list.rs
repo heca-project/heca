@@ -4,10 +4,10 @@ use chrono::Duration;
 use heca_lib::prelude::HebrewMonth;
 use heca_lib::HebrewDate;
 use once_cell::sync::Lazy;
-use q::NonZeroI8;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
+use std::num::NonZeroI8;
 use std::process::Command;
 
 static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
