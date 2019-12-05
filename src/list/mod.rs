@@ -7,7 +7,7 @@ use crate::prelude::get_omer::get_omer;
 use crate::prelude::print;
 use crate::{Printable, Runnable};
 use chrono::prelude::*;
-use heca_lib::prelude::TorahReadingType;
+use heca_lib::prelude::{Location, TorahReadingType};
 use heca_lib::HebrewYear;
 use rayon::prelude::*;
 use serde::Serialize;
@@ -80,8 +80,6 @@ impl Printable for Return {
 
 impl Runnable<Return> for ListArgs {
     fn run(&self, _args: &MainArgs) -> Result<Return, AppError> {
-        let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(self.amnt_years as usize);
-
         let main_events = self
             .events
             .iter()
@@ -111,59 +109,14 @@ impl Runnable<Return> for ListArgs {
             YearType::Hebrew(year) => {
                 HebrewYear::new(year)?;
                 HebrewYear::new(year + self.amnt_years)?;
-
-                (0 as u32..(self.amnt_years as u32))
-                    .into_par_iter()
-                    .map(|x| {
-                        let mut ret: Vec<DayVal> = Vec::with_capacity(200);
-                        let year = HebrewYear::new(x as u64 + year).unwrap();
-
-                        ret.extend(
-                            year.get_holidays(self.location, &main_events)
-                                .into_iter()
-                                .map(|x| DayVal {
-                                    day: x.day().into(),
-                                    name: Name::TorahReading(x.name()),
-                                }),
-                        );
-
-                        if self
-                            .events
-                            .contains(&Event::MinorHoliday(MinorHoliday::Omer))
-                        {
-                            ret.extend_from_slice(&get_omer(&year));
-                        }
-                        if self
-                            .events
-                            .contains(&Event::MinorHoliday(MinorHoliday::Minor))
-                        {
-                            ret.extend(get_minor_holidays(&year));
-                        }
-                        custom_events.iter().for_each(|x| {
-                            if let Ok(day) = year.get_hebrew_date(x.date.month, x.date.day) {
-                                let d = DayVal {
-                                    name: Name::CustomHoliday(x.clone()),
-                                    day: day.try_into().unwrap(),
-                                };
-                                ret.push(d);
-                            } else if let Some(not_exists) = &x.if_not_exists {
-                                not_exists.iter().for_each(|day_month| {
-                                    if let Ok(day) =
-                                        year.get_hebrew_date(day_month.month, day_month.day)
-                                    {
-                                        let d = DayVal {
-                                            name: Name::CustomHoliday(x.clone()),
-                                            day: day.into(),
-                                        };
-                                        ret.push(d);
-                                    }
-                                });
-                            }
-                        });
-
-                        ret
-                    })
-                    .collect_into_vec(&mut part1);
+                let part1 = get_list(
+                    year,
+                    self.amnt_years,
+                    self.location,
+                    &self.events,
+                    &main_events,
+                    &custom_events,
+                )?;
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
                 part1.into_iter().flatten().for_each(|x| part2.push(x));
                 Ok(Return { list: part2 })
@@ -171,70 +124,23 @@ impl Runnable<Return> for ListArgs {
 
             YearType::Gregorian(year) => {
                 let that_year = year + 3760 - 1;
+                let last_year = year + self.amnt_years;
                 HebrewYear::new(that_year)?;
-                HebrewYear::new(that_year + self.amnt_years)?;
-                (0 as u32..(self.amnt_years as u32) + 2)
-                    .into_par_iter()
-                    .map(|x| {
-                        let mut ret = Vec::with_capacity(200);
-                        let heb_year = HebrewYear::new(x as u64 + that_year).unwrap();
+                let part1 = get_list(
+                    that_year,
+                    self.amnt_years + 10,
+                    self.location,
+                    &self.events,
+                    &main_events,
+                    &custom_events,
+                )?;
 
-                        ret.extend(
-                            heb_year
-                                .get_holidays(self.location, &main_events)
-                                .into_iter()
-                                .map(|x| DayVal {
-                                    day: x.day().into(),
-                                    name: Name::TorahReading(x.name()),
-                                }),
-                        );
-                        if self
-                            .events
-                            .contains(&Event::MinorHoliday(MinorHoliday::Omer))
-                        {
-                            ret.extend_from_slice(&get_omer(&heb_year));
-                        }
-                        if self
-                            .events
-                            .contains(&Event::MinorHoliday(MinorHoliday::Minor))
-                        {
-                            ret.extend(get_minor_holidays(&heb_year));
-                        }
-                        custom_events.iter().for_each(|x| {
-                            if let Ok(day) = heb_year.get_hebrew_date(x.date.month, x.date.day) {
-                                let d = DayVal {
-                                    name: Name::CustomHoliday(x.clone()),
-                                    day: day.try_into().unwrap(),
-                                };
-                                ret.push(d);
-                            } else if let Some(not_exists) = &x.if_not_exists {
-                                not_exists.iter().for_each(|day_month| {
-                                    if let Ok(day) =
-                                        heb_year.get_hebrew_date(day_month.month, day_month.day)
-                                    {
-                                        let d = DayVal {
-                                            name: Name::CustomHoliday(x.clone()),
-                                            day: day.into(),
-                                        };
-                                        ret.push(d);
-                                    }
-                                });
-                            }
-                        });
-                        ret
-                    })
-                    .collect_into_vec(&mut part1);
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
                 part1
                     .into_iter()
                     .flatten()
                     .filter(|x| x.day > Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0))
-                    .filter(|x| {
-                        x.day
-                            < Utc
-                                .ymd((year + self.amnt_years) as i32, 1, 1)
-                                .and_hms(0, 0, 0)
-                    })
+                    .filter(|x| x.day < Utc.ymd((last_year) as i32, 1, 1).and_hms(0, 0, 0))
                     .for_each(|x| part2.push(x));
 
                 Ok(Return { list: part2 })
@@ -246,4 +152,63 @@ impl Runnable<Return> for ListArgs {
         }
         Ok(result1)
     }
+}
+
+fn get_list(
+    year: u64,
+    amnt_years: u64,
+    location: Location,
+    events: &[Event],
+    main_events: &Vec<TorahReadingType>,
+    custom_events: &Vec<CustomHoliday>,
+) -> Result<Vec<Vec<DayVal>>, AppError> {
+    let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(amnt_years as usize);
+    HebrewYear::new(year)?;
+    HebrewYear::new(year + amnt_years)?;
+
+    (0 as u32..(amnt_years as u32))
+        .into_par_iter()
+        .map(|x| {
+            let mut ret: Vec<DayVal> = Vec::with_capacity(200);
+            let year = HebrewYear::new(x as u64 + year).unwrap();
+
+            ret.extend(
+                year.get_holidays(location, &main_events)
+                    .into_iter()
+                    .map(|x| DayVal {
+                        day: x.day().into(),
+                        name: Name::TorahReading(x.name()),
+                    }),
+            );
+
+            if events.contains(&Event::MinorHoliday(MinorHoliday::Omer)) {
+                ret.extend_from_slice(&get_omer(&year));
+            }
+            if events.contains(&Event::MinorHoliday(MinorHoliday::Minor)) {
+                ret.extend(get_minor_holidays(&year));
+            }
+            custom_events.iter().for_each(|x| {
+                if let Ok(day) = year.get_hebrew_date(x.date.month, x.date.day) {
+                    let d = DayVal {
+                        name: Name::CustomHoliday(x.clone()),
+                        day: day.try_into().unwrap(),
+                    };
+                    ret.push(d);
+                } else if let Some(not_exists) = &x.if_not_exists {
+                    not_exists.iter().for_each(|day_month| {
+                        if let Ok(day) = year.get_hebrew_date(day_month.month, day_month.day) {
+                            let d = DayVal {
+                                name: Name::CustomHoliday(x.clone()),
+                                day: day.into(),
+                            };
+                            ret.push(d);
+                        }
+                    });
+                }
+            });
+
+            ret
+        })
+        .collect_into_vec(&mut part1);
+    Ok(part1)
 }
