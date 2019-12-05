@@ -10,6 +10,16 @@ Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back a
 
 ## Installation
 
+### Direct
+You can download Linux (statically linked) and macos executables (untested) from the [release page](https://github.com/heca-project/heca/releases).
+
+Then run
+```
+$ mv ~/Downloads/heca-$VERSION-$TARGET /usr/local/bin/heca
+$ chmod +x /usr/local/bin/heca
+$ heca
+```
+### Cargo
 If you have cargo installed, you can run:
 
 ```
