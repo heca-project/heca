@@ -38,6 +38,21 @@ for i in `seq 1 5`; do
 done
 echo "heca  | multithreaded   | sorted     | $final_val"
 
+set +e
+for i in $( ps -e | awk ' { print $1 }' ); do
+	sudo taskset -acp 0 $i 2>/dev/null >/dev/null
+done
+
+set -e
+
+final_val=0
+for i in `seq 1 5`; do
+	full_val=$( { time taskset -ac 1-3 /tmp/heca/release/heca --print=json list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas >/dev/null ; } 2>&1 )
+	final_val=$(awk "BEGIN {print $final_val+$full_val; exit}")
+done
+echo "heca  | multithreaded   | json       | $final_val"
+
+
 
 
 set +e
