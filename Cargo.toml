@@ -1,15 +1,14 @@
 [package]
 name = "heca"
-version = "1.1.3"
+version = "1.2.0"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = '2018'
 repository = "https://github.com/heca-project/heca"
 description = "Hebrew calendar utility"
-keywords = ["calendar", "hebrew", "jewish"]
 categories = ["command-line-utilities", "date-and-time"]
+keywords = ["calendar", "hebrew", "jewish"]
 license = "MIT"
 readme = "README.md"
-maintenance = { status = "actively-maintained" }
 
 [dependencies]
 
