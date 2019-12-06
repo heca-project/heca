@@ -9,6 +9,7 @@ use crate::args::types::*;
 use crate::prelude::*;
 
 fn main() {
+    start_benchmark();
     let output_type = output_type();
     if let Err(err) = app(std::env::args(), output_type) {
         if output_type == OutputType::JSON {
@@ -16,8 +17,27 @@ fn main() {
         } else {
             eprintln!("{}", err);
         }
+        stop_benchmark();
         std::process::exit(1);
     }
+    stop_benchmark();
+}
+
+#[cfg(not(feature = "profile"))]
+fn start_benchmark() {}
+
+#[cfg(not(feature = "profile"))]
+fn stop_benchmark() {}
+#[cfg(feature = "profile")]
+fn start_benchmark() {
+    use cpuprofiler::*;
+    PROFILER.lock().unwrap().start("/tmp/heca.profile").unwrap();
+}
+
+#[cfg(feature = "profile")]
+fn stop_benchmark() {
+    use cpuprofiler::*;
+    PROFILER.lock().unwrap().stop().unwrap();
 }
 
 fn output_type() -> OutputType {
