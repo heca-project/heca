@@ -154,13 +154,58 @@ pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
         day: year
             .get_hebrew_date(
                 HebrewMonth::Av,
-                NonZeroI8::new(day_of_month_of_shabbos_chazon+7).unwrap(),
+                NonZeroI8::new(day_of_month_of_shabbos_chazon + 7).unwrap(),
             )
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosNachamu),
     });
 
+    let day_of_rh: DateTime<Utc> = year
+        .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(1).unwrap())
+        .unwrap()
+        .into();
+
+    let day_of_month_of_shabbos_shuva = match day_of_rh.weekday() {
+        Weekday::Sun => 6,
+        Weekday::Mon => 5,
+        Weekday::Wed => 3,
+        Weekday::Fri => 8,
+        x => panic!("Shabbos Shuva shouldn't be on {}", x),
+    };
+
+    let day_of_erev_rh: DateTime<Utc> = year
+        .get_hebrew_date(HebrewMonth::Elul, NonZeroI8::new(29).unwrap())
+        .unwrap()
+        .into();
+
+    let day_of_month_of_leil_slichos = match day_of_erev_rh.weekday() {
+        Weekday::Sun => 21,
+        Weekday::Tue => 26,
+        Weekday::Thu => 24,
+        Weekday::Sat => 22,
+        x => panic!("Leil Slichos shouldn't be on {}", x),
+    };
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(
+                HebrewMonth::Elul,
+                NonZeroI8::new(day_of_month_of_leil_slichos).unwrap(),
+            )
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::LeilSlichos),
+    });
+    holidays.push(DayVal {
+        day: year
+            .get_hebrew_date(
+                HebrewMonth::Tishrei,
+                NonZeroI8::new(day_of_month_of_shabbos_shuva).unwrap(),
+            )
+            .unwrap()
+            .into(),
+        name: Name::MinorDays(MinorDays::ShabbosShuva),
+    });
 
     holidays
 }

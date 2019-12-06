@@ -199,9 +199,68 @@ static HEBCAL_TABLE: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("PesachSheni", "");
     m.insert("ShabbosNachamu", "Shabbat Nachamu");
     m.insert("ShabbosChazon", "Shabbat Hazon");
-
+    m.insert("ShabbosShuva", "Shabbat Shuva");
+    m.insert("LeilSlichos", "");
     m
 });
+
+#[test]
+fn leil_slichos_always_starts_on_shabbos() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1990")
+        .arg("--years")
+        .arg("5000")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    for i in res {
+        if i.name == "Slichos" {
+            eprintln!("{}", i.day);
+            assert_eq!(
+                DateTime::parse_from_rfc3339(&i.day).unwrap().weekday(),
+                Weekday::Sat
+            );
+        }
+
+        if i.name == "LeilSlichos" {
+            eprintln!("{}", i.day);
+            assert_eq!(
+                DateTime::parse_from_rfc3339(&i.day).unwrap().weekday(),
+                Weekday::Sat
+            );
+        }
+    }
+}
+
+#[test]
+fn shabbos_shuva_always_starts_on_shabbos() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1990")
+        .arg("--years")
+        .arg("5000")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+    for i in res {
+        if i.name == "ShabbosShuva" {
+            eprintln!("{}", i.day);
+            assert_eq!(
+                DateTime::parse_from_rfc3339(&i.day).unwrap().weekday(),
+                Weekday::Fri
+            );
+        }
+    }
+}
 
 #[test]
 fn erev_rosh_hashana_check_gregorian() {
