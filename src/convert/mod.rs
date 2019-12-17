@@ -1,5 +1,5 @@
 use crate::args::types::{AppError, ConvertArgs, ConvertType, Language, MainArgs, OutputType};
-use crate::prelude::{print, Printable};
+use crate::prelude::print;
 use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
@@ -40,7 +40,7 @@ where
 }
 
 impl Return {
-    fn pretty_print(&self, args: MainArgs) -> Result<(), AppError> {
+    fn pretty_print(&self, args: &MainArgs) -> Result<(), AppError> {
         match args.language {
             Language::English => match self.orig_day {
                 Either::Right(r) => println!(
@@ -93,8 +93,9 @@ impl Return {
         Ok(())
     }
 }
-impl Printable for Return {
-    fn print(&self, args: MainArgs) -> Result<(), AppError> {
+
+impl Return {
+    fn print(&self, args: &MainArgs) -> Result<(), AppError> {
         match args.output_type {
             OutputType::JSON => self.json_print(),
             OutputType::Pretty | OutputType::Regular => self.pretty_print(args),
@@ -102,23 +103,26 @@ impl Printable for Return {
     }
 }
 
-impl Runnable<Return> for ConvertArgs {
-    fn run(&self, _args: &MainArgs) -> Result<Return, AppError> {
-        match self.date {
-            ConvertType::Gregorian(date) => Ok(Return {
+impl Runnable for ConvertArgs {
+    fn run(&self, args: &MainArgs) -> Result<(), AppError> {
+        let ret = match self.date {
+            ConvertType::Gregorian(date) => Return {
                 orig_day: Either::Right(date.and_hms(0, 0, 1)),
                 day: Either::Right([
                     date.and_hms(0, 0, 1).try_into()?,
                     date.and_hms(23, 0, 1).try_into()?,
                 ]),
-            }),
-            ConvertType::Hebrew(date) => Ok(Return {
+            },
+            ConvertType::Hebrew(date) => Return {
                 orig_day: Either::Left(date),
                 day: Either::Left({
                     let first_day: DateTime<Utc> = date.into();
                     [first_day, first_day + Duration::days(1)]
                 }),
-            }),
-        }
+            },
+        };
+
+        ret.print(args)?;
+        Ok(())
     }
 }

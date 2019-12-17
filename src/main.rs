@@ -75,8 +75,8 @@ where
 {
     let args = args::build_args(args, output_type)?;
     match args.command {
-        Command::List(ref sub_args) => sub_args.run(&args)?.print(args)?,
-        Command::Convert(ref sub_args) => sub_args.run(&args)?.print(args)?,
+        Command::List(ref sub_args) => sub_args.run(&args)?,
+        Command::Convert(ref sub_args) => sub_args.run(&args)?,
     };
 
     Ok(())

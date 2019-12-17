@@ -1,6 +1,7 @@
 use crate::args::prelude::{str_to_location, Config};
 use crate::args::types::{
-    AppError, Command, CustomHoliday, Event, Language, ListArgs, MinorHoliday, YearType,
+    AppError, Command, CustomHoliday, DailyStudy, Event, Language, ListArgs, MinorHoliday,
+    RambamChapters, YearType,
 };
 use clap::ArgMatches;
 use heca_lib::prelude::{Location, TorahReadingType};
@@ -65,6 +66,15 @@ pub fn parse_options(
                 .map(|x| Event::CustomHoliday(x.clone()))
                 .collect(),
             "minor-holidays" => vec![Event::MinorHoliday(MinorHoliday::Minor)],
+            "daf-yomi" => vec![Event::DailyStudy(DailyStudy::DafYomi)],
+            "yerushalmi-yomi" => vec![Event::DailyStudy(DailyStudy::YerushalmiYomi)],
+            "daily-mishna" => vec![Event::DailyStudy(DailyStudy::DailyMishna)],
+            "halacha-yomit" => vec![Event::DailyStudy(DailyStudy::HalachaYomit)],
+            "929" => vec![Event::DailyStudy(DailyStudy::NineTwoNine)],
+            "rambam-3-chapters" => {
+                vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::Three))]
+            }
+            "rambam-1-chapter" => vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::One))],
             x => panic!(format!("Assertion Error! How did {} get here?", x)),
         })
         .collect::<Vec<Event>>();

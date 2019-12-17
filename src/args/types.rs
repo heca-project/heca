@@ -35,6 +35,7 @@ pub struct ConvertArgs {
     pub date: ConvertType,
     pub language: Language,
 }
+
 #[derive(Debug)]
 pub enum ConvertType {
     Gregorian(chrono::Date<Utc>),
@@ -54,13 +55,31 @@ pub enum Event {
     TorahReadingType(TorahReadingType),
     MinorHoliday(MinorHoliday),
     CustomHoliday(CustomHoliday),
+    DailyStudy(DailyStudy),
 }
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CustomHoliday {
     pub printable: String,
     pub json: String,
     pub date: DayMonth,
     pub if_not_exists: Option<Vec<DayMonth>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DailyStudy {
+    DafYomi,
+    Rambam(RambamChapters),
+    YerushalmiYomi,
+    NineTwoNine,
+    DailyMishna,
+    HalachaYomit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum RambamChapters {
+    Three,
+    One,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -116,8 +135,81 @@ impl Serialize for DayVal {
                 state.serialize_field("type", "CustomHoliday")?;
                 state.serialize_field("name", &custom_holiday.json)?;
             }
+            Name::DailyStudy(daily_study) => {
+                match daily_study {
+                    DailyStudyOutput::Daf(daf) => {
+                        state.serialize_field("type", "DafYomi")?;
+                        state.serialize_field("name", &daf.as_json_string())?;
+                    }
+                };
+            }
         };
         state.end()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum DailyStudyOutput {
+    Daf(Daf),
+}
+
+#[derive(Debug, Clone)]
+pub struct Daf {
+    masechta_english: &'static str,
+    masechta_json: &'static str,
+    masechta_hebrew: &'static str,
+    daf: u8,
+}
+
+impl Daf {
+    pub fn from_days(
+        day: u16,
+        gemaras: &[(&'static str, &'static str, &'static str, u8); 37],
+    ) -> Self {
+        let mut day = day;
+        let mut index = 0;
+        let mut masechta_english;
+        let mut masechta_json;
+        let mut masechta_hebrew;
+
+        let daf = loop {
+            masechta_english = gemaras[index].0;
+            masechta_hebrew = gemaras[index].1;
+            masechta_json = gemaras[index].2;
+
+            if day < (gemaras[index].3 as u16 - 1) {
+                break day as u8;
+            } else {
+                day -= gemaras[index].3 as u16 - 1;
+                index += 1;
+            }
+        };
+        Self {
+            masechta_english,
+            masechta_json,
+            masechta_hebrew,
+            daf,
+        }
+    }
+    pub fn as_json_string(&self) -> String {
+        format!("{}{}", self.masechta_json, self.daf + 2)
+    }
+
+    pub fn pretty_print(
+        &self,
+        lock: &mut BufWriter<StdoutLock>,
+        language: Language,
+    ) -> Option<usize> {
+        let mut p = if language == Language::English {
+            lock.write(self.masechta_english.as_bytes()).ok()?
+        } else {
+            lock.write(self.masechta_hebrew.as_bytes()).ok()?
+        };
+        p += lock.write(b" ").ok()?;
+        let mut daf_arr = [b'\0'; 3];
+        let count_y = itoa::write(&mut daf_arr[..], self.daf + 2).unwrap();
+        p += lock.write(&daf_arr[..count_y]).ok()?;
+        Some(p)
     }
 }
 
@@ -126,6 +218,7 @@ pub enum Name {
     TorahReading(TorahReading),
     MinorDays(MinorDays),
     CustomHoliday(CustomHoliday),
+    DailyStudy(DailyStudyOutput),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -207,6 +300,7 @@ pub enum MinorHoliday {
 type Month = u32;
 type Day = u32;
 type Year = i32;
+
 #[derive(Debug)]
 pub enum AppError {
     LocationError(String),
@@ -228,6 +322,7 @@ pub enum AppError {
 }
 
 use clap::ErrorKind;
+
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -338,6 +433,8 @@ impl Serialize for AppError {
 }
 
 use std::fmt;
+use std::io::{BufWriter, StdoutLock, Write};
+
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -375,7 +472,7 @@ impl fmt::Display for AppError {
             AppError::ArgUndefinedError(ce) => write!(f, "{}", ce),
             AppError::ConversionError(ce) => write!(f, "{}", ce),
             AppError::ArgError(err) => write!(f, "{}", err),
-            AppError::LocationError(e) => {write!(f,"{} is not a valid location. Must be either \"Chul\" or \"Israel\"",e)}
+            AppError::LocationError(e) => { write!(f, "{} is not a valid location. Must be either \"Chul\" or \"Israel\"", e) }
         }
     }
 }

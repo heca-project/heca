@@ -76,14 +76,31 @@ where
                            .help("Generate events for n years")
                            .takes_value(true)
                            .required(false)
-                           .default_value("1")).arg(Arg::with_name("Events")
+                           .default_value("1"))
+                       .arg(Arg::with_name("Events")
                        .long("show")
                        .help("What events to list")
                        .takes_value(true)
                        .multiple(true)
                        .required(false)
                        .use_delimiter(true)
-                       .possible_values(&["yom-tov", "shabbos", "special-parshas", "chol", "minor-holidays", "omer", "custom-holidays"]).default_value("yom-tov")).arg(Arg::with_name("Year")
+                       .possible_values(&[
+                           "yom-tov",
+                           "shabbos",
+                           "special-parshas",
+                           "chol",
+                           "minor-holidays",
+                           "omer",
+                           "custom-holidays",
+                           "daf-yomi",
+                           "yerushalmi-yomi",
+                           "daily-mishna",
+                           "halacha-yomit",
+                           "929",
+                           "rambam-3-chapters",
+                           "rambam-1-chapter"])
+                       .default_value("yom-tov"))
+                       .arg(Arg::with_name("Year")
                        .required(true)
                        .takes_value(true))).get_matches_safe()?, output_type)
 }

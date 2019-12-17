@@ -1,17 +1,21 @@
 use crate::args::types::{
-    AppError, CustomHoliday, DayVal, Event, Language, ListArgs, MainArgs, MinorHoliday, Name,
-    OutputType, YearType,
+    AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
+    MainArgs, MinorHoliday, Name, OutputType, YearType,
 };
-use crate::prelude::constants::get_minor_holidays;
+use crate::prelude::constants::{get_minor_holidays, GEMARAS_FIRST_CYCLE, GEMARAS_SECOND_CYCLE};
 use crate::prelude::get_omer::get_omer;
 use crate::prelude::print;
-use crate::{Printable, Runnable};
+use crate::Runnable;
 use chrono::prelude::*;
-use heca_lib::prelude::{Location, TorahReadingType};
-use heca_lib::HebrewYear;
+use chrono::Duration;
+use heca_lib::prelude::{HebrewMonth, Location, TorahReadingType};
+use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
 use serde::Serialize;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
+use std::io::stdout;
+use std::io::BufWriter;
+use std::io::Write;
 
 #[derive(Debug, Serialize)]
 #[serde(transparent)]
@@ -20,10 +24,7 @@ pub struct Return {
 }
 
 impl Return {
-    fn pretty_print(&self, args: MainArgs) -> Result<(), AppError> {
-        use std::io::stdout;
-        use std::io::BufWriter;
-        use std::io::Write;
+    fn pretty_print(&self, args: &MainArgs) -> Result<(), AppError> {
         let stdout = stdout();
         let mut lock = BufWriter::with_capacity(1024 * 1024, stdout.lock());
         self.list.iter().for_each(|d| {
@@ -59,6 +60,9 @@ impl Return {
                 Name::CustomHoliday(custom_holiday) => {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
+                Name::DailyStudy(daily_study) => match daily_study {
+                    DailyStudyOutput::Daf(d) => d.pretty_print(&mut lock, args.language),
+                },
             };
             lock.write(b"\n").unwrap();
         });
@@ -69,8 +73,9 @@ impl Return {
         Ok(())
     }
 }
-impl Printable for Return {
-    fn print(&self, args: MainArgs) -> Result<(), AppError> {
+
+impl Return {
+    fn print(&self, args: &MainArgs) -> Result<(), AppError> {
         match args.output_type {
             OutputType::JSON => self.json_print(),
             OutputType::Pretty | OutputType::Regular => self.pretty_print(args),
@@ -78,20 +83,83 @@ impl Printable for Return {
     }
 }
 
-impl Runnable<Return> for ListArgs {
-    fn run(&self, _args: &MainArgs) -> Result<Return, AppError> {
+type DailyStudyEvents = Vec<DailyStudy>;
+
+trait GetDayVal {
+    fn get_day_val(&self, start_year: u64, last_year: u64) -> Vec<DayVal>;
+}
+
+impl GetDayVal for DailyStudyEvents {
+    fn get_day_val(&self, start_year: u64, last_year: u64) -> Vec<DayVal> {
+        use std::num::NonZeroI8;
+        let first_day: DateTime<Utc> =
+            HebrewDate::from_ymd(start_year, HebrewMonth::Tishrei, NonZeroI8::new(1).unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let last_day: DateTime<Utc> =
+            HebrewDate::from_ymd(last_year, HebrewMonth::Elul, NonZeroI8::new(29).unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let mut return_val = Vec::new();
+        let mut i = first_day;
+        while i <= last_day {
+            for event in self.iter() {
+                match event {
+                    DailyStudy::DafYomi => {
+                        let first_day_of_second_cycle = Utc.ymd(1975, 6, 23).and_hms(18, 0, 0);
+                        if i >= first_day_of_second_cycle {
+                            let diff = i - first_day_of_second_cycle;
+                            let d = DayVal {
+                                day: i,
+                                name: Name::DailyStudy(DailyStudyOutput::Daf(Daf::from_days(
+                                    (diff.num_days() % 2711).try_into().unwrap(),
+                                    &GEMARAS_SECOND_CYCLE,
+                                ))),
+                            };
+                            return_val.push(d);
+                        } else {
+                            let first_day_of_first_cycle = Utc.ymd(1923, 9, 10).and_hms(18, 0, 0);
+                            if i >= first_day_of_first_cycle {
+                                let diff = i - first_day_of_first_cycle;
+                                let d = DayVal {
+                                    day: i,
+                                    name: Name::DailyStudy(DailyStudyOutput::Daf(Daf::from_days(
+                                        (diff.num_days() % 2702).try_into().unwrap(),
+                                        &GEMARAS_FIRST_CYCLE,
+                                    ))),
+                                };
+                                return_val.push(d);
+                            }
+                        }
+                    }
+                    DailyStudy::Rambam(_) => {}
+                    DailyStudy::YerushalmiYomi => {}
+                    DailyStudy::NineTwoNine => {}
+                    DailyStudy::DailyMishna => {}
+                    DailyStudy::HalachaYomit => {}
+                };
+            }
+            if i.weekday() == Weekday::Sun {}
+            i = i + Duration::days(1);
+        }
+        return_val
+    }
+}
+
+impl Runnable for ListArgs {
+    fn run(&self, args: &MainArgs) -> Result<(), AppError> {
         let main_events = self
             .events
             .iter()
-            .map(|x| {
+            .filter_map(|x| {
                 if let Event::TorahReadingType(trr) = x {
-                    Some(trr)
+                    Some(*trr)
                 } else {
                     None
                 }
             })
-            .filter(|x| x.is_some())
-            .map(|x| *x.unwrap())
             .collect::<Vec<TorahReadingType>>();
 
         let custom_events = self
@@ -105,42 +173,59 @@ impl Runnable<Return> for ListArgs {
                 }
             })
             .collect::<Vec<CustomHoliday>>();
+        let daily_study_events = self
+            .events
+            .iter()
+            .filter_map(|x| {
+                if let Event::DailyStudy(daily_study) = x {
+                    Some(daily_study.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<DailyStudyEvents>();
         let result: Result<Return, AppError> = match self.year {
             YearType::Hebrew(year) => {
                 HebrewYear::new(year)?;
                 HebrewYear::new(year + self.amnt_years)?;
-                let part1 = get_list(
+                let mut part1 = get_list(
                     year,
-                    self.amnt_years,
+                    year + self.amnt_years,
                     self.location,
                     &self.events,
                     &main_events,
                     &custom_events,
                 )?;
-                let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
-                part1.into_iter().flatten().for_each(|x| part2.push(x));
-                Ok(Return { list: part2 })
+                part1.extend(daily_study_events.get_day_val(year, year + self.amnt_years - 1));
+                Ok(Return { list: part1 })
             }
 
             YearType::Gregorian(year) => {
-                let that_year = year + 3760 - 1;
-                let last_year = year + self.amnt_years;
-                HebrewYear::new(that_year)?;
-                let part1 = get_list(
+                let orig_jan_1 = Utc.ymd(year as i32 - 1, 12, 31).and_hms(18, 0, 0);
+                let last_jan_1 = Utc
+                    .ymd((year + self.amnt_years + 1) as i32, 1, 1)
+                    .and_hms(18, 0, 0);
+                let that_year = HebrewDate::try_from(orig_jan_1).unwrap().year();
+                let last_year = HebrewDate::try_from(last_jan_1).unwrap().year();
+                let mut part1 = get_list(
                     that_year,
-                    self.amnt_years + 10,
+                    last_year,
                     self.location,
                     &self.events,
                     &main_events,
                     &custom_events,
                 )?;
-
+                part1.extend(daily_study_events.get_day_val(that_year, last_year));
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
                 part1
                     .into_iter()
-                    .flatten()
                     .filter(|x| x.day > Utc.ymd(year as i32, 1, 1).and_hms(0, 0, 0))
-                    .filter(|x| x.day < Utc.ymd((last_year) as i32, 1, 1).and_hms(0, 0, 0))
+                    .filter(|x| {
+                        x.day
+                            < Utc
+                                .ymd((year + self.amnt_years) as i32, 1, 1)
+                                .and_hms(0, 0, 0)
+                    })
                     .for_each(|x| part2.push(x));
 
                 Ok(Return { list: part2 })
@@ -150,18 +235,20 @@ impl Runnable<Return> for ListArgs {
         if !self.no_sort {
             result1.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
         }
-        Ok(result1)
+        result1.print(args)?;
+        Ok(())
     }
 }
 
 fn get_list(
     year: u64,
-    amnt_years: u64,
+    last_year: u64,
     location: Location,
     events: &[Event],
     main_events: &Vec<TorahReadingType>,
     custom_events: &Vec<CustomHoliday>,
-) -> Result<Vec<Vec<DayVal>>, AppError> {
+) -> Result<Vec<DayVal>, AppError> {
+    let amnt_years = last_year - year;
     let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(amnt_years as usize);
     HebrewYear::new(year)?;
     HebrewYear::new(year + amnt_years)?;
@@ -210,5 +297,9 @@ fn get_list(
             ret
         })
         .collect_into_vec(&mut part1);
-    Ok(part1)
+    let mut part2: Vec<DayVal> = Vec::with_capacity(amnt_years as usize);
+    part1.into_iter().flatten().for_each(|a| {
+        part2.push(a);
+    });
+    Ok(part2)
 }

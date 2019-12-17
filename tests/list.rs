@@ -893,7 +893,7 @@ fn just_shabbos_works_gregorian() {
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
-struct Res {
+pub struct Res {
     day: String,
     name: String,
     r#type: String,
