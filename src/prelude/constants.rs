@@ -5,31 +5,30 @@ use heca_lib::prelude::HebrewMonth;
 
 use chrono::prelude::*;
 use chrono::DateTime;
-use smallvec::{smallvec, SmallVec};
 use std::num::NonZeroI8;
 
-pub fn get_minor_holidays(year: &HebrewYear) -> SmallVec<[DayVal; 16]> {
-    let mut holidays = smallvec![
+pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
+    let mut holidays = vec![
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(9).unwrap())
                 .unwrap()
                 .into(),
-            name: Name::MinorDays(MinorDays::ErevYomKippur)
+            name: Name::MinorDays(MinorDays::ErevYomKippur),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(14).unwrap())
                 .unwrap()
                 .into(),
-            name: Name::MinorDays(MinorDays::ErevSukkos)
+            name: Name::MinorDays(MinorDays::ErevSukkos),
         },
         DayVal {
             day: year
                 .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(14).unwrap())
                 .unwrap()
                 .into(),
-            name: Name::MinorDays(MinorDays::ErevPesach)
+            name: Name::MinorDays(MinorDays::ErevPesach),
         },
         DayVal {
             day: year
