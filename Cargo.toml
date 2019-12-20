@@ -7,14 +7,14 @@ description = "Hebrew Calendar library"
 keywords = ["library", "calendar", "hebrew", "jewish"]
 categories = ["date-and-time"]
 license = "MIT"
-repository = "https://github.com/heca-project/heca"
+repository = "https://github.com/heca-project/heca-lib"
 readme = "README.md"
 
 [badges]
-travis-ci = { repository = "heca-project/heca", branch = "master" }
+travis-ci = { repository = "heca-project/heca-lib", branch = "master" }
 maintenance = { status ="actively-developed"}
-is-it-maintained-issue-resolution = {repository = "heca-project/heca"}
-is-it-maintained-open-issues = { repository = "heca-project/heca"}
+is-it-maintained-issue-resolution = {repository = "heca-project/heca-lib"}
+is-it-maintained-open-issues = { repository = "heca-project/heca-lib"}
 
 
 
