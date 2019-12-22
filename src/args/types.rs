@@ -141,6 +141,14 @@ impl Serialize for DayVal {
                         state.serialize_field("type", "DafYomi")?;
                         state.serialize_field("name", &daf.as_json_string())?;
                     }
+                    DailyStudyOutput::RambamThreeChapters(halacha) => {
+                        state.serialize_field("type", "Rambam3Chapters")?;
+                        state.serialize_field("name", &halacha.as_json_string())?;
+                    }
+                    DailyStudyOutput::RambamOneChapters(halacha) => {
+                        state.serialize_field("type", "Rambam1Chapter")?;
+                        state.serialize_field("name", &halacha.as_json_string())?;
+                    }
                 };
             }
         };
@@ -151,6 +159,103 @@ impl Serialize for DayVal {
 #[derive(Debug, Clone)]
 pub enum DailyStudyOutput {
     Daf(Daf),
+    RambamThreeChapters(RambamThreeChapter),
+    RambamOneChapters(RambamChapter),
+}
+
+#[derive(Debug, Clone)]
+pub struct RambamThreeChapter {
+    ch1: RambamChapter,
+    ch2: RambamChapter,
+    ch3: RambamChapter,
+}
+
+impl RambamThreeChapter {
+    pub fn from_days(day: u16) -> Self {
+        let day_1 = day * 3;
+        let day_2 = day * 3 + 1;
+        let day_3 = day * 3 + 2;
+        let ch1 = RambamChapter::from_days(day_1);
+        let ch2 = RambamChapter::from_days(day_2);
+        let ch3 = RambamChapter::from_days(day_3);
+        Self { ch1, ch2, ch3 }
+    }
+
+    pub fn pretty_print(
+        &self,
+        lock: &mut BufWriter<StdoutLock>,
+        language: Language,
+    ) -> Option<usize> {
+        let mut sum = self.ch1.pretty_print(lock, language)?;
+        sum += lock.write(b" - ").ok()?;
+        sum += self.ch3.pretty_print(lock, language)?;
+        Some(sum)
+    }
+    pub fn as_json_string(&self) -> String {
+        format!(
+            "{}{}{}",
+            self.ch1.as_json_string(),
+            self.ch2.as_json_string(),
+            self.ch3.as_json_string()
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RambamChapter {
+    halacha_english: &'static str,
+    halacha_json: &'static str,
+    halacha_hebrew: &'static str,
+    chapter: u8,
+}
+
+impl RambamChapter {
+    pub fn from_days(day: u16) -> Self {
+        let mut day = day;
+        let mut index = 0;
+        let mut halacha_english;
+        let mut halacha_json;
+        let mut halacha_hebrew;
+
+        let chapter = loop {
+            halacha_english = RAMBAM[index].0;
+            halacha_hebrew = RAMBAM[index].1;
+            halacha_json = RAMBAM[index].2;
+
+            if day < (RAMBAM[index].3 as u16) {
+                break day as u8 + 1;
+            } else {
+                day -= RAMBAM[index].3 as u16;
+                index += 1;
+            }
+        };
+        Self {
+            halacha_english,
+            halacha_json,
+            halacha_hebrew,
+            chapter,
+        }
+    }
+
+    pub fn pretty_print(
+        &self,
+        lock: &mut BufWriter<StdoutLock>,
+        language: Language,
+    ) -> Option<usize> {
+        let mut p = if language == Language::English {
+            lock.write(self.halacha_english.as_bytes()).ok()?
+        } else {
+            lock.write(self.halacha_hebrew.as_bytes()).ok()?
+        };
+        p += lock.write(b" ").ok()?;
+        let mut daf_arr = [b'\0'; 3];
+        let count_y = itoa::write(&mut daf_arr[..], self.chapter).unwrap();
+        p += lock.write(&daf_arr[..count_y]).ok()?;
+        Some(p)
+    }
+    pub fn as_json_string(&self) -> String {
+        format!("{}{}", self.halacha_json, self.chapter)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -160,7 +265,6 @@ pub struct Daf {
     masechta_hebrew: &'static str,
     daf: u8,
 }
-
 impl Daf {
     pub fn from_days(
         day: u16,
@@ -432,6 +536,8 @@ impl Serialize for AppError {
     }
 }
 
+use crate::args::types::DailyStudyOutput::RambamOneChapters;
+use crate::prelude::constants::RAMBAM;
 use std::fmt;
 use std::io::{BufWriter, StdoutLock, Write};
 

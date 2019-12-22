@@ -1,6 +1,8 @@
+use crate::args::types::DailyStudyOutput::{RambamOneChapters, RambamThreeChapters};
 use crate::args::types::{
     AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
-    MainArgs, MinorHoliday, Name, OutputType, YearType,
+    MainArgs, MinorHoliday, Name, OutputType, RambamChapter, RambamChapters, RambamThreeChapter,
+    YearType,
 };
 use crate::prelude::constants::{get_minor_holidays, GEMARAS_FIRST_CYCLE, GEMARAS_SECOND_CYCLE};
 use crate::prelude::get_omer::get_omer;
@@ -62,6 +64,12 @@ impl Return {
                 }
                 Name::DailyStudy(daily_study) => match daily_study {
                     DailyStudyOutput::Daf(d) => d.pretty_print(&mut lock, args.language),
+                    DailyStudyOutput::RambamThreeChapters(three_chapter) => {
+                        three_chapter.pretty_print(&mut lock, args.language)
+                    }
+                    DailyStudyOutput::RambamOneChapters(one_chapter) => {
+                        one_chapter.pretty_print(&mut lock, args.language)
+                    }
                 },
             };
             lock.write(b"\n").unwrap();
@@ -134,7 +142,42 @@ impl GetDayVal for DailyStudyEvents {
                             }
                         }
                     }
-                    DailyStudy::Rambam(_) => {}
+                    DailyStudy::Rambam(chapters) => {
+                        let first_day = Utc.ymd(1984, 4, 27).and_hms(18, 0, 0);
+                        let diff: Duration = i - first_day;
+                        if i >= first_day {
+                            match chapters {
+                                RambamChapters::One => {
+                                    let d = DayVal {
+                                        day: i,
+                                        name: Name::DailyStudy(
+                                            DailyStudyOutput::RambamOneChapters(
+                                                RambamChapter::from_days(
+                                                    (diff.num_days() % 1017).try_into().unwrap(),
+                                                ),
+                                            ),
+                                        ),
+                                    };
+                                    return_val.push(d);
+                                }
+                                RambamChapters::Three => {
+                                    let d = DayVal {
+                                        day: i,
+                                        name: Name::DailyStudy(
+                                            DailyStudyOutput::RambamThreeChapters(
+                                                RambamThreeChapter::from_days(
+                                                    (diff.num_days() % (1017 / 3))
+                                                        .try_into()
+                                                        .unwrap(),
+                                                ),
+                                            ),
+                                        ),
+                                    };
+                                    return_val.push(d);
+                                }
+                            }
+                        }
+                    }
                     DailyStudy::YerushalmiYomi => {}
                     DailyStudy::NineTwoNine => {}
                     DailyStudy::DailyMishna => {}

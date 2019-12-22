@@ -227,9 +227,6 @@ fn hebcal_to_heca(s: &str) -> Option<(&'static str, u8)> {
     }
 }
 
-/*
-*/
-
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Res {
     day: String,
