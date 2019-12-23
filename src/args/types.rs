@@ -138,16 +138,20 @@ impl Serialize for DayVal {
             Name::DailyStudy(daily_study) => {
                 match daily_study {
                     DailyStudyOutput::Daf(daf) => {
+                        let mut m = HashMap::new();
+                        m.insert("masechta", daf.masechta_json.to_string());
+                        m.insert("daf", daf.daf.to_string());
                         state.serialize_field("type", "DafYomi")?;
-                        state.serialize_field("name", &daf.as_json_string())?;
+                        state.serialize_field("topic", &daf)?;
                     }
                     DailyStudyOutput::RambamThreeChapters(halacha) => {
                         state.serialize_field("type", "Rambam3Chapters")?;
-                        state.serialize_field("name", &halacha.as_json_string())?;
+                        let v = vec![&halacha.ch1, &halacha.ch2, &halacha.ch3];
+                        state.serialize_field("topic", &v)?;
                     }
                     DailyStudyOutput::RambamOneChapters(halacha) => {
                         state.serialize_field("type", "Rambam1Chapter")?;
-                        state.serialize_field("name", &halacha.as_json_string())?;
+                        state.serialize_field("topic", &halacha)?;
                     }
                 };
             }
@@ -191,14 +195,6 @@ impl RambamThreeChapter {
         sum += self.ch3.pretty_print(lock, language)?;
         Some(sum)
     }
-    pub fn as_json_string(&self) -> String {
-        format!(
-            "{}{}{}",
-            self.ch1.as_json_string(),
-            self.ch2.as_json_string(),
-            self.ch3.as_json_string()
-        )
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -207,6 +203,19 @@ pub struct RambamChapter {
     halacha_json: &'static str,
     halacha_hebrew: &'static str,
     chapter: u8,
+}
+
+impl Serialize for RambamChapter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use crate::types::*;
+        let mut state = serializer.serialize_struct("Day", 2)?;
+        state.serialize_field("halacha", &self.halacha_json)?;
+        state.serialize_field("chapter", &self.chapter)?;
+        state.end()
+    }
 }
 
 impl RambamChapter {
@@ -253,9 +262,6 @@ impl RambamChapter {
         p += lock.write(&daf_arr[..count_y]).ok()?;
         Some(p)
     }
-    pub fn as_json_string(&self) -> String {
-        format!("{}{}", self.halacha_json, self.chapter)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -265,6 +271,19 @@ pub struct Daf {
     masechta_hebrew: &'static str,
     daf: u8,
 }
+impl Serialize for Daf {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use crate::types::*;
+        let mut state = serializer.serialize_struct("Day", 2)?;
+        state.serialize_field("masechta", &self.masechta_json)?;
+        state.serialize_field("daf", &(self.daf + 2))?;
+        state.end()
+    }
+}
+
 impl Daf {
     pub fn from_days(
         day: u16,
@@ -294,9 +313,6 @@ impl Daf {
             masechta_hebrew,
             daf,
         }
-    }
-    pub fn as_json_string(&self) -> String {
-        format!("{}{}", self.masechta_json, self.daf + 2)
     }
 
     pub fn pretty_print(
@@ -536,8 +552,8 @@ impl Serialize for AppError {
     }
 }
 
-use crate::args::types::DailyStudyOutput::RambamOneChapters;
 use crate::prelude::constants::RAMBAM;
+use std::collections::HashMap;
 use std::fmt;
 use std::io::{BufWriter, StdoutLock, Write};
 

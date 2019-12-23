@@ -23,7 +23,13 @@ fn daf_yomi_test() {
             .trim()
             .to_string();
         if let Some(h) = hebcal_to_heca(&daf) {
-            hebcal_hashset.insert(date, format!("{}{}", h.0, h.1));
+            hebcal_hashset.insert(
+                date,
+                DafYomiTopic {
+                    daf: h.1,
+                    masechta: h.0.to_string(),
+                },
+            );
         }
     });
 
@@ -44,13 +50,12 @@ fn daf_yomi_test() {
             .stdout,
     )
     .expect(&format!("{} {}", file!(), line!()));
-    let res: Vec<Res> = serde_json::from_str(s).expect(&format!("{} {}", file!(), line!()));
+    let res: Vec<DafYomiRes> = serde_json::from_str(s).expect(&format!("{} {}", file!(), line!()));
 
     res.into_iter().for_each(|x| {
         let date = DateTime::parse_from_rfc3339(&x.day).expect(&format!("{} {}", file!(), line!()));
         let date = NaiveDate::from_ymd(date.year(), date.month(), date.day());
-        let daf = x.name;
-        heca_hashset.insert(date, daf);
+        heca_hashset.insert(date, x.topic);
     });
 
     for (date, daf) in hebcal_hashset {
@@ -58,165 +63,167 @@ fn daf_yomi_test() {
         if let Some(heca_daf) = heca_daf {
             if &daf != heca_daf {
                 panic!(
-                    "hebcal daf '{}' != heca_daf '{}' at date {}",
+                    "hebcal daf '{:?}' != heca_daf '{:?}' at date {}",
                     daf, heca_daf, date
                 );
             }
         } else {
-            panic!("heca_hashset not found day {} daf {}", date, daf);
+            panic!("heca_hashset not found day {} daf {:?}", date, daf);
         }
     }
 }
 
 fn hebcal_to_heca(s: &str) -> Option<(&'static str, u8)> {
     let (masechta, daf) =
-        s.trim()
-            .split_at(s.rfind(" ").expect(&format!("{} {}", file!(), line!())));
+        s.trim().split_at(
+            s.rfind(" ")
+                .expect(&format!("{} {} {}", s, file!(), line!())),
+        );
     let masechta = masechta.trim();
     let daf = daf.trim();
     match masechta {
         "Berachot" => Some((
-            "ברכות",
+            "Berakhot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Shabbat" => Some((
-            "שבת",
+            "Shabbat",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Eruvin" => Some((
-            "עירובין",
+            "Eruvin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Pesachim" => Some((
-            "פסחים",
+            "Pesachim",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Shekalim" => Some((
-            "שקלים",
+            "Shekalim",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Yoma" => Some((
-            "יומא",
+            "Yoma",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Rosh Hashana" => Some((
-            "ראשהשנה",
+            "RoshHashanah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Sukkah" => Some((
-            "סוכה",
+            "Sukkah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Beitzah" => Some((
-            "ביצה",
+            "Beitzah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Taanit" => Some((
-            "תענית",
+            "Taanit",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Megillah" => Some((
-            "מגילה",
+            "Megillah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Moed Katan" => Some((
-            "מועדקטן",
+            "MoedKatan",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Chagigah" => Some((
-            "חגיגה",
+            "Chagigah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Yevamot" => Some((
-            "יבמות",
+            "Yevamot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Ketubot" => Some((
-            "כתובות",
+            "Ketubot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Nedarim" => Some((
-            "נדרים",
+            "Nedarim",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Nazir" => Some((
-            "נזיר",
+            "Nazir",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Sotah" => Some((
-            "סוטה",
+            "Sotah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Gitin" => Some((
-            "גיטין",
+            "Gittin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Kiddushin" => Some((
-            "קידושין",
+            "Kiddushin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Baba Kamma" => Some((
-            "בבאקמא",
+            "BavaKamma",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Baba Metzia" => Some((
-            "בבאמציעא",
+            "BavaMetzia",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Baba Batra" => Some((
-            "בבאבתרא",
+            "BavaBatra",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Sanhedrin" => Some((
-            "סנהדרין",
+            "Sanhedrin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Makkot" => Some((
-            "מכות",
+            "Makkot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Shevuot" => Some((
-            "שבועות",
+            "Shevuot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Avodah Zarah" => Some((
-            "עבודהזרה",
+            "AvodahZarah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Horayot" => Some((
-            "הוריות",
+            "Horayot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Zevachim" => Some((
-            "זבחים",
+            "Zevachim",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Menachot" => Some((
-            "מנחות",
+            "Menachot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Chullin" => Some((
-            "חולין",
+            "Chullin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Bechorot" => Some((
-            "בכורות",
+            "Bekhorot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Arachin" => Some((
-            "ערכין",
+            "Arakhin",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Temurah" => Some((
-            "תמורה",
+            "Temurah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Keritot" => Some((
-            "כריתות",
+            "Keritot",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Niddah" => Some((
-            "נדה",
+            "Niddah",
             daf.parse().expect(&format!("{} {}", file!(), line!())),
         )),
         "Meilah" => None,
@@ -228,9 +235,56 @@ fn hebcal_to_heca(s: &str) -> Option<(&'static str, u8)> {
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
-pub struct Res {
+pub struct DafYomiRes {
     day: String,
-    name: String,
-    #[serde(rename = "type")]
-    res_type: String,
+    topic: DafYomiTopic,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+pub struct DafYomiTopic {
+    daf: u8,
+    masechta: String,
+}
+
+#[test]
+fn rambam_test() {
+    let mut cmd =
+        Command::cargo_bin(env!("CARGO_PKG_NAME")).expect(&format!("{} {}", file!(), line!()));
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("1975")
+        .arg("--years")
+        .arg("8000")
+        .arg("--show=rambam-1-chapter");
+    let s = &String::from_utf8(
+        cmd.output()
+            .expect(&format!("{} {}", file!(), line!()))
+            .stdout,
+    )
+    .expect(&format!("{} {}", file!(), line!()));
+    let res: Vec<RambamRes> = serde_json::from_str(s).expect(&format!("{} {}", file!(), line!()));
+    for i in &res {
+        assert!(i.topic.chapter > 0);
+    }
+    for i in &res {
+        if i.day == "2020-07-8T16:00:00Z" {
+            assert_eq!(i.topic.chapter, 12);
+            assert_eq!(i.topic.halacha, "KingsAndWars");
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+pub struct RambamRes {
+    day: String,
+    topic: RambamTopic,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+pub struct RambamTopic {
+    chapter: u8,
+    halacha: String,
 }
