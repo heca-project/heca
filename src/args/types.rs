@@ -71,7 +71,6 @@ pub enum DailyStudy {
     DafYomi,
     Rambam(RambamChapters),
     YerushalmiYomi,
-    NineTwoNine,
     DailyMishna,
     HalachaYomit,
 }

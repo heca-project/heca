@@ -96,7 +96,6 @@ where
                            "yerushalmi-yomi",
                            "daily-mishna",
                            "halacha-yomit",
-                           "929",
                            "rambam-3-chapters",
                            "rambam-1-chapter"])
                        .default_value("yom-tov"))

@@ -178,7 +178,6 @@ impl GetDayVal for DailyStudyEvents {
                         }
                     }
                     DailyStudy::YerushalmiYomi => {}
-                    DailyStudy::NineTwoNine => {}
                     DailyStudy::DailyMishna => {}
                     DailyStudy::HalachaYomit => {}
                 };

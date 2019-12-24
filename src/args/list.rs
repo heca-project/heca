@@ -70,7 +70,6 @@ pub fn parse_options(
             "yerushalmi-yomi" => vec![Event::DailyStudy(DailyStudy::YerushalmiYomi)],
             "daily-mishna" => vec![Event::DailyStudy(DailyStudy::DailyMishna)],
             "halacha-yomit" => vec![Event::DailyStudy(DailyStudy::HalachaYomit)],
-            "929" => vec![Event::DailyStudy(DailyStudy::NineTwoNine)],
             "rambam-3-chapters" => {
                 vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::Three))]
             }
