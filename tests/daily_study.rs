@@ -5,6 +5,43 @@ use std::collections::HashMap;
 use std::process::Command;
 
 #[test]
+fn yerushalmi_yomi_test() {
+    let mut cmd =
+        Command::cargo_bin(env!("CARGO_PKG_NAME")).expect(&format!("{} {}", file!(), line!()));
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("2022")
+        .arg("--show=yerushalmi-yomi");
+    let s = &String::from_utf8(
+        cmd.output()
+            .expect(&format!("{} {}", file!(), line!()))
+            .stdout,
+    )
+    .expect(&format!("{} {}", file!(), line!()));
+    let res: Vec<YerushalmiYomiRes> =
+        serde_json::from_str(s).expect(&format!("{} {}", file!(), line!()));
+    assert_eq!(
+        res.iter()
+            .find(|x| x.day == "2022-11-13T18:00:00Z")
+            .unwrap()
+            .topic
+            .masechta,
+        "JerusalemTalmudBerakhot"
+    );
+    assert_eq!(
+        res.iter()
+            .find(|x| x.day == "2022-11-13T18:00:00Z")
+            .unwrap()
+            .topic
+            .daf,
+        1
+    );
+}
+
+#[test]
 fn daf_yomi_test() {
     let hebcal_daf_yomi = include_str!("daf_yomi.txt");
     let mut hebcal_hashset = HashMap::new();
@@ -242,6 +279,18 @@ pub struct DafYomiRes {
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct DafYomiTopic {
+    daf: u8,
+    masechta: String,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+pub struct YerushalmiYomiRes {
+    day: String,
+    topic: YerushalmiYomiTopic,
+}
+
+#[derive(Deserialize, Debug, Eq, PartialEq)]
+pub struct YerushalmiYomiTopic {
     daf: u8,
     masechta: String,
 }

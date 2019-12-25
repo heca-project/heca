@@ -71,8 +71,6 @@ pub enum DailyStudy {
     DafYomi,
     Rambam(RambamChapters),
     YerushalmiYomi,
-    DailyMishna,
-    HalachaYomit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -152,6 +150,10 @@ impl Serialize for DayVal {
                         state.serialize_field("type", "Rambam1Chapter")?;
                         state.serialize_field("topic", &halacha)?;
                     }
+                    DailyStudyOutput::YerushalmiYomi(yerushalmi_yomi) => {
+                        state.serialize_field("type", "Yerushalmi")?;
+                        state.serialize_field("topic", &yerushalmi_yomi)?;
+                    }
                 };
             }
         };
@@ -164,6 +166,7 @@ pub enum DailyStudyOutput {
     Daf(Daf),
     RambamThreeChapters(RambamThreeChapter),
     RambamOneChapters(RambamChapter),
+    YerushalmiYomi(YerushalmiYomi),
 }
 
 #[derive(Debug, Clone)]
@@ -264,19 +267,86 @@ impl RambamChapter {
 }
 
 #[derive(Debug, Clone)]
-pub struct Daf {
+pub struct YerushalmiYomi {
     masechta_english: &'static str,
     masechta_json: &'static str,
     masechta_hebrew: &'static str,
     daf: u8,
 }
-impl Serialize for Daf {
+
+impl YerushalmiYomi {
+    pub fn from_days(day: u16) -> Self {
+        let mut day = day;
+        let mut index = 0;
+        let mut masechta_english;
+        let mut masechta_json;
+        let mut masechta_hebrew;
+
+        let daf = loop {
+            masechta_english = YERUSHALMI[index].0;
+            masechta_hebrew = YERUSHALMI[index].1;
+            masechta_json = YERUSHALMI[index].2;
+
+            if day < (YERUSHALMI[index].3 as u16) {
+                break day as u8;
+            } else {
+                day -= YERUSHALMI[index].3 as u16;
+                index += 1;
+            }
+        };
+        Self {
+            masechta_english,
+            masechta_json,
+            masechta_hebrew,
+            daf,
+        }
+    }
+    pub fn pretty_print(
+        &self,
+        lock: &mut BufWriter<StdoutLock>,
+        language: Language,
+    ) -> Option<usize> {
+        let mut p = if language == Language::English {
+            lock.write(self.masechta_english.as_bytes()).ok()?
+        } else {
+            lock.write(self.masechta_hebrew.as_bytes()).ok()?
+        };
+        p += lock.write(b" ").ok()?;
+        let mut daf_arr = [b'\0'; 3];
+        let count_y = itoa::write(&mut daf_arr[..], self.daf + 1).unwrap();
+        p += lock.write(&daf_arr[..count_y]).ok()?;
+        Some(p)
+    }
+}
+
+impl Serialize for YerushalmiYomi {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         use crate::types::*;
         let mut state = serializer.serialize_struct("Day", 2)?;
+        state.serialize_field("masechta", &self.masechta_json)?;
+        state.serialize_field("daf", &(self.daf + 1))?;
+        state.end()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Daf {
+    masechta_english: &'static str,
+    masechta_json: &'static str,
+    masechta_hebrew: &'static str,
+    daf: u8,
+}
+
+impl Serialize for Daf {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use crate::types::*;
+        let mut state = serializer.serialize_struct("day", 2)?;
         state.serialize_field("masechta", &self.masechta_json)?;
         state.serialize_field("daf", &(self.daf + 2))?;
         state.end()
@@ -551,7 +621,7 @@ impl Serialize for AppError {
     }
 }
 
-use crate::prelude::constants::RAMBAM;
+use crate::prelude::constants::{RAMBAM, YERUSHALMI};
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{BufWriter, StdoutLock, Write};

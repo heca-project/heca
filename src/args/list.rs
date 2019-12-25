@@ -68,8 +68,6 @@ pub fn parse_options(
             "minor-holidays" => vec![Event::MinorHoliday(MinorHoliday::Minor)],
             "daf-yomi" => vec![Event::DailyStudy(DailyStudy::DafYomi)],
             "yerushalmi-yomi" => vec![Event::DailyStudy(DailyStudy::YerushalmiYomi)],
-            "daily-mishna" => vec![Event::DailyStudy(DailyStudy::DailyMishna)],
-            "halacha-yomit" => vec![Event::DailyStudy(DailyStudy::HalachaYomit)],
             "rambam-3-chapters" => {
                 vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::Three))]
             }

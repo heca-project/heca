@@ -1,7 +1,7 @@
 use crate::args::types::{
     AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
     MainArgs, MinorHoliday, Name, OutputType, RambamChapter, RambamChapters, RambamThreeChapter,
-    YearType,
+    YearType, YerushalmiYomi,
 };
 use crate::prelude::constants::{get_minor_holidays, GEMARAS_FIRST_CYCLE, GEMARAS_SECOND_CYCLE};
 use crate::prelude::get_omer::get_omer;
@@ -9,7 +9,8 @@ use crate::prelude::print;
 use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
-use heca_lib::prelude::{HebrewMonth, Location, TorahReadingType};
+use heca_lib::prelude::Chol::NineAv;
+use heca_lib::prelude::{HebrewMonth, Location, TorahReading, TorahReadingType};
 use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
 use serde::Serialize;
@@ -68,6 +69,9 @@ impl Return {
                     }
                     DailyStudyOutput::RambamOneChapters(one_chapter) => {
                         one_chapter.pretty_print(&mut lock, args.language)
+                    }
+                    DailyStudyOutput::YerushalmiYomi(yerushalmi_yomi) => {
+                        yerushalmi_yomi.pretty_print(&mut lock, args.language)
                     }
                 },
             };
@@ -177,9 +181,75 @@ impl GetDayVal for DailyStudyEvents {
                             }
                         }
                     }
-                    DailyStudy::YerushalmiYomi => {}
-                    DailyStudy::DailyMishna => {}
-                    DailyStudy::HalachaYomit => {}
+                    DailyStudy::YerushalmiYomi => {
+                        let first_day_of_yerushalmi_yomi = Utc.ymd(1980, 2, 1).and_hms(18, 0, 0);
+                        if i >= first_day_of_yerushalmi_yomi {
+                            let cur_hebrew_day: HebrewDate = i.try_into().unwrap();
+                            let first_hebrew_day_of_yerushalmi_yomi: HebrewDate =
+                                first_day_of_yerushalmi_yomi.try_into().unwrap();
+                            let amnt_years =
+                                cur_hebrew_day.year() - first_hebrew_day_of_yerushalmi_yomi.year();
+
+                            let diff_days = i - first_day_of_yerushalmi_yomi;
+
+                            let this_years_tisha_beav = HebrewYear::new(cur_hebrew_day.year())
+                                .unwrap()
+                                .get_holidays(Location::Chul, &[TorahReadingType::Chol])
+                                .into_iter()
+                                .find(|x| x.name() == TorahReading::Chol(NineAv))
+                                .unwrap()
+                                .day();
+                            if !(cur_hebrew_day.month() == HebrewMonth::Tishrei
+                                && cur_hebrew_day.day() == NonZeroI8::new(10).unwrap())
+                                && !(cur_hebrew_day == this_years_tisha_beav)
+                            {
+                                let amnt_yom_kippur_this_year = if cur_hebrew_day.month()
+                                    == HebrewMonth::Tishrei
+                                    && cur_hebrew_day.day() < NonZeroI8::new(10).unwrap()
+                                {
+                                    0
+                                } else {
+                                    1
+                                };
+                                let amnt_tisha_beav_this_year =
+                                    if cur_hebrew_day < this_years_tisha_beav {
+                                        0
+                                    } else {
+                                        1
+                                    };
+                                let amnt_yom_kippur = if amnt_years == 0 {
+                                    0
+                                } else if amnt_years == 1 {
+                                    amnt_yom_kippur_this_year
+                                } else {
+                                    amnt_years - 1 + amnt_yom_kippur_this_year
+                                };
+                                let amnt_tisha_beav = if amnt_years == 0 {
+                                    amnt_tisha_beav_this_year
+                                } else if amnt_years == 1 {
+                                    amnt_tisha_beav_this_year + 1
+                                } else {
+                                    amnt_years + amnt_tisha_beav_this_year
+                                };
+                                if diff_days.num_days() > 0 {
+                                    let d = DayVal {
+                                        day: i,
+                                        name: Name::DailyStudy(DailyStudyOutput::YerushalmiYomi(
+                                            YerushalmiYomi::from_days(
+                                                ((diff_days.num_days() as u64
+                                                    - amnt_tisha_beav
+                                                    - amnt_yom_kippur)
+                                                    % (1563 - 5 - 4))
+                                                    .try_into()
+                                                    .unwrap(),
+                                            ),
+                                        )),
+                                    };
+                                    return_val.push(d);
+                                }
+                            }
+                        }
+                    }
                 };
             }
             if i.weekday() == Weekday::Sun {}
