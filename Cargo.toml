@@ -1,6 +1,6 @@
 [package]
 name = "heca-lib"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = "2018"
 description = "Hebrew Calendar library"
