@@ -1,0 +1,28 @@
+language: rust
+before_install:
+- rustup target add x86_64-unknown-linux-musl
+- rustup target add i686-unknown-linux-musl
+- rustup target add x86_64-apple-darwin
+addons:
+  apt:
+    packages: musl-tools xz-utils
+matrix:
+  include:
+  - os: linux
+    rust: stable
+    env: TARGET=x86_64-unknown-linux-musl
+  - os: linux
+    rust: stable
+    env: TARGET=i686-unknown-linux-musl
+  - os: osx
+    rust: stable
+    env: TARGET=x86_64-apple-darwin
+script: cargo test --target "$TARGET" --target-dir=/tmp/heca
+deploy:
+  cleanup: true
+  provider: cargo
+  edge: true
+  on:
+    tags: true
+  token:
+    secure: srJGkQ893QgNmOZqdiTT9DOLbp7sF0eSOfrhN8fh7cnAqfqBWhrQLBqmfwiRABUPNifomrkIEcdURN+m3fpH7Ea2E5eO4IycwHJxbwToKrb5+MUzTBkOW0m683LG6R1fS0DpgJdjDCfegPlBNR5bCw+etlMLneB2KqmyWey2elgRAYwKrPI7Zt0YJLuYM1IthjoPgAQoec2kLnJdB/7SeduGgeq+lvCIDfbHSXJeiWTK2a0jPHARU6KHZMVQ0u9zJzGLMls2v2Qcvd4RrWCaHe85PIHHFFcu+uzPYd9EQWB6H9nODEOzs/4gp43w524tlPllRg7spiq0pRHoiEBdSU8i5pp2GMpq/M2XdFFAUqTUj9OajwEFMbdr17K2Otez69S+Mev99PwHlHiW2fCEnQCaHydZtzmNnw2qVi39vkiPH9Mj7z5N9y2G9aPzmoB82gn6qF76yVkCZ/W9mLfcoAesBhrggo+2Da89+MGNz4EBAhYss/a6M6uAvspx1l9vzefHhBfOw7GVoUUhjFzUUKCjLeSuJxR1HD62H30WReSDEYphZZD6mfUc7i1BQ3ub7bNYs+T1mGaEw+KheP1z/gkkJjbuK4bJCeMEZ192QsyievmDUUBtHiGwG7SQmeJQ3/sYT3R/SkKwyvsWqfEvnqMR+ubm2urUaW7k2Jm1zx4=
