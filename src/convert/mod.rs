@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use time::Duration;
+use chrono::{DateTime, Utc, Duration};
 
 use crate::prelude::*;
 use serde::ser::SerializeStruct;
@@ -122,7 +122,7 @@ impl HebrewDate {
 
         Ok(HebrewDate {
             month,
-            day: day,
+            day,
             year: hebrew_year,
         })
     }
@@ -141,7 +141,7 @@ impl HebrewDate {
         Ok(hebrew_year.get_hebrewdate_from_days_after_rh(days_since_first_rh))
     }
 
-    pub(crate) fn to_gregorian(&self) -> chrono::DateTime<Utc> {
+    pub(crate) fn to_gregorian(&self) -> DateTime<Utc> {
         let amnt_days_between_rh_and_epoch = self.year.days_since_epoch;
         let sched = self.year.sched;
         let mut amnt_days_in_month: u16 = 0;

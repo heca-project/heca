@@ -138,7 +138,7 @@ mod tests {
     use crate::convert::HebrewDate;
     use crate::prelude::*;
     use std::num::NonZeroI8;
-    use time::Duration;
+    use chrono::Duration;
 
     use super::*;
     #[test]

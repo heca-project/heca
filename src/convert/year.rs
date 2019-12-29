@@ -8,6 +8,7 @@ use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
 use std::num::NonZeroI8;
+use chrono::Datelike;
 
 pub(crate) mod backend;
 use crate::convert::year::backend::{
@@ -366,9 +367,9 @@ impl HebrewYear {
 /// # Error Values:
 /// * YearTooSmall - This algorithm won't work if the year is before year 4.
 ///
-impl TryFrom<chrono::DateTime<Utc>> for HebrewDate {
+impl TryFrom<DateTime<Utc>> for HebrewDate {
     type Error = ConversionError;
-    fn try_from(original_day: chrono::DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
+    fn try_from(original_day: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_gregorian(original_day)
     }
 }
@@ -430,7 +431,7 @@ impl TryFrom<chrono::DateTime<Utc>> for HebrewDate {
 ///  So there's a last little bit:
 ///
 /// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
-impl From<HebrewDate> for chrono::DateTime<Utc> {
+impl From<HebrewDate> for DateTime<Utc> {
     fn from(h: HebrewDate) -> Self {
         h.to_gregorian()
     }
