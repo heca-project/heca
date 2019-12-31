@@ -17,8 +17,6 @@ is-it-maintained-issue-resolution = {repository = "heca-project/heca-lib"}
 is-it-maintained-open-issues = { repository = "heca-project/heca-lib"}
 
 
-
-
 [dependencies]
 lazy_static = "1.3.0"
 chrono = "0.4"
@@ -36,3 +34,7 @@ criterion = "0.3"
 [profile.release]
 debug = true
 lto = true
+
+[[bench]]
+name = "my_benchmark"
+harness = false

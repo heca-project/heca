@@ -8,12 +8,13 @@ use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
 use std::num::NonZeroI8;
-use chrono::Datelike;
+use chrono::{Datelike, DateTime, Utc};
 
 pub(crate) mod backend;
 use crate::convert::year::backend::{
     get_rosh_hashana, months_per_year, return_year_sched, FIRST_YEAR, YEAR_SCHED,
 };
+use crate::prelude::*;
 
 /// HebrewYear holds data on a given year. It's faster to get multiple HebrewDates from
 /// an existing HebrewYear rather than generating each one on its own.
@@ -308,7 +309,7 @@ impl HebrewYear {
     ) -> SmallVec<[TorahReadingDay; 256]> {
         let mut return_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
         if yt_types.contains(&TorahReadingType::YomTov) {
-            return_vec.extend_from_slice(&get_yt_list(self.clone(), location));
+            get_yt_list(self.clone(), location, &mut return_vec);
         }
         if yt_types.contains(&TorahReadingType::Chol) {
             return_vec.extend_from_slice(&get_chol_list(self.clone()));
@@ -320,6 +321,30 @@ impl HebrewYear {
             return_vec.extend_from_slice(&get_special_parsha_list(self.clone()));
         }
         return_vec
+    }
+
+
+    pub fn get_holidays_extend<A: Extend<TorahReadingDay>>(
+        &self,
+        location: Location,
+        yt_types: &[TorahReadingType],
+        return_val: &mut A
+    ) {
+        let mut v = Vec::new();
+        if yt_types.contains(&TorahReadingType::YomTov) {
+            get_yt_list(self.clone(), location, &mut v);
+        }
+        return_val.extend(v.into_iter());
+        /*
+    if yt_types.contains(&TorahReadingType::Chol) {
+        return_vec.extend_from_slice(&get_chol_list(self.clone()));
+    }
+    if yt_types.contains(&TorahReadingType::Shabbos) {
+        return_vec.extend_from_slice(&get_shabbos_list(self.clone(), location));
+    }
+    if yt_types.contains(&TorahReadingType::SpecialParsha) {
+        return_vec.extend_from_slice(&get_special_parsha_list(self.clone()));
+    }*/
     }
 }
 
@@ -438,6 +463,8 @@ impl From<HebrewDate> for DateTime<Utc> {
 }
 
 mod test {
+    use chrono::Weekday;
+
     #[test]
     fn make_new_year() {
         use super::*;

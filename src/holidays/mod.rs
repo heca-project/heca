@@ -5,11 +5,12 @@ use crate::{HebrewDate, HebrewYear};
 use std::num::NonZeroI8;
 
 #[inline]
-pub(crate) fn get_yt_list(
+pub(crate) fn get_yt_list<A: Extend<TorahReadingDay>>(
     year: HebrewYear,
     location: Location,
-) -> SmallVec<[TorahReadingDay; 256]> {
-    let mut v1 = smallvec![
+    return_val: &mut A
+) {
+    return_val.extend(vec![
         TorahReadingDay {
             day: year
                 .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(1).unwrap())
@@ -76,7 +77,7 @@ pub(crate) fn get_yt_list(
                 .unwrap(),
             name: TorahReading::YomTov(YomTov::ShminiAtzeres),
         },
-    ];
+    ].into_iter());
     if location == Location::Chul {
         v1.push(TorahReadingDay {
             day: year
@@ -154,7 +155,7 @@ pub(crate) fn get_yt_list(
         });
     }
 
-    v1.into()
+    return_val.extend(v1.into_iter());
 }
 
 pub(crate) fn get_chol_list(year: HebrewYear) -> SmallVec<[TorahReadingDay; 256]> {
@@ -553,7 +554,9 @@ pub(crate) fn get_shabbos_list(
     //Nitzavim/Vayelech is split only if Rosh Hashana starts on a Monday or Tuesday
     let split_nitzavim = rh_dow == Day::Monday || rh_dow == Day::Tuesday;
     let split_nitzavim_next_year = rh_dow_next == Day::Monday || rh_dow_next == Day::Tuesday;
-    let regular_shabbosim_list = get_shabbosim(year, &get_yt_list(year, location)).0;
+    let mut yt_list = Vec::new();
+    get_yt_list(year, location, &mut yt_list);
+    let regular_shabbosim_list = get_shabbosim(year, &yt_list).0;
     let mut parsha_list = if split_nitzavim {
         let mut v: SmallVec<[Parsha; 256]> = SmallVec::new();
         v.push(Parsha::Vayelech);
@@ -934,9 +937,10 @@ mod test {
         for i in 5764..9999 {
             println!("{}", i);
             println!("Getting chul yt list");
-            get_yt_list(HebrewYear::new(i).unwrap(), Location::Chul);
+            let mut v = Vec::new();
+            get_yt_list(HebrewYear::new(i).unwrap(), Location::Chul, &mut v);
             println!("Getting eretz yt list");
-            get_yt_list(HebrewYear::new(i).unwrap(), Location::Israel);
+            get_yt_list(HebrewYear::new(i).unwrap(), Location::Israel, &mut v);
             println!("Getting chol list");
             get_chol_list(HebrewYear::new(i).unwrap());
         }
