@@ -657,13 +657,19 @@ impl fmt::Display for AppError {
             AppError::YearIsNotANumber(year) => {
                 write!(f, "{} is not a valid year as it's not a number", year)
             }
-            AppError::DayIsNotAValidNumber(day) => {
-                write!(f, "{} is not a valid day as it's not a number larger than 0", day)
-            }
+            AppError::DayIsNotAValidNumber(day) => write!(
+                f,
+                "{} is not a valid day as it's not a number larger than 0",
+                day
+            ),
             AppError::ArgUndefinedError(ce) => write!(f, "{}", ce),
             AppError::ConversionError(ce) => write!(f, "{}", ce),
             AppError::ArgError(err) => write!(f, "{}", err),
-            AppError::LocationError(e) => { write!(f, "{} is not a valid location. Must be either \"Chul\" or \"Israel\"", e) }
+            AppError::LocationError(e) => write!(
+                f,
+                "{} is not a valid location. Must be either \"Chul\" or \"Israel\"",
+                e
+            ),
         }
     }
 }

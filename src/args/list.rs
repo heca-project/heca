@@ -72,7 +72,7 @@ pub fn parse_options(
                 vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::Three))]
             }
             "rambam-1-chapter" => vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::One))],
-            x => panic!(format!("Assertion Error! How did {} get here?", x)),
+            x => unreachable!("{}", x),
         })
         .collect::<Vec<Event>>();
     Ok(Command::List(ListArgs {

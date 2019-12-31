@@ -320,18 +320,8 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         "TransmissionOfTheOralLaw",
         3,
     ),
-    (
-        "Positive Mitzvot",
-        "מצוות עשה",
-        "PositiveMitzvot",
-        3,
-    ),
-    (
-        "Negative Mitzvot",
-        "מצוות לא תעשה",
-        "NegativeMitzvot",
-        3,
-    ),
+    ("Positive Mitzvot", "מצוות עשה", "PositiveMitzvot", 3),
+    ("Negative Mitzvot", "מצוות לא תעשה", "NegativeMitzvot", 3),
     (
         "Overview of Mishneh Torah Contents",
         "תוכן החיבור",
@@ -344,18 +334,8 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         "FoundationsOfTheTorah",
         10,
     ),
-    (
-        "Human Dispositions",
-        "הלכות דעות",
-        "HumanDispositions",
-        7,
-    ),
-    (
-        "Torah Study",
-        "הלכות תלמוד תורה",
-        "TorahStudy",
-        7,
-    ),
+    ("Human Dispositions", "הלכות דעות", "HumanDispositions", 7),
+    ("Torah Study", "הלכות תלמוד תורה", "TorahStudy", 7),
     (
         "Foreign Worship and Customs of the Nations",
         "הלכות עבודה זרה וחוקות הגויים",
@@ -363,12 +343,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         12,
     ),
     ("Repentance", "הלכות תשובה", "Repentance", 10),
-    (
-        "Reading the Shema",
-        "הלכות קריאת שמע",
-        "ReadingTheShema",
-        4,
-    ),
+    ("Reading the Shema", "הלכות קריאת שמע", "ReadingTheShema", 4),
     (
         "Prayer and the Priestly Blessing",
         "הלכות תפילה וברכת כהנים",
@@ -384,12 +359,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
     ("Fringes", "הלכות ציצית", "Fringes", 3),
     ("Blessings", "הלכות ברכות", "Blessings", 11),
     ("Circumcision", "הלכות מילה", "Circumcision", 3),
-    (
-        "The Order of Prayer",
-        "סדר התפילה",
-        "TheOrderOfPrayer",
-        4,
-    ),
+    ("The Order of Prayer", "סדר התפילה", "TheOrderOfPrayer", 4),
     ("Sabbath", "הלכות שבת", "Sabbath", 30),
     ("Eruvin", "הלכות עירובין", "Eruvin", 8),
     (
@@ -438,12 +408,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         "LevirateMarriageAndRelease",
         8,
     ),
-    (
-        "Virgin Maiden",
-        "הלכות נערה בתולה",
-        "VirginMaiden",
-        3,
-    ),
+    ("Virgin Maiden", "הלכות נערה בתולה", "VirginMaiden", 3),
     (
         "Woman Suspected of Infidelity",
         "הלכות סוטה",
@@ -462,44 +427,24 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         "ForbiddenFoods",
         17,
     ),
-    (
-        "Ritual Slaughter",
-        "הלכות שחיטה",
-        "RitualSlaughter",
-        14,
-    ),
+    ("Ritual Slaughter", "הלכות שחיטה", "RitualSlaughter", 14),
     ("Oaths", "הלכות שבועות", "Oaths", 12),
     ("Vows", "הלכות נדרים", "Vows", 13),
-    (
-        "Nazariteship",
-        "הלכות נזירות",
-        "Nazariteship",
-        10,
-    ),
+    ("Nazariteship", "הלכות נזירות", "Nazariteship", 10),
     (
         "Appraisals and Devoted Property",
         "הלכות ערכים וחרמין",
         "AppraisalsAndDevotedProperty",
         8,
     ),
-    (
-        "Diverse Species",
-        "הלכות כלאים",
-        "DiverseSpecies",
-        10,
-    ),
+    ("Diverse Species", "הלכות כלאים", "DiverseSpecies", 10),
     (
         "Gifts to the Poor",
         "הלכות מתנות עניים",
         "GiftsToThePoor",
         10,
     ),
-    (
-        "Heave Offerings",
-        "הלכות תרומות",
-        "HeaveOfferings",
-        15,
-    ),
+    ("Heave Offerings", "הלכות תרומות", "HeaveOfferings", 15),
     ("Tithes", "הלכות מעשרות", "Tithes", 14),
     (
         "Second Tithes and Fourth Year's Fruit",
@@ -568,18 +513,8 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         5,
     ),
     ("Trespass", "הלכות מעילה", "Trespass", 8),
-    (
-        "Paschal Offering",
-        "הלכות קרבן פסח",
-        "PaschalOffering",
-        10,
-    ),
-    (
-        "Festival Offering",
-        "הלכות חגיגה",
-        "FestivalOffering",
-        3,
-    ),
+    ("Paschal Offering", "הלכות קרבן פסח", "PaschalOffering", 10),
+    ("Festival Offering", "הלכות חגיגה", "FestivalOffering", 3),
     ("Firstlings", "הלכות בכורות", "Firstlings", 8),
     (
         "Offerings for Unintentional Transgressions",
@@ -600,12 +535,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         "DefilementByACorpse",
         25,
     ),
-    (
-        "Red Heifer",
-        "הלכות פרה אדומה",
-        "RedHeifer",
-        15,
-    ),
+    ("Red Heifer", "הלכות פרה אדומה", "RedHeifer", 15),
     (
         "Defilement by Leprosy",
         "הלכות טומאת צרעת",
@@ -631,12 +561,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
         16,
     ),
     ("Vessels", "הלכות כלים", "Vessels", 28),
-    (
-        "Immersion Pools",
-        "הלכות מקואות",
-        "ImmersionPools",
-        11,
-    ),
+    ("Immersion Pools", "הלכות מקואות", "ImmersionPools", 11),
     (
         "Damages to Property",
         "הלכות נזקי ממון",
@@ -706,12 +631,7 @@ pub const RAMBAM: [(&str, &str, &str, u8); 88] = [
     ("Testimony", "הלכות עדות", "Testimony", 22),
     ("Rebels", "הלכות ממרים", "Rebels", 7),
     ("Mourning", "הלכות אבל", "Mourning", 14),
-    (
-        "Kings and Wars",
-        "הלכות מלכים ומלחמות",
-        "KingsAndWars",
-        12,
-    ),
+    ("Kings and Wars", "הלכות מלכים ומלחמות", "KingsAndWars", 12),
 ];
 
 pub const YERUSHALMI: [(&str, &str, &str, u8); 39] = [
