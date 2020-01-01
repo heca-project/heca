@@ -13,7 +13,9 @@ pub fn get(year: &HebrewYear, exact_days: bool) -> Vec<DayVal> {
 }
 
 fn get_yom_haatzmaut_and_yom_hazikaron(year: &HebrewYear, exact_days: bool) -> Vec<DayVal> {
-    //let first_day_of_pesach: Chrono<Utc> = year.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(15).unwrap()).unwrap().try_into().unwrap();
+    if year.year() < 5709 {
+        return vec![];
+    }
     let offset = if exact_days {
         0
     } else {
@@ -21,7 +23,13 @@ fn get_yom_haatzmaut_and_yom_hazikaron(year: &HebrewYear, exact_days: bool) -> V
             MonthSchedule::BaChaG
             | MonthSchedule::HaShaG
             | MonthSchedule::ZaChaG
-            | MonthSchedule::ZaShaG => 1,
+            | MonthSchedule::ZaShaG => {
+                if year.year() < 5764 {
+                    0
+                } else {
+                    1
+                }
+            }
             MonthSchedule::GaKaZ | MonthSchedule::BaShaZ | MonthSchedule::HaKaZ => -1,
             MonthSchedule::BaChaH
             | MonthSchedule::BaShaH

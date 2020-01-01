@@ -6,7 +6,7 @@ use serde::Deserialize;
 use std::process::Command;
 
 #[test]
-fn hebcal_to_cmd_check() {
+fn hebcal_to_cmd_check_yom_haatzmaut() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")
         .arg("en_US")
@@ -20,10 +20,28 @@ fn hebcal_to_cmd_check() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_haatzmauts = include_str!("yom_haatzmaut_5760_500").split('\n').collect();
-    let yom_hazikarons = include_str!("yom_hazikaron_5760_500").split('\n').collect();
+    let yom_haatzmauts = include_str!("yom_haatzmaut_5700_500").split('\n').collect();
 
     find_holiday(yom_haatzmauts, "YomHaAtzmaut", &res);
+}
+
+#[test]
+fn hebcal_to_cmd_check_yom_hazikaron() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5698")
+        .arg("--years")
+        .arg("600")
+        .arg("--show=israeli-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+
+    let yom_hazikarons = include_str!("yom_hazikaron_5700_500").split('\n').collect();
+
     find_holiday(yom_hazikarons, "YomHaZikaron", &res);
 }
 
@@ -45,7 +63,6 @@ fn find_holiday(yom_haatzmauts: Vec<&str>, json_match: &str, res: &[Res]) {
                 .iter()
                 .filter(|x| x.name == json_match)
                 .map(|x| {
-                    eprintln!("{}", x.day);
                     NaiveDate::parse_from_str(&x.day, "%Y-%-m-%-dT18:00:00Z").expect(&format!(
                         "{} {}",
                         file!(),
