@@ -18,6 +18,7 @@ pub struct Config {
     pub custom_days: Vec<CustomHoliday>,
     pub language: Option<Language>,
     pub location: Option<Location>,
+    pub exact_days: Option<bool>,
 }
 
 impl Config {
@@ -36,6 +37,7 @@ impl Config {
         let mut custom_days = vec![];
         let mut language = None;
         let mut location = None;
+        let mut exact_days = None;
         if let Some(ref file) = config_file {
             let f = &fs::read_to_string(file)?;
             let config_attempt = toml::from_str(f);
@@ -59,6 +61,7 @@ impl Config {
                             }),
                             language: c.language,
                             location: c.location,
+                            exact_days: c.exact_days,
                         },
                         Err(_) => {
                             return Err(err.into());
@@ -69,7 +72,9 @@ impl Config {
             if let Some(loc) = &config.location {
                 location = Some(str_to_location(loc.as_ref())?);
             }
-
+            if let Some(exact) = config.exact_days {
+                exact_days = Some(exact)
+            };
             language = config
                 .language
                 .and_then(|lang_string| match lang_string.as_ref() {
@@ -132,6 +137,7 @@ impl Config {
             language,
             custom_days,
             location,
+            exact_days,
         })
     }
 }
@@ -205,12 +211,14 @@ struct ConfigFileV1 {
     days: Option<Vec<(String, String, String)>>,
     language: Option<String>,
     location: Option<String>,
+    exact_days: Option<bool>,
 }
 #[derive(Deserialize)]
 struct ConfigFile {
     days: Option<Vec<InnerDate>>,
     language: Option<String>,
     location: Option<String>,
+    exact_days: Option<bool>,
 }
 #[derive(Deserialize)]
 struct InnerDate {

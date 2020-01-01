@@ -1,3 +1,4 @@
+use crate::algorithms::israeli_holidays::IsraeliHoliday;
 use std::num::NonZeroI8;
 
 use chrono::prelude::*;
@@ -48,6 +49,7 @@ pub struct ListArgs {
     pub events: Vec<Event>,
     pub amnt_years: u64,
     pub no_sort: bool,
+    pub exact_days: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,6 +58,7 @@ pub enum Event {
     MinorHoliday(MinorHoliday),
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudy),
+    IsraeliHolidays,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -132,6 +135,17 @@ impl Serialize for DayVal {
                 state.serialize_field("type", "CustomHoliday")?;
                 state.serialize_field("name", &custom_holiday.json)?;
             }
+            Name::IsraeliHoliday(holiday) => {
+                state.serialize_field("type", "IsraeliHoliday")?;
+                match holiday {
+                    IsraeliHoliday::YomHaAtzmaut => {
+                        state.serialize_field("name", "YomHaAtzmaut")?
+                    }
+                    IsraeliHoliday::YomHaZikaron => {
+                        state.serialize_field("name", "YomHaZikaron")?
+                    }
+                }
+            }
             Name::DailyStudy(daily_study) => {
                 match daily_study {
                     DailyStudyOutput::Daf(daf) => {
@@ -189,7 +203,7 @@ impl RambamThreeChapter {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut sum = self.ch1.pretty_print(lock, language)?;
@@ -250,7 +264,7 @@ impl RambamChapter {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {
@@ -303,7 +317,7 @@ impl YerushalmiYomi {
     }
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {
@@ -386,7 +400,7 @@ impl Daf {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {
@@ -408,6 +422,7 @@ pub enum Name {
     MinorDays(MinorDays),
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudyOutput),
+    IsraeliHoliday(IsraeliHoliday),
 }
 
 #[derive(Debug, Clone, Serialize)]

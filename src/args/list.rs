@@ -38,6 +38,15 @@ pub fn parse_options(
     };
 
     let no_sort = matches.occurrences_of("NoSort") > 0;
+    let exact_days = if matches.occurrences_of("ExactDays") > 0 {
+        true
+    } else {
+        if let Some(exact) = config.exact_days {
+            exact
+        } else {
+            false
+        }
+    };
 
     let location = if let Some(location) = matches.value_of("Location") {
         str_to_location(location)?
@@ -72,6 +81,8 @@ pub fn parse_options(
                 vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::Three))]
             }
             "rambam-1-chapter" => vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::One))],
+
+            "israeli-holidays" => vec![Event::IsraeliHolidays],
             x => unreachable!("{}", x),
         })
         .collect::<Vec<Event>>();
@@ -81,5 +92,6 @@ pub fn parse_options(
         events,
         amnt_years,
         no_sort,
+        exact_days,
     }))
 }

@@ -1,3 +1,5 @@
+use crate::algorithms::israeli_holidays;
+
 use crate::args::types::{
     AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
     MainArgs, MinorHoliday, Name, OutputType, RambamChapter, RambamChapters, RambamThreeChapter,
@@ -74,6 +76,9 @@ impl Return {
                         yerushalmi_yomi.pretty_print(&mut lock, args.language)
                     }
                 },
+                Name::IsraeliHoliday(israeli_holidays) => {
+                    israeli_holidays.pretty_print(&mut lock, args.language)
+                }
             };
             lock.write(b"\n").unwrap();
         });
@@ -306,6 +311,7 @@ impl Runnable for ListArgs {
                     &self.events,
                     &main_events,
                     &custom_events,
+                    self.exact_days,
                 )?;
                 part1.extend(daily_study_events.get_day_val(year, year + self.amnt_years - 1));
                 Ok(Return { list: part1 })
@@ -325,6 +331,7 @@ impl Runnable for ListArgs {
                     &self.events,
                     &main_events,
                     &custom_events,
+                    self.exact_days,
                 )?;
                 part1.extend(daily_study_events.get_day_val(that_year, last_year));
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
@@ -358,6 +365,7 @@ fn get_list(
     events: &[Event],
     main_events: &Vec<TorahReadingType>,
     custom_events: &Vec<CustomHoliday>,
+    exact_days: bool,
 ) -> Result<Vec<DayVal>, AppError> {
     let amnt_years = last_year - year;
     let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(amnt_years as usize);
@@ -381,6 +389,9 @@ fn get_list(
 
             if events.contains(&Event::MinorHoliday(MinorHoliday::Omer)) {
                 ret.extend_from_slice(&get_omer(&year));
+            }
+            if events.contains(&Event::IsraeliHolidays) {
+                ret.extend_from_slice(&israeli_holidays::get(&year, exact_days));
             }
             if events.contains(&Event::MinorHoliday(MinorHoliday::Minor)) {
                 ret.extend(get_minor_holidays(&year));
