@@ -25,14 +25,13 @@ matrix:
       env: TARGET=x86_64-apple-darwin
 
 
-scipt: cargo test --target "$TARGET" --target-dir=/tmp/heca
+script: cargo test --target "$TARGET" --target-dir=/tmp/heca
 
 before_deploy: ./ci/before_deploy.sh
 
 deploy:
   skip_cleanup: true
   file:
-    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
     - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
   provider: releases
   edge: true
