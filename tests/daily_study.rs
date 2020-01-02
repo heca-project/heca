@@ -1,5 +1,5 @@
 use assert_cmd::prelude::CommandCargoExt;
-use chrono::{DateTime, Datelike, Duration, NaiveDate};
+use chrono::{Duration, NaiveDate};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::process::Command;
@@ -79,7 +79,7 @@ fn daf_yomi_test() {
         .arg("list")
         .arg("1975")
         .arg("--years")
-        .arg("8000")
+        .arg("1000")
         .arg("--show=daf-yomi");
     let s = &String::from_utf8(
         cmd.output()
@@ -90,8 +90,11 @@ fn daf_yomi_test() {
     let res: Vec<DafYomiRes> = serde_json::from_str(s).expect(&format!("{} {}", file!(), line!()));
 
     res.into_iter().for_each(|x| {
-        let date = DateTime::parse_from_rfc3339(&x.day).expect(&format!("{} {}", file!(), line!()));
-        let date = NaiveDate::from_ymd(date.year(), date.month(), date.day());
+        let date = NaiveDate::parse_from_str(&x.day, "%Y-%-m-%-dT18:00:00Z").expect(&format!(
+            "{} {}",
+            file!(),
+            line!()
+        ));
         heca_hashset.insert(date, x.topic);
     });
 
@@ -105,7 +108,10 @@ fn daf_yomi_test() {
                 );
             }
         } else {
-            panic!("heca_hashset not found day {} daf {:?}", date, daf);
+            panic!(
+                "heca_hashset not found day {} daf {:?} {:?}",
+                date, daf, heca_daf
+            );
         }
     }
 }
@@ -306,7 +312,7 @@ fn rambam_test() {
         .arg("list")
         .arg("1975")
         .arg("--years")
-        .arg("8000")
+        .arg("1000")
         .arg("--show=rambam-1-chapter");
     let s = &String::from_utf8(
         cmd.output()

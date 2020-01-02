@@ -630,7 +630,7 @@ fn check_month_not_parsed_gregorian_2() {
 
 #[test]
 fn ensure_days_not_found_in_every_year_gregorian() {
-    for x in 5..10000 {
+    for x in 5..1000 {
         let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
         cmd.arg("--language")
             .arg("en_US")
