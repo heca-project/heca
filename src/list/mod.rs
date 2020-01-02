@@ -103,6 +103,9 @@ trait GetDayVal {
 impl GetDayVal for DailyStudyEvents {
     fn get_day_val(&self, start_year: u64, last_year: u64) -> Vec<DayVal> {
         use std::num::NonZeroI8;
+        if self.is_empty() {
+            return vec![];
+        }
         let first_day: DateTime<Utc> =
             HebrewDate::from_ymd(start_year, HebrewMonth::Tishrei, NonZeroI8::new(1).unwrap())
                 .unwrap()

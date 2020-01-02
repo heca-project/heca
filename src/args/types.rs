@@ -189,7 +189,7 @@ impl RambamThreeChapter {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut sum = self.ch1.pretty_print(lock, language)?;
@@ -250,7 +250,7 @@ impl RambamChapter {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {
@@ -303,7 +303,7 @@ impl YerushalmiYomi {
     }
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {
@@ -386,7 +386,7 @@ impl Daf {
 
     pub fn pretty_print(
         &self,
-        lock: &mut BufWriter<StdoutLock>,
+        lock: &mut BufWriter<StdoutLock<'_>>,
         language: Language,
     ) -> Option<usize> {
         let mut p = if language == Language::English {

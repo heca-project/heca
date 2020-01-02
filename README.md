@@ -34,7 +34,7 @@ $ cargo install heca
 ### Options
 
 1. `--config`: Sets the config file. See the Config section for more information. If not set, it tries to read `$XDG_CONFIG_HOME/heca/config.toml`).
-2. `--language`: Sets the output language. The options are Hebrew (he_IL) or English (en_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL`), it outputs to English.
+2. `--language`: Sets the output language. The options are Hebrew (he_IL) or English (en_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL`), it defaults to English.
 3. `--print`: Prints the result as JSON, regular or pretty-printed (is currently aliased to regular).
 
 ### Subcommands
@@ -60,7 +60,20 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
 
 1. `--no-sort`: Doesn't sort output. This is useful if you're just looking for a certain date.
 2. `--years <AmountYears>`: Generate events for n years. Defaults to 1.
-3. `--show <Events>`: What events to list. Possible values are "yom-tov", "shabbos" (lists the Weekly parshas), "special-parshas" (lists the four special Parshas read in the winter), "chol" (Shows weekdays which have Torah readings, including Shushan Purim), "minor-holidays" (Lag BaOmer, Pesach Sheni, and Erev Yom Tov), "omer", "custom-holidays" (Days listed in the config file). Defaults to yom-tov.
+3. `--show <Events>`: What events to list. Possible values are:
+     1. `yom-tov` - lists the main Yom Tovs - Rosh Hashana, Yom Kippur, Pesach, Shavuos and Sukkos.
+     2. `shabbos` - lists the weekly Torah portion.
+     3. `special-parshas` - lists the four special Torah portions read in the winter.
+     4. `chol` - Shows weekdays that have special Torah readings - includes Shushan Purim.
+     5. `minor-holidays` - Lag BaOmer, Pesach Sheni, and Erev Yom Tov.
+     6. `omer` - Lists the Omer.
+     7. `custom-holidays` - lists days in the config file.
+     8. `daf-yomi` - lists the daily Daf Yomi.
+     9. `yerushalmi-yomi` - lists the daily Yerushalmi Yomi.
+     10. `rambam-3-chapters` - lists the daily Rambam (3 chapters a day).
+     11. `rambam-1-chapter` - list the daily Rambam (1 chapter a day).
+
+     The default is `yom-tov`.
 4. `--location`: Selects if you're looking for an Israeli calendar or Chu"l calendar. Options are "Chul" or "Israel". It defaults to Chul unless the language is Hebrew, in which case it defaults to Israel.
 5. `--type`: Force conversion from type T, where T is either "hebrew" (then date must be written as '5/אדרא/5779'), "gregorian" (where the date must be written as '1996/12/19'), or fuzzy (assumes Hebrew if `year` is above 4000, Gregorian otherwise. It also tries to be fuzzy in Hebrew month spelling and order). Defaults to `fuzzy`.
 
@@ -70,15 +83,15 @@ The config is a TOML file, with several options:
 
 1. days - An array. Can be made out of:
 
-   a. A three-element array. The first is the Hebrew day, the second is the string to output when pretty printing and, and 
+   a. _Deprecated_: A three-element array. The first is the Hebrew day, the second is the string to output when pretty printing and, and 
    the third is the string to output when JSON printing). If the date doesn't exist in a certain year (For example, 
    not all years have an Adar Beis, 30th of Cheshvan or 30th of Kislev), that date is ignored. 
 
    b. An object of: `date`, `title`, `json`, and (optionally) `ifNotExists`. If `date` doesn't exist,
     then print it on all dates in `ifNotExist`. 
 
-2. language - The default language (options: `en_US` or `he_IL`).
-3. location - The default location (options: `chul` or `israel`).
+2. `language` - The default language (options: `en_US` or `he_IL`).
+3. `location` - The default location (options: `chul` or `israel`).
 
 ### Examples:
 ```
@@ -106,7 +119,7 @@ days = [
 ### What's the difference between Israeli Torah reading and Diaspora?
 
 ```
-diff  <(./target/release/heca list 2019 --show shabbos) <(./target/release/heca list 2019 --location Israel --show shabbos)
+$ diff  <(./target/release/heca list 2019 --show shabbos) <(./target/release/heca list 2019 --location Israel --show shabbos)
 
 16,29c16,30
 < Night of 2019/5/3: Acharei Mos
@@ -144,7 +157,7 @@ diff  <(./target/release/heca list 2019 --show shabbos) <(./target/release/heca 
 ### When's the next time the first Seder will be on a Friday night?
 
 ```
-for i in `seq 5779 5900`; do echo "$i-$(date -d $(./target/release/heca --print json list $i --show minor-holidays |jq '.|.[] | select(.name == "ErevPesach") | .day' | tr -d \") '+%a')" ; done | grep "Fri"
+$ for i in `seq 5779 5900`; do echo "$i-$(date -d $(./target/release/heca --print json list $i --show minor-holidays |jq '.|.[] | select(.name == "ErevPesach") | .day' | tr -d \") '+%a')" ; done | grep "Fri"
 
 5781-Fri
 5785-Fri
@@ -159,19 +172,43 @@ for i in `seq 5779 5900`; do echo "$i-$(date -d $(./target/release/heca --print 
 5883-Fri
 5890-Fri
 ```
+
+### When will there be a Siuyum of both Rambam and Daf Yomi on the same day?
+
+```
+$ ./target/release/heca --print=json list 1985 --years 5000 --show daf-yomi |jq '.[] | select(.topic.masechta | contains("Berakhot")) | select(.topic.daf | contains(2)) | .day' > /tmp/siyum_daf_yomi
+$ ./target/release/heca --print=json list 1985 --years 5000 --show rambam-3-chapters |jq '.[] | select(.topic[0].halacha | contains("Transmission")) | select(.topic[0].chapter | contains(1)) | .day' > /tmp/siyum_rambam_3_chapters
+$ comm -12 /tmp/siyum_daf_yomi /tmp/siyum_rambam_3_chapters
+
+"3155-08-25T18:00:00Z"
+"5671-11-11T18:00:00Z"
+``` 
+
+So we'll have to wait a while for an Achdus Siyum.
+
 ## Benchmarks
 
 In my _totally not scientific benchmarks_:
 
 ```
-./benchmark/bench.sh
+$ ./benchmark/bench.sh
 
-heca  | multithreaded   | unsorted   | 1.786
-heca  | multithreaded   | sorted     | 2.189
-heca  | singlethreaded  | unsorted   | 2.454
-heca  | singlethreaded  | sorted     | 3.247
-hebcal                               | 5.243
 ```
+| Command | Mean [s] | Min [s] | Max [s] | Relative |
+|:---|---:|---:|---:|---:|
+| `taskset -ac 0-3 /tmp/heca/release/heca --print=regular list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas --no-sort` | 0.474 | 0.471 | 0.483 | 1.00 |
+| `taskset -ac 0-3 /tmp/heca/release/heca --print=regular list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas` | 0.559 | 0.558 | 0.562 | 1.00 |
+| `taskset -ac 1 /tmp/heca/release/heca --print=regular list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas --no-sort` | 0.631 | 0.627 | 0.637 | 1.33 ± 0.01 |
+| `taskset -ac 1 /tmp/heca/release/heca --print=regular list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas` | 0.826 | 0.820 | 0.839 | 1.48 |
+| `taskset -ac 0-3 /tmp/heca/release/heca --print=json list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas --no-sort` | 0.915 | 0.909 | 0.927 | 1.00 |
+| `taskset -ac 0-3 /tmp/heca/release/heca --print=json list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas` | 1.001 | 997.1 | 1012.4 | 1.00 |
+| `taskset -ac 1 /tmp/heca/release/heca --print=json list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas --no-sort` | 1.072 | 1068 | 1.078 | 1.17 ± 0.01 |
+| `taskset -ac 1 /tmp/heca/release/heca --print=json list 3766 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas` | 1.268 | 1260.8 | 1276.0 | 1.27 ± 0.01 |
+
+| Command | Mean [s] | Min [s] | Max [s] | Relative |
+|:---|---:|---:|---:|---:|
+| `taskset -ac 1 hebcal 3766 --years 17000` | 1.012 | 1.008 | 1.030 | 1.00 |
+| `taskset -ac 0-3 hebcal 3766 --years 17000` | 1.012 | 1.008 | 1.021 | 1.00 |
 
 
 ## Versioning

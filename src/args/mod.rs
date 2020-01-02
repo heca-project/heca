@@ -94,8 +94,6 @@ where
                            "custom-holidays",
                            "daf-yomi",
                            "yerushalmi-yomi",
-                           "daily-mishna",
-                           "halacha-yomit",
                            "rambam-3-chapters",
                            "rambam-1-chapter"])
                        .default_value("yom-tov"))

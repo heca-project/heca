@@ -27,7 +27,8 @@ cpuprofiler = "0.0.4"
 [profile.release]
 lto = true
 debug = true
-overflow-checks = true
+overflow-checks = false
+panic="abort"
 
 [features]
 profile = []
