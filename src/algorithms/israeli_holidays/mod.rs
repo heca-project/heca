@@ -10,6 +10,7 @@ pub fn get(year: &HebrewYear, exact_days: bool) -> Vec<DayVal> {
     let mut return_vec = vec![];
     return_vec.extend_from_slice(&get_yom_haatzmaut_and_yom_hazikaron(year, exact_days));
     get_yom_yerushalayim(year).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
+    get_yom_hashoah(year, exact_days).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
     return_vec
 }
 
@@ -24,6 +25,38 @@ fn get_yom_yerushalayim(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::YomYerushalayim),
+        })
+    }
+}
+
+fn get_yom_hashoah(year: &HebrewYear, exact_days: bool) -> Option<DayVal> {
+    if year.year() < 5711 {
+        None
+    } else {
+        let offset = if exact_days {
+            0
+        } else {
+            match year.year_type() {
+                MonthSchedule::BaChaG
+                | MonthSchedule::HaShaG
+                | MonthSchedule::ZaChaG
+                | MonthSchedule::ZaShaG => 1,
+                MonthSchedule::GaKaZ | MonthSchedule::BaShaZ | MonthSchedule::HaKaZ => 0,
+                MonthSchedule::BaChaH
+                | MonthSchedule::BaShaH
+                | MonthSchedule::GaChaH
+                | MonthSchedule::ZaShaH => 0,
+                MonthSchedule::ZaChA | MonthSchedule::HaShA | MonthSchedule::HaChA => -1,
+            }
+        };
+
+        Some(DayVal {
+            day: year
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(27 + offset).unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            name: Name::IsraeliHoliday(IsraeliHoliday::YomHaShoah),
         })
     }
 }
@@ -79,6 +112,7 @@ pub enum IsraeliHoliday {
     YomHaZikaron,
     YomHaAtzmaut,
     YomYerushalayim,
+    YomHaShoah,
 }
 
 impl IsraeliHoliday {
@@ -92,11 +126,13 @@ impl IsraeliHoliday {
                 Self::YomHaAtzmaut => lock.write(b"Yom HaAtzmaut").ok()?,
                 Self::YomHaZikaron => lock.write(b"Yom HaZikaron").ok()?,
                 Self::YomYerushalayim => lock.write(b"Yom Yerushalayim").ok()?,
+                Self::YomHaShoah => lock.write(b"Yom HaShoah").ok()?,
             },
             Language::Hebrew => match self {
                 Self::YomHaAtzmaut => lock.write("יום העצמאות".as_bytes()).ok()?,
                 Self::YomHaZikaron => lock.write("יום הזיכרון".as_bytes()).ok()?,
-                Self::YomYerushalayim => lock.write("יום_ירושלים".as_bytes()).ok()?,
+                Self::YomYerushalayim => lock.write("יום ירושלים".as_bytes()).ok()?,
+                Self::YomHaShoah => lock.write("יום השואה".as_bytes()).ok()?,
             },
         };
         Some(p)
