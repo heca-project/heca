@@ -1,3 +1,4 @@
+use crate::algorithms::israeli_holidays::IsraeliHoliday;
 use std::num::NonZeroI8;
 
 use chrono::prelude::*;
@@ -48,6 +49,7 @@ pub struct ListArgs {
     pub events: Vec<Event>,
     pub amnt_years: u64,
     pub no_sort: bool,
+    pub exact_days: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,6 +58,7 @@ pub enum Event {
     MinorHoliday(MinorHoliday),
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudy),
+    IsraeliHolidays,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -131,6 +134,23 @@ impl Serialize for DayVal {
             Name::CustomHoliday(custom_holiday) => {
                 state.serialize_field("type", "CustomHoliday")?;
                 state.serialize_field("name", &custom_holiday.json)?;
+            }
+            Name::IsraeliHoliday(holiday) => {
+                state.serialize_field("type", "IsraeliHoliday")?;
+                match holiday {
+                    IsraeliHoliday::YomHaAtzmaut => {
+                        state.serialize_field("name", "YomHaAtzmaut")?
+                    }
+                    IsraeliHoliday::YomHaZikaron => {
+                        state.serialize_field("name", "YomHaZikaron")?
+                    }
+                    IsraeliHoliday::YomYerushalayim => {
+                        state.serialize_field("name", "YomYerushalayim")?
+                    }
+                    IsraeliHoliday::YomHaShoah => state.serialize_field("name", "YomHaShoah")?,
+                    IsraeliHoliday::YomHaAliyah => state.serialize_field("name", "YomHaAliyah")?,
+                    IsraeliHoliday::Sigd => state.serialize_field("name", "Sigd")?,
+                }
             }
             Name::DailyStudy(daily_study) => {
                 match daily_study {
@@ -408,6 +428,7 @@ pub enum Name {
     MinorDays(MinorDays),
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudyOutput),
+    IsraeliHoliday(IsraeliHoliday),
 }
 
 #[derive(Debug, Clone, Serialize)]

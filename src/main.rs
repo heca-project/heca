@@ -1,3 +1,4 @@
+mod algorithms;
 mod args;
 mod convert;
 mod list;

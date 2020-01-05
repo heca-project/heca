@@ -2,7 +2,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 
 mod convert;
 mod list;
-mod prelude;
+pub(crate) mod prelude;
 pub mod types;
 
 use crate::args::prelude::{Config, ConfigDateFmt, ConfigDateType};
@@ -64,7 +64,12 @@ where
                            .required(false))
                        .arg(Arg::with_name("NoSort")
                            .long("no-sort")
-                           .help("Don't sort output."))
+                           .help("Don't sort output"))
+                       .arg(
+                           Arg::with_name("ExactDays")
+                               .long("exact-days")
+                               .help("If showing modern Israeli holidays, show them on their true days, ignoring the recommendation of the Rabbanut to celebrate them early or late to avoid breaking Shabbos.")
+                       )
                        .arg(Arg::with_name("Location")
                            .long("location")
                            .help("Are you looking for an Israeli calendar or a Chutz La'aretz calendar?")
@@ -95,7 +100,9 @@ where
                            "daf-yomi",
                            "yerushalmi-yomi",
                            "rambam-3-chapters",
-                           "rambam-1-chapter"])
+                           "rambam-1-chapter",
+                           "israeli-holidays"
+                       ])
                        .default_value("yom-tov"))
                        .arg(Arg::with_name("Year")
                        .required(true)
