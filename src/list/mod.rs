@@ -1,4 +1,4 @@
-use crate::algorithms::israeli_holidays;
+use crate::algorithms::{chabad_holidays, israeli_holidays};
 
 use crate::args::types::{
     AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
@@ -78,6 +78,9 @@ impl Return {
                 },
                 Name::IsraeliHoliday(israeli_holidays) => {
                     israeli_holidays.pretty_print(&mut lock, args.language)
+                }
+                Name::ChabadHoliday(chabad_holidays) => {
+                    chabad_holidays.pretty_print(&mut lock, args.language)
                 }
             };
             lock.write(b"\n").unwrap();
@@ -395,6 +398,9 @@ fn get_list(
             }
             if events.contains(&Event::IsraeliHolidays) {
                 ret.extend_from_slice(&israeli_holidays::get(&year, exact_days));
+            }
+            if events.contains(&Event::ChabadHolidays) {
+                ret.extend_from_slice(&chabad_holidays::get(&year));
             }
             if events.contains(&Event::MinorHoliday(MinorHoliday::Minor)) {
                 ret.extend(get_minor_holidays(&year));
