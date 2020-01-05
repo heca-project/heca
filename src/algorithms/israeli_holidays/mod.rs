@@ -12,6 +12,7 @@ pub fn get(year: &HebrewYear, exact_days: bool) -> Vec<DayVal> {
     get_yom_yerushalayim(year).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
     get_yom_hashoah(year, exact_days).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
     get_yom_haaliyah(year).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
+    get_sigd(year).and_then(|x| Some(return_vec.extend(std::iter::once(x))));
     return_vec
 }
 
@@ -41,6 +42,21 @@ fn get_yom_yerushalayim(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::YomYerushalayim),
+        })
+    }
+}
+
+fn get_sigd(year: &HebrewYear) -> Option<DayVal> {
+    if year.year() < 5769 {
+        None
+    } else {
+        Some(DayVal {
+            day: year
+                .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroI8::new(29).unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            name: Name::IsraeliHoliday(IsraeliHoliday::Sigd),
         })
     }
 }
@@ -130,6 +146,7 @@ pub enum IsraeliHoliday {
     YomYerushalayim,
     YomHaShoah,
     YomHaAliyah,
+    Sigd,
 }
 
 impl IsraeliHoliday {
@@ -145,6 +162,7 @@ impl IsraeliHoliday {
                 Self::YomYerushalayim => lock.write(b"Yom Yerushalayim").ok()?,
                 Self::YomHaShoah => lock.write(b"Yom HaShoah").ok()?,
                 Self::YomHaAliyah => lock.write(b"Yom HaAliyah").ok()?,
+                Self::Sigd => lock.write(b"Sigd").ok()?,
             },
             Language::Hebrew => match self {
                 Self::YomHaAtzmaut => lock.write("יום העצמאות".as_bytes()).ok()?,
@@ -152,6 +170,7 @@ impl IsraeliHoliday {
                 Self::YomYerushalayim => lock.write("יום ירושלים".as_bytes()).ok()?,
                 Self::YomHaShoah => lock.write("יום השואה".as_bytes()).ok()?,
                 Self::YomHaAliyah => lock.write("יום העלייה".as_bytes()).ok()?,
+                Self::Sigd => lock.write("סיגד".as_bytes()).ok()?,
             },
         };
         Some(p)

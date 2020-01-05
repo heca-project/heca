@@ -149,6 +149,7 @@ impl Serialize for DayVal {
                     }
                     IsraeliHoliday::YomHaShoah => state.serialize_field("name", "YomHaShoah")?,
                     IsraeliHoliday::YomHaAliyah => state.serialize_field("name", "YomHaAliyah")?,
+                    IsraeliHoliday::Sigd => state.serialize_field("name", "Sigd")?,
                 }
             }
             Name::DailyStudy(daily_study) => {
