@@ -26,6 +26,28 @@ fn hebcal_to_cmd_check_yom_haatzmaut() {
 }
 
 #[test]
+fn hebcal_to_cmd_check_yom_yerushalayim() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("en_US")
+        .arg("--print")
+        .arg("json")
+        .arg("list")
+        .arg("5698")
+        .arg("--years")
+        .arg("600")
+        .arg("--show=israeli-holidays");
+    let res: Vec<Res> =
+        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
+
+    let yom_yerushalayim = include_str!("yom_yerushalayim_5700_500")
+        .split('\n')
+        .collect();
+
+    find_holiday(yom_yerushalayim, "YomYerushalayim", &res);
+}
+
+#[test]
 fn hebcal_to_cmd_check_yom_hazikaron() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")
