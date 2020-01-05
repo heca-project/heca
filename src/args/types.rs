@@ -1,3 +1,4 @@
+use crate::algorithms::chabad_holidays::ChabadHoliday;
 use crate::algorithms::israeli_holidays::IsraeliHoliday;
 use std::num::NonZeroI8;
 
@@ -59,6 +60,7 @@ pub enum Event {
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudy),
     IsraeliHolidays,
+    ChabadHolidays,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -150,6 +152,20 @@ impl Serialize for DayVal {
                     IsraeliHoliday::YomHaShoah => state.serialize_field("name", "YomHaShoah")?,
                     IsraeliHoliday::YomHaAliyah => state.serialize_field("name", "YomHaAliyah")?,
                     IsraeliHoliday::Sigd => state.serialize_field("name", "Sigd")?,
+                }
+            }
+            Name::ChabadHoliday(holiday) => {
+                state.serialize_field("type", "ChabadHoliday")?;
+                match holiday {
+                    ChabadHoliday::YudKislev => state.serialize_field("name", "YudKislev")?,
+                    ChabadHoliday::YudTesKislev => state.serialize_field("name", "YudTesKislev")?,
+                    ChabadHoliday::ChofKislev => state.serialize_field("name", "ChofKislev")?,
+                    ChabadHoliday::YudBeisTammuz => {
+                        state.serialize_field("name", "YudBeisTammuz")?
+                    }
+                    ChabadHoliday::YudGimmelTammuz => {
+                        state.serialize_field("name", "YudGimmelTammuz")?
+                    }
                 }
             }
             Name::DailyStudy(daily_study) => {
@@ -429,6 +445,7 @@ pub enum Name {
     CustomHoliday(CustomHoliday),
     DailyStudy(DailyStudyOutput),
     IsraeliHoliday(IsraeliHoliday),
+    ChabadHoliday(ChabadHoliday),
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -83,6 +83,7 @@ pub fn parse_options(
             "rambam-1-chapter" => vec![Event::DailyStudy(DailyStudy::Rambam(RambamChapters::One))],
 
             "israeli-holidays" => vec![Event::IsraeliHolidays],
+            "chabad-holidays" => vec![Event::ChabadHolidays],
             x => unreachable!("{}", x),
         })
         .collect::<Vec<Event>>();
