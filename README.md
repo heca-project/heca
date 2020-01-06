@@ -19,6 +19,11 @@ $ mv ~/Downloads/heca-$VERSION-$TARGET /usr/local/bin/heca
 $ chmod +x /usr/local/bin/heca
 $ heca
 ```
+### Arch AUR
+```
+$ yaourt -S heca
+```
+
 ### Cargo
 If you have cargo installed, you can run:
 
@@ -102,7 +107,7 @@ The config is a TOML file, with several options:
     then print it on all dates in `ifNotExist`. 
 
 2. `language` - The default language (options: `en_US` or `he_IL`).
-3. `location` - The default location (options: `chul` or `israel`).
+3. `location` - The default location (options: `Chul` or `Israel`).
 4. `exact-days` - See above in the arguments section. (option: `true` or `false`).
 
 ### Examples:
