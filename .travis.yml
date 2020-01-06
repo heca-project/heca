@@ -1,40 +1,32 @@
 language: rust
 before_install:
-  - rustup target add x86_64-unknown-linux-musl
-  - rustup target add i686-unknown-linux-musl
-  - rustup target add x86_64-apple-darwin
-
+- rustup target add x86_64-unknown-linux-musl
+- rustup target add i686-unknown-linux-musl
+- rustup target add x86_64-apple-darwin
 addons:
   apt:
-    packages:
-      musl-tools
-      xz-utils
-
+    packages: musl-tools xz-utils
 matrix:
   include:
-    - os: linux 
-      rust: stable
-      env: TARGET=x86_64-unknown-linux-musl
- 
-    - os: linux
-      rust: stable
-      env: TARGET=i686-unknown-linux-musl
-
-    - os: osx 
-      rust: stable
-      env: TARGET=x86_64-apple-darwin
-
-
+  - os: linux
+    rust: stable
+    env: TARGET=x86_64-unknown-linux-musl
+  - os: linux
+    rust: stable
+    env: TARGET=i686-unknown-linux-musl
+  - os: osx
+    rust: stable
+    env: TARGET=x86_64-apple-darwin
 script: cargo test --target "$TARGET"
-
-before_deploy: ./ci/before_deploy.sh
-
+before_deploy: "./ci/before_deploy.sh"
 deploy:
-  skip_cleanup: true
+  cleanup: false
   file:
-    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
-    - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
+  - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
+  - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
   provider: releases
   draft: false
   on:
     tags: true
+  token:
+    secure: SzPmQMuXFRSw9CAHi2kpgruqAltsylUeYc4BPG3j2AtU6AVQJ7H08l0/sehnkrHR5TyznRUrXzC65dctBIQOLO7pRioUvCvz1Ea19fvvrLGMpil9M9egXN26y8qKgvxlJbUw9s3deHw7xJPShK+HiEBU72syICDx4rN5/BkgONlapJDLoT930fL1E1ekbzx2l73eLV9VSKm/JsMH81ZjwEqDtjOrUSbosj29bzcRDkOkCq7S6YO8lHcwu9479OTnI5QAV9q4R7Dyj2E9TRRZCYZO41NoXWz4Ut3S/1COUeYxyt79vBLSmfndN/1RRoctZBHD4NWK5UtBURK2zpPny9f/eM0ofAJQRLUfZ9iBaAvX2Zf0AfRyAi67fM4BA0sWSTOaApYiMbHo/XY6Qm3Y3zMDS2stY/jxHNOM5YPupoaOgDGrwEf6zIdDH5eWI5EUcVS4y257Jt0c7R5JS9SQ0VCCNuhURDoNxmydavbGuWcOMDL1BFSIe7rCK5KKqg6k6k4OG+SIoBG2KasdCQ8k6rsjvAwltre+Pis0JeCGhTzZGe+/CdHAi6ldxokFPlPSrJJ+RcYbIKDUSqwLn06M2AX/Kq2gnj+pRfXoqdZZ1r3TiYxZmzyUtD0VX87nWynmLMOSfdrIfRnWaQTlgazk4jrPES6lpr4uf5DXe4hVuh8=
