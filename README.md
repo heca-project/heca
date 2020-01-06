@@ -59,6 +59,8 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
 ##### Options
 
 1. `--no-sort`: Doesn't sort output. This is useful if you're just looking for a certain date.
+ 
+   Can also be configured through setting `HECA_NOSORT=1`
 2. `--years <AmountYears>`: Generate events for n years. Defaults to 1.
 3. `--show <Events>`: What events to list. Possible values are:
      1. `yom-tov` - lists the main Yom Tovs - Rosh Hashana, Yom Kippur, Pesach, Shavuos and Sukkos.
@@ -71,11 +73,20 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
      8. `daf-yomi` - lists the daily Daf Yomi.
      9. `yerushalmi-yomi` - lists the daily Yerushalmi Yomi.
      10. `rambam-3-chapters` - lists the daily Rambam (3 chapters a day).
-     11. `rambam-1-chapter` - list the daily Rambam (1 chapter a day).
+     11. `rambam-1-chapter` - lists the daily Rambam (1 chapter a day).
+     12. `israeli-holidays` - lists the Israeli holidays that hebcal displays (Yom HaAliyah, Sigd, Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, and Yom Yerushalayim).
+     13. `chabad-holidays` - lists the days when Chabad doesn't say Tachanun (10 Kislev, 19/20 Kislev, and 12/13 Tammuz).
 
      The default is `yom-tov`.
-4. `--location`: Selects if you're looking for an Israeli calendar or Chu"l calendar. Options are "Chul" or "Israel". It defaults to Chul unless the language is Hebrew, in which case it defaults to Israel.
+4. `--location`: Selects if you're looking for an Israeli calendar or Chu"l calendar. Options are "Chul" or "Israel". It defaults to Chul unless the language is Hebrew, in which case it defaults to Israel. Can also be configured through `HECA_LOCATION`.
 5. `--type`: Force conversion from type T, where T is either "hebrew" (then date must be written as '5/אדרא/5779'), "gregorian" (where the date must be written as '1996/12/19'), or fuzzy (assumes Hebrew if `year` is above 4000, Gregorian otherwise. It also tries to be fuzzy in Hebrew month spelling and order). Defaults to `fuzzy`.
+ 
+    Can also be configured through `HECA_YEAR_TYPE`.
+    
+6. `--exact-days`: There's an [argument](https://www.halachipedia.com/index.php?title=Yom_HaAtzmaut#cite_ref-6) between the Rabbanut, and Rabbis Aharon Soloveitchik and Hershel Schachter. The Rabbanut says that if these days fall out around Shabbos, we should move them so that it won't lead to people breaking Shabbos, 
+                   while Rabbis Soloveitchik and Hershel Schachter said that one in America, one should always celebrate it on the given day. This option overrides the default Psak of the Rabbanut.
+                    
+      Can also be configured through `HECA_EXACT_DAYS`.    
 
 ## Config file
 
@@ -92,6 +103,7 @@ The config is a TOML file, with several options:
 
 2. `language` - The default language (options: `en_US` or `he_IL`).
 3. `location` - The default location (options: `chul` or `israel`).
+4. `exact-days` - See above in the arguments section. (option: `true` or `false`).
 
 ### Examples:
 ```
@@ -111,6 +123,8 @@ days = [
    { date = "30 Kislev", ifNotExists = ["29 Kislev", "1 Teves"], title = "This day doesn't always exist", json = "AnnoyingDay" },
    { date = "31 תשרי", ifNotExists = ["32 Adar2"], title = "Huh?", json = "HuhDay" }
 ]
+language = "en_US"
+exact-days = true
 ```
 
 

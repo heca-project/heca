@@ -211,6 +211,7 @@ struct ConfigFileV1 {
     days: Option<Vec<(String, String, String)>>,
     language: Option<String>,
     location: Option<String>,
+    #[serde(rename = "exact-days")]
     exact_days: Option<bool>,
 }
 #[derive(Deserialize)]
@@ -218,6 +219,7 @@ struct ConfigFile {
     days: Option<Vec<InnerDate>>,
     language: Option<String>,
     location: Option<String>,
+    #[serde(rename = "exact-days")]
     exact_days: Option<bool>,
 }
 #[derive(Deserialize)]

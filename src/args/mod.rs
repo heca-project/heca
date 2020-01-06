@@ -57,9 +57,8 @@ where
                    .subcommand(SubCommand::with_name("list")
                        .arg(Arg::with_name("YearType")
                            .long("type")
-                           .help("Specify if the year is a Hebrew or a Gregorian year.")
+                           .help("Specify if the year is a Hebrew or a Gregorian year. Default is \"fuzzy\"")
                            .possible_values(&["hebrew", "gregorian", "fuzzy"])
-                           .default_value("fuzzy")
                            .takes_value(true)
                            .required(false))
                        .arg(Arg::with_name("NoSort")
@@ -115,7 +114,7 @@ fn get_language(config_language: Option<Language>, passed_language: Option<&str>
         match language {
             "en_US" => Language::English,
             "he_IL" => Language::Hebrew,
-            x => panic!(format!("Assertion Error! How did {} get here?", x)),
+            _ => unreachable!(),
         }
     } else if let Some(language) = config_language {
         language
@@ -156,10 +155,7 @@ fn parse_args(matches: ArgMatches<'_>, output_type: OutputType) -> Result<MainAr
                 "UK" => ConfigDateFmt::UK,
                 "L" => ConfigDateFmt::L,
                 "US" => ConfigDateFmt::US,
-                x => panic!(format!(
-                    "Assertion error!, how did DateFormat get a value of {}",
-                    x
-                )),
+                _ => unreachable!(),
             }
         } else {
             ConfigDateFmt::ISO
@@ -172,7 +168,7 @@ fn parse_args(matches: ArgMatches<'_>, output_type: OutputType) -> Result<MainAr
                 "hebrew" => ConfigDateType::Hebrew,
                 "gregorian" => ConfigDateType::Gregorian,
                 "fuzzy" => ConfigDateType::Fuzzy,
-                x => panic!("How did you pass a T of {}", x),
+                _ => unreachable!(),
             },
         )?
     } else {
