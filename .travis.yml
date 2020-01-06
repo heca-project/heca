@@ -35,7 +35,6 @@ deploy:
     - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}"
     - "/tmp/heca-staging/heca-${TRAVIS_TAG}-${TARGET}.xz"
   provider: releases
-  edge: true
   draft: false
   on:
     tags: true
