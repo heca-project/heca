@@ -1,6 +1,6 @@
 [package]
 name = "heca"
-version = "1.4.1"
+version = "1.5.0"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = '2018'
 repository = "https://github.com/heca-project/heca"
@@ -14,7 +14,7 @@ readme = "README.md"
 
 chrono = {version = "0.4", features = ["serde"]}
 clap = {version = "2.33", features = ["yaml"]}
-heca-lib = "1.0"
+heca-lib = "1.3"
 either = {version = "1.5", features = ["serde"]}
 itoa = "0.4"
 rayon = "1.2"
@@ -37,5 +37,6 @@ profile = []
 assert_cmd = "0.12"
 predicates = "1"
 once_cell = "1.2"
+regex = "1"
 
 

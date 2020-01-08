@@ -61,6 +61,7 @@ pub enum Event {
     DailyStudy(DailyStudy),
     IsraeliHolidays,
     ChabadHolidays,
+    ShabbosMevarchim,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -191,6 +192,11 @@ impl Serialize for DayVal {
                         state.serialize_field("topic", &yerushalmi_yomi)?;
                     }
                 };
+            }
+            Name::ShabbosMevarchim(shabbos_mevarchim) => {
+                state.serialize_field("type", "ShabbosMevarchim")?;
+                state.serialize_field("month", &shabbos_mevarchim.hebrew_month)?;
+                state.serialize_field("molad", &shabbos_mevarchim)?;
             }
         };
         state.end()
@@ -446,6 +452,7 @@ pub enum Name {
     DailyStudy(DailyStudyOutput),
     IsraeliHoliday(IsraeliHoliday),
     ChabadHoliday(ChabadHoliday),
+    ShabbosMevarchim(ShabbosMevarchim),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -659,6 +666,7 @@ impl Serialize for AppError {
     }
 }
 
+use crate::algorithms::shabbos_mevarchim::ShabbosMevarchim;
 use crate::prelude::constants::{RAMBAM, YERUSHALMI};
 use std::collections::HashMap;
 use std::fmt;

@@ -101,7 +101,8 @@ where
                            "rambam-3-chapters",
                            "rambam-1-chapter",
                            "israeli-holidays",
-                           "chabad-holidays"
+                           "chabad-holidays",
+                           "shabbos-mevarchim"
                        ])
                        .default_value("yom-tov"))
                        .arg(Arg::with_name("Year")

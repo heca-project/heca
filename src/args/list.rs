@@ -38,27 +38,23 @@ pub fn parse_options(
             }
             _ => unreachable!(),
         }
-    } else {
-        if let Some(no_sort) = env::var_os("HECA_YEAR_TYPE") {
-            match no_sort.to_string_lossy().deref() {
-                "HEBREW" => YearType::Hebrew(year_num),
-                "GREGORIAN" => YearType::Gregorian(year_num),
-                "FUZZY" => {
-                    if year_num > 3000 {
-                        YearType::Hebrew(year_num)
-                    } else {
-                        YearType::Gregorian(year_num)
-                    }
+    } else if let Some(no_sort) = env::var_os("HECA_YEAR_TYPE") {
+        match no_sort.to_string_lossy().deref() {
+            "HEBREW" => YearType::Hebrew(year_num),
+            "GREGORIAN" => YearType::Gregorian(year_num),
+            "FUZZY" => {
+                if year_num > 3000 {
+                    YearType::Hebrew(year_num)
+                } else {
+                    YearType::Gregorian(year_num)
                 }
-                _ => panic!(r#"HECA_YEAR_TYPE must be "HEBREW", "GREGORIAN" or "FUZZY""#),
             }
-        } else {
-            if year_num > 3000 {
-                YearType::Hebrew(year_num)
-            } else {
-                YearType::Gregorian(year_num)
-            }
+            _ => panic!(r#"HECA_YEAR_TYPE must be "HEBREW", "GREGORIAN" or "FUZZY""#),
         }
+    } else if year_num > 3000 {
+        YearType::Hebrew(year_num)
+    } else {
+        YearType::Gregorian(year_num)
     };
 
     let no_sort = if matches.occurrences_of("NoSort") > 0 {
@@ -122,6 +118,8 @@ pub fn parse_options(
 
             "israeli-holidays" => vec![Event::IsraeliHolidays],
             "chabad-holidays" => vec![Event::ChabadHolidays],
+
+            "shabbos-mevarchim" => vec![Event::ShabbosMevarchim],
             _ => unreachable!("{}", x),
         })
         .collect::<Vec<Event>>();
