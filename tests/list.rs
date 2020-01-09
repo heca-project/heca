@@ -304,6 +304,33 @@ fn erev_rosh_hashana_check_hebrew() {
     }
 }
 
+#[test]
+fn check_hebrew_command_line() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--language")
+        .arg("he_IL")
+        .arg("list")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,israeli-holidays,chabad-holidays,daf-yomi,yerushalmi-yomi,rambam-3-chapters,rambam-1-chapter,shabbos-mevarchim");
+    let out = cmd.output().unwrap();
+    if !out.status.success() {
+        panic!("{}", &String::from_utf8(out.stderr).unwrap());
+    }
+    let res = &String::from_utf8(out.stdout).unwrap();
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.env("LANG","he_IL").
+        arg("list")
+        .arg("5750")
+        .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,israeli-holidays,chabad-holidays,daf-yomi,yerushalmi-yomi,rambam-3-chapters,rambam-1-chapter,shabbos-mevarchim");
+    let out = cmd.output().unwrap();
+    if !out.status.success() {
+        panic!("{}", &String::from_utf8(out.stderr).unwrap());
+    }
+    let res1 = &String::from_utf8(out.stdout).unwrap();
+    assert_eq!(res, res1);
+}
+
 static HEBCAL: Lazy<HashMap<chrono::NaiveDate, Vec<String>>> = Lazy::new(|| {
     let mut hebcal = HashMap::new();
     let holidays = include_str!("holidays_1980_9999");

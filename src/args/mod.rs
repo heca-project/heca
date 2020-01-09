@@ -119,8 +119,8 @@ fn get_language(config_language: Option<Language>, passed_language: Option<&str>
         }
     } else if let Some(language) = config_language {
         language
-    } else if let Some(language) = env::vars().find(|x| x.0 == "LANG") {
-        if language.1 == "he_IL.UTF-8" {
+    } else if let Ok(language) = env::var("LANG") {
+        if language == "he_IL.UTF-8" || language == "he_IL" {
             Language::Hebrew
         } else {
             Language::English
