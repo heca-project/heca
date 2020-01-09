@@ -81,6 +81,7 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
      11. `rambam-1-chapter` - lists the daily Rambam (1 chapter a day).
      12. `israeli-holidays` - lists the Israeli holidays that hebcal displays (Yom HaAliyah, Sigd, Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, and Yom Yerushalayim).
      13. `chabad-holidays` - lists the days when Chabad doesn't say Tachanun (10 Kislev, 19/20 Kislev, and 12/13 Tammuz).
+     14. `shabbos-mevarchim` - lists the Shabbos Mevorchim of the upcoming month. It also outputs the time of the molad (new moon).
 
      The default is `yom-tov`.
 4. `--location`: Selects if you're looking for an Israeli calendar or Chu"l calendar. Options are "Chul" or "Israel". It defaults to Chul unless the language is Hebrew, in which case it defaults to Israel. Can also be configured through `HECA_LOCATION`.
@@ -205,6 +206,28 @@ $ comm -12 /tmp/siyum_daf_yomi /tmp/siyum_rambam_3_chapters
 
 So we'll have to wait a while for an Achdus Siyum.
 
+### When will the Molad be on a round number?
+```
+$ ./target/release/heca --print=json list --show=shabbos-mevarchim 1020 --years 5000 |jq '. |.[] | select(.molad.minute ==0) | select(.molad.chalakim == 0) | .day'
+
+"2092-02-01T18:00:00Z"
+"2179-06-04T18:00:00Z"
+"2267-09-13T18:00:00Z"
+"2354-01-22T18:00:00Z"
+"2441-05-17T18:00:00Z"
+```
+So, only in seventy years.
+### When will the Molad be on a _really_ round number?
+
+```
+$ ./target/release/heca --print=json list --show=shabbos-mevarchim 1020 --years 5000 |jq '. |.[]| select(.molad.hour == 0) | select(.molad.minute ==0) | select(.molad.chalakim == 0) | .day'
+
+"1830-02-19T18:00:00Z"
+"3925-10-23T18:00:00Z"
+```
+
+We'll have to wait for a _while_ for the Molad to fall out exactly on midnight.
+
 ## Benchmarks
 
 In my _totally not scientific benchmarks_:
@@ -236,4 +259,5 @@ We use [SemVer](http://semver.org/) for versioning of JSON output (although we m
 
 ## License 
 
-Licensed under the MIT license.
+* Source is licensed under the MIT license.
+* Binary is licensed under the MIT + Apache-2 license.
