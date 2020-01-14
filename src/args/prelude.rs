@@ -3,7 +3,9 @@ use crate::args::DATE_TOKEN;
 use heca_lib::prelude::{HebrewMonth, Location};
 use serde::Deserialize;
 use std::convert::TryInto;
-use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::ErrorKind;
 use std::num::NonZeroI8;
 
 pub fn str_to_location(location: &str) -> Result<Location, AppError> {
@@ -21,15 +23,37 @@ pub struct Config {
     pub exact_days: Option<bool>,
 }
 
+#[cfg(macos)]
+fn get_config_file(program_name: &str) -> Option<String> {
+    let base_dir = xdg::BaseDirectories::with_prefix(program_name).ok()?;
+    let path = base_dir.find_config_file("config.toml")?;
+    Some(String::from(path.to_string_lossy()))
+}
+
+#[cfg(not(macos))]
+fn get_config_file(program_name: &str) -> Option<String> {
+    use std::path::PathBuf;
+    let mut path = PathBuf::from(dirs::config_dir()?);
+    path.push(program_name);
+    path.push("config.toml");
+    Some(path.to_string_lossy().to_string())
+}
+
 impl Config {
     pub fn from_location(pass_value: Option<&str>) -> Result<Self, AppError> {
-        let config_file = if let Some(v) = pass_value {
-            Some(String::from(v))
-        } else if let Ok(base_dir) = xdg::BaseDirectories::with_prefix("heca") {
-            if let Some(path) = base_dir.find_config_file("config.toml") {
-                Some(String::from(path.to_string_lossy()))
-            } else {
-                None
+        let mut config_file = if let Some(v) = pass_value {
+            Some(File::open(v)?)
+        } else if let Some(config_file) = get_config_file("heca") {
+            let file = File::open(config_file);
+            match file {
+                Err(e) => {
+                    if e.kind() == ErrorKind::NotFound {
+                        None
+                    } else {
+                        return Err(e.into());
+                    }
+                }
+                Ok(file) => Some(file),
             }
         } else {
             None
@@ -38,13 +62,14 @@ impl Config {
         let mut language = None;
         let mut location = None;
         let mut exact_days = None;
-        if let Some(ref file) = config_file {
-            let f = &fs::read_to_string(file)?;
-            let config_attempt = toml::from_str(f);
+        if let Some(ref mut file) = config_file {
+            let mut f = String::new();
+            file.read_to_string(&mut f)?;
+            let config_attempt = toml::from_str(&f);
             let config: ConfigFile = match config_attempt {
                 Ok(config) => config,
                 Err(err) => {
-                    let config_v2: Result<ConfigFileV1, _> = toml::from_str(f);
+                    let config_v2: Result<ConfigFileV1, _> = toml::from_str(&f);
                     match config_v2 {
                         Ok(c) => ConfigFile {
                             days: c.days.and_then(|c| {

@@ -521,14 +521,15 @@ fn custom_day_check_file_does_not_exist() {
     cmd.arg("--language")
         .arg("en_US")
         .arg("--config")
-        .arg("sample_config_does_not_exist.toml")
+        .arg("/sample_config_does_not_exist.toml")
         .arg("--print")
         .arg("json")
         .arg("list")
         .arg("5750")
         .arg("--show=yom-tov,shabbos,special-parshas,chol,minor-holidays,omer,custom-holidays");
-    let res: Err =
-        serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stderr).unwrap()).unwrap();
+    let out = cmd.output().unwrap();
+    assert_eq!(out.status.code().unwrap(), 1);
+    let res: Err = serde_json::from_str(&String::from_utf8(out.stderr).unwrap()).unwrap();
 
     assert_eq!(res.r#type, "ReadError");
 }

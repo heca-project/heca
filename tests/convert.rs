@@ -18,8 +18,6 @@ fn base_convert_english() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--language")
         .env("JSON", "YES")
         .arg("en_US")
-        .arg("--print")
-        .arg("json")
         .arg("convert")
         .arg("--datefmt")
         .arg("ISO")
