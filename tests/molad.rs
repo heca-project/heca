@@ -21,7 +21,7 @@ fn test_molad() {
         .arg("--show=shabbos-mevarchim");
     let out = cmd.output().expect(&format!("{} {}", file!(), line!()));
     if !out.status.success() {
-        panic!("{}", String::from_utf8(&out.stderr).unwrap());
+        panic!("{}", String::from_utf8(out.stderr).unwrap());
     }
     let re = Regex::new(
         r#"(.+)/(.+)/(.+) Molad (.+): (.+), (.+) minutes and (.+) chalakim after (.+) (.+)"#,
