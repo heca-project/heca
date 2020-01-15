@@ -2,7 +2,6 @@
 
 Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back and list Jewish holidays.
 
-[![Crates.io](https://img.shields.io/crates/v/heca.svg)](https://crates.io/crates/heca)
 [![Build Status](https://travis-ci.org/heca-project/heca.svg?branch=master)](https://travis-ci.org/heca-project/heca)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Percentage of issues still open")
@@ -25,10 +24,12 @@ $ yaourt -S heca
 ```
 
 ### Cargo
-If you have cargo installed, you can run:
+If you have git and cargo installed, you can run:
 
 ```
-$ cargo install heca
+$ git clone --depth=1 https://github.com/heca-project/heca.git
+$ cd heca
+$ cargo install --path .
 ```
 
 ## Usage
