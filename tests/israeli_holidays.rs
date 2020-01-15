@@ -20,7 +20,7 @@ fn hebcal_to_cmd_check_yom_haatzmaut() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_haatzmauts = include_str!("yom_haatzmaut_5700_500").split('\n').collect();
+    let yom_haatzmauts = include_str!("yom_haatzmaut_5700_500").lines().collect();
 
     find_holiday(yom_haatzmauts, "YomHaAtzmaut", &res);
 }
@@ -40,7 +40,7 @@ fn hebcal_to_cmd_check_sigd() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_haatzmauts = include_str!("sigd_5700_500").split('\n').collect();
+    let yom_haatzmauts = include_str!("sigd_5700_500").lines().collect();
 
     find_holiday(yom_haatzmauts, "Sigd", &res);
 }
@@ -60,7 +60,7 @@ fn hebcal_to_cmd_check_yom_haaliyah() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_haatzmauts = include_str!("yom_haaliyah_5700_500").split('\n').collect();
+    let yom_haatzmauts = include_str!("yom_haaliyah_5700_500").lines().collect();
 
     find_holiday(yom_haatzmauts, "YomHaAliyah", &res);
 }
@@ -80,7 +80,7 @@ fn hebcal_to_cmd_check_yom_hashoah() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_haatzmauts = include_str!("yom_hashoah_5700_500").split('\n').collect();
+    let yom_haatzmauts = include_str!("yom_hashoah_5700_500").lines().collect();
 
     find_holiday(yom_haatzmauts, "YomHaShoah", &res);
 }
@@ -100,9 +100,7 @@ fn hebcal_to_cmd_check_yom_yerushalayim() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_yerushalayim = include_str!("yom_yerushalayim_5700_500")
-        .split('\n')
-        .collect();
+    let yom_yerushalayim = include_str!("yom_yerushalayim_5700_500").lines().collect();
 
     find_holiday(yom_yerushalayim, "YomYerushalayim", &res);
 }
@@ -122,7 +120,7 @@ fn hebcal_to_cmd_check_yom_hazikaron() {
     let res: Vec<Res> =
         serde_json::from_str(&String::from_utf8(cmd.output().unwrap().stdout).unwrap()).unwrap();
 
-    let yom_hazikarons = include_str!("yom_hazikaron_5700_500").split('\n').collect();
+    let yom_hazikarons = include_str!("yom_hazikaron_5700_500").lines().collect();
 
     find_holiday(yom_hazikarons, "YomHaZikaron", &res);
 }

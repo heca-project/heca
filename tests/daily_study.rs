@@ -46,7 +46,7 @@ fn daf_yomi_test() {
     let hebcal_daf_yomi = include_str!("daf_yomi.txt");
     let mut hebcal_hashset = HashMap::new();
     let mut heca_hashset = HashMap::new();
-    hebcal_daf_yomi.split_terminator("\n").for_each(|x| {
+    hebcal_daf_yomi.lines().for_each(|x| {
         let (date, daf) = x.split_at(x.find(" Daf Yomi:").expect(&format!(
             "{} {}",
             file!(),

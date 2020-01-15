@@ -28,10 +28,9 @@ fn test_molad() {
     )
     .expect(&format!("{} {}", file!(), line!()));
     let orig: Vec<Res> = include_str!("molad_1990_100")
-        .split('\n')
+        .lines()
         .filter(|x| x != &"")
         .map(|x| {
-            eprintln!("{}", x);
             let caps = re.captures(x).expect(&format!("{} {}", file!(), line!()));
             let month: u32 = caps
                 .get(1)
@@ -98,7 +97,6 @@ fn test_molad() {
         line!()
     )))
     .expect(&format!("{} {}", file!(), line!()));
-    eprintln!("res = {:?}", res);
 
     for r in res.iter().filter(|x| x.month != "Tishrei") {
         orig.iter()
