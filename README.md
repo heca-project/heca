@@ -38,8 +38,8 @@ $ cargo install heca
 
 ### Options
 
-1. `--config`: Sets the config file. See the Config section for more information. If not set, it tries to read `$XDG_CONFIG_HOME/heca/config.toml`).
-2. `--language`: Sets the output language. The options are Hebrew (he_IL) or English (en_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL`), it defaults to English.
+1. `--config`: Sets the config file. See the Config section for more information. If not set, it tries to read `$XDG_CONFIG_HOME/heca/config.toml` on \*Nix or `{FOLDERID_RoamingAppData}\heca\config.toml` on Windows).
+2. `--language`: Sets the output language. The options are Hebrew (he\_IL) or English (en\_US). If not set, it tries to pick up your languages from the `LANG` environment variable. If `LANG` isn't set (or is set to something not `he_IL`), it defaults to English.
 3. `--print`: Prints the result as JSON, regular or pretty-printed (is currently aliased to regular).
 
 ### Subcommands
