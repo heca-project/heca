@@ -101,6 +101,7 @@ pub enum YearType {
 pub struct DayVal {
     pub day: chrono::DateTime<Utc>,
     pub name: Name,
+    pub candle_lighting: Option<u8>,
 }
 
 impl Serialize for DayVal {
@@ -116,6 +117,9 @@ impl Serialize for DayVal {
                 TorahReading::YomTov(yt) => {
                     state.serialize_field("type", "YomTov")?;
                     state.serialize_field("name", yt)?;
+                    if let Some(_) = self.candle_lighting {
+                        state.serialize_field("candleLighting", &true)?;
+                    }
                 }
                 TorahReading::Chol(chol) => {
                     state.serialize_field("type", "Chol")?;
@@ -124,6 +128,9 @@ impl Serialize for DayVal {
                 TorahReading::Shabbos(shabbos) => {
                     state.serialize_field("type", "Shabbos")?;
                     state.serialize_field("name", shabbos)?;
+                    if let Some(_) = self.candle_lighting {
+                        state.serialize_field("candleLighting", &true)?;
+                    }
                 }
                 TorahReading::SpecialParsha(special_parsha) => {
                     state.serialize_field("type", "YomTov")?;

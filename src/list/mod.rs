@@ -12,7 +12,7 @@ use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
 use heca_lib::prelude::Chol::NineAv;
-use heca_lib::prelude::{HebrewMonth, Location, TorahReading, TorahReadingType};
+use heca_lib::prelude::*;
 use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
 use serde::Serialize;
@@ -45,19 +45,28 @@ impl Return {
             let count_m = itoa::write(&mut month_arr[..], month).unwrap();
             let count_d = itoa::write(&mut day_arr[..], day).unwrap();
             match args.language {
-                Language::English => lock.write(b"Night of ").ok(),
-                Language::Hebrew => lock.write("לילה של ".as_bytes()).ok(),
+                Language::English => lock.write(b"Night of ").unwrap(),
+                Language::Hebrew => lock.write("ליל ".as_bytes()).unwrap(),
             };
-            lock.write(&year_arr[..count_y as usize]).ok();
-            lock.write(b"/").ok();
-            lock.write(&month_arr[..count_m as usize]).ok();
-            lock.write(b"/").ok();
-            lock.write(&day_arr[..count_d as usize]).ok();
-            lock.write(b": ").ok();
+            lock.write(&year_arr[..count_y as usize]).unwrap();
+            lock.write(b"/").unwrap();
+            lock.write(&month_arr[..count_m as usize]).unwrap();
+            lock.write(b"/").unwrap();
+            lock.write(&day_arr[..count_d as usize]).unwrap();
+            lock.write(b": ").unwrap();
             match name {
-                Name::TorahReading(name) => lock
-                    .write(print::torah_reading(name, args.language).as_bytes())
-                    .ok(),
+                Name::TorahReading(name) => {
+                    let mut res = lock
+                        .write(print::torah_reading(name, args.language).as_bytes())
+                        .unwrap();
+                    if let Some(_) = d.candle_lighting {
+                        res += match args.language {
+                            Language::English => lock.write(b". Candle lighting").unwrap(),
+                            Language::Hebrew => lock.write(". הדלקת נרות".as_bytes()).unwrap(),
+                        };
+                    }
+                    Some(res)
+                }
                 Name::MinorDays(day) => lock
                     .write(print::minor_holidays(day, args.language).as_bytes())
                     .ok(),
@@ -142,6 +151,7 @@ impl GetDayVal for DailyStudyEvents {
                                     (diff.num_days() % 2711).try_into().unwrap(),
                                     &GEMARAS_SECOND_CYCLE,
                                 ))),
+                                candle_lighting: None,
                             };
                             return_val.push(d);
                         } else {
@@ -150,6 +160,7 @@ impl GetDayVal for DailyStudyEvents {
                                 let diff = i - first_day_of_first_cycle;
                                 let d = DayVal {
                                     day: i,
+                                    candle_lighting: None,
                                     name: Name::DailyStudy(DailyStudyOutput::Daf(Daf::from_days(
                                         (diff.num_days() % 2702).try_into().unwrap(),
                                         &GEMARAS_FIRST_CYCLE,
@@ -166,6 +177,7 @@ impl GetDayVal for DailyStudyEvents {
                             match chapters {
                                 RambamChapters::One => {
                                     let d = DayVal {
+                                        candle_lighting: None,
                                         day: i,
                                         name: Name::DailyStudy(
                                             DailyStudyOutput::RambamOneChapters(
@@ -179,6 +191,7 @@ impl GetDayVal for DailyStudyEvents {
                                 }
                                 RambamChapters::Three => {
                                     let d = DayVal {
+                                        candle_lighting: None,
                                         day: i,
                                         name: Name::DailyStudy(
                                             DailyStudyOutput::RambamThreeChapters(
@@ -258,6 +271,7 @@ impl GetDayVal for DailyStudyEvents {
                                                     .unwrap(),
                                             ),
                                         )),
+                                        candle_lighting: None,
                                     };
                                     return_val.push(d);
                                 }
@@ -390,9 +404,56 @@ fn get_list(
             ret.extend(
                 year.get_holidays(location, &main_events)
                     .into_iter()
-                    .map(|x| DayVal {
-                        day: x.day().into(),
-                        name: Name::TorahReading(x.name()),
+                    .map(|x| {
+                        let day: DateTime<Utc> = x.day().into();
+                        let is_shabbos = if let TorahReading::Shabbos(_) = x.name() {
+                            true
+                        } else {
+                            false
+                        };
+                        let is_yom_tov = if let TorahReading::YomTov(yt) = x.name() {
+                            let should_light_candles = match yt {
+                                heca_lib::prelude::YomTov::RoshHashanah1
+                                | heca_lib::prelude::YomTov::RoshHashanah2
+                                | heca_lib::prelude::YomTov::YomKippur
+                                | heca_lib::prelude::YomTov::Sukkos1
+                                | heca_lib::prelude::YomTov::ShminiAtzeres
+                                | heca_lib::prelude::YomTov::Pesach1
+                                | heca_lib::prelude::YomTov::Shavuos1 => true,
+                                yt => match location {
+                                    Location::Chul => {
+                                        if yt == heca_lib::prelude::YomTov::Sukkos2
+                                            || yt == heca_lib::prelude::YomTov::SimchasTorah
+                                            || yt == heca_lib::prelude::YomTov::Pesach2
+                                            || yt == heca_lib::prelude::YomTov::Pesach8
+                                            || yt == heca_lib::prelude::YomTov::Shavuos2
+                                        {
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    }
+                                    Location::Israel => false,
+                                },
+                            };
+                            //also check for Shabbos Chol HaMoed
+                            should_light_candles || day.weekday() == Weekday::Fri
+                        } else {
+                            false
+                        };
+                        if is_shabbos || is_yom_tov {
+                            DayVal {
+                                day,
+                                name: Name::TorahReading(x.name()),
+                                candle_lighting: Some(0),
+                            }
+                        } else {
+                            DayVal {
+                                day: x.day().into(),
+                                name: Name::TorahReading(x.name()),
+                                candle_lighting: None,
+                            }
+                        }
                     }),
             );
 
@@ -416,6 +477,7 @@ fn get_list(
                     let d = DayVal {
                         name: Name::CustomHoliday(x.clone()),
                         day: day.try_into().unwrap(),
+                        candle_lighting: None,
                     };
                     ret.push(d);
                 } else if let Some(not_exists) = &x.if_not_exists {
@@ -424,6 +486,7 @@ fn get_list(
                             let d = DayVal {
                                 name: Name::CustomHoliday(x.clone()),
                                 day: day.into(),
+                                candle_lighting: None,
                             };
                             ret.push(d);
                         }

@@ -17,198 +17,247 @@ pub fn get_omer(year: &HebrewYear) -> [DayVal; 49] {
         DayVal {
             day: first_day_of_pesach + Duration::days(1),
             name: Name::MinorDays(MinorDays::Omer1),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(2),
             name: Name::MinorDays(MinorDays::Omer2),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(3),
             name: Name::MinorDays(MinorDays::Omer3),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(4),
             name: Name::MinorDays(MinorDays::Omer4),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(5),
             name: Name::MinorDays(MinorDays::Omer5),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(6),
             name: Name::MinorDays(MinorDays::Omer6),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(7),
             name: Name::MinorDays(MinorDays::Omer7),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(8),
             name: Name::MinorDays(MinorDays::Omer8),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(9),
             name: Name::MinorDays(MinorDays::Omer9),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(10),
             name: Name::MinorDays(MinorDays::Omer10),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(11),
             name: Name::MinorDays(MinorDays::Omer11),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(12),
             name: Name::MinorDays(MinorDays::Omer12),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(13),
             name: Name::MinorDays(MinorDays::Omer13),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(14),
             name: Name::MinorDays(MinorDays::Omer14),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(15),
             name: Name::MinorDays(MinorDays::Omer15),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(16),
             name: Name::MinorDays(MinorDays::Omer16),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(17),
             name: Name::MinorDays(MinorDays::Omer17),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(18),
             name: Name::MinorDays(MinorDays::Omer18),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(19),
             name: Name::MinorDays(MinorDays::Omer19),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(20),
             name: Name::MinorDays(MinorDays::Omer20),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(21),
             name: Name::MinorDays(MinorDays::Omer21),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(22),
             name: Name::MinorDays(MinorDays::Omer22),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(23),
             name: Name::MinorDays(MinorDays::Omer23),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(24),
             name: Name::MinorDays(MinorDays::Omer24),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(25),
             name: Name::MinorDays(MinorDays::Omer25),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(26),
             name: Name::MinorDays(MinorDays::Omer26),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(27),
             name: Name::MinorDays(MinorDays::Omer27),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(28),
             name: Name::MinorDays(MinorDays::Omer28),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(29),
             name: Name::MinorDays(MinorDays::Omer29),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(30),
             name: Name::MinorDays(MinorDays::Omer30),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(31),
             name: Name::MinorDays(MinorDays::Omer31),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(32),
             name: Name::MinorDays(MinorDays::Omer32),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(33),
             name: Name::MinorDays(MinorDays::Omer33),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(34),
             name: Name::MinorDays(MinorDays::Omer34),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(35),
             name: Name::MinorDays(MinorDays::Omer35),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(36),
             name: Name::MinorDays(MinorDays::Omer36),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(37),
             name: Name::MinorDays(MinorDays::Omer37),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(38),
             name: Name::MinorDays(MinorDays::Omer38),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(39),
             name: Name::MinorDays(MinorDays::Omer39),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(40),
             name: Name::MinorDays(MinorDays::Omer40),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(41),
             name: Name::MinorDays(MinorDays::Omer41),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(42),
             name: Name::MinorDays(MinorDays::Omer42),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(43),
             name: Name::MinorDays(MinorDays::Omer43),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(44),
             name: Name::MinorDays(MinorDays::Omer44),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(45),
             name: Name::MinorDays(MinorDays::Omer45),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(46),
             name: Name::MinorDays(MinorDays::Omer46),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(47),
             name: Name::MinorDays(MinorDays::Omer47),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(48),
             name: Name::MinorDays(MinorDays::Omer48),
+            candle_lighting: None,
         },
         DayVal {
             day: first_day_of_pesach + Duration::days(49),
             name: Name::MinorDays(MinorDays::Omer49),
+            candle_lighting: None,
         },
     ]
 }

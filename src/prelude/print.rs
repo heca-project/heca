@@ -252,7 +252,7 @@ pub fn torah_reading(tr: TorahReading, language: types::Language) -> &'static st
                 Chol::NineAv => "Ninth of Av",
             },
             TorahReading::Shabbos(tr) => match tr {
-                Parsha::Haazinu => "Haazina",
+                Parsha::Haazinu => "Haazinu",
                 Parsha::Vayelech => "Vayelech",
                 Parsha::Bereishis => "Bereishis",
                 Parsha::Noach => "Noach",
