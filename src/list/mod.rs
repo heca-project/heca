@@ -1,5 +1,6 @@
 use crate::algorithms::{chabad_holidays, israeli_holidays, shabbos_mevarchim};
 
+use crate::algorithms::candle_lighting::City;
 use crate::args::types::{
     AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
     MainArgs, MinorHoliday, Name, OutputType, RambamChapter, RambamChapters, RambamThreeChapter,
@@ -59,9 +60,30 @@ impl Return {
                     let mut res = lock
                         .write(print::torah_reading(name, args.language).as_bytes())
                         .unwrap();
-                    if let Some(_) = d.candle_lighting {
+                    if let Some(l) = d.candle_lighting {
                         res += match args.language {
-                            Language::English => lock.write(b". Candle lighting").unwrap(),
+                            Language::English => {
+                                let mut ret = lock.write(b". Candle lighting").unwrap();
+                                if let Some(candle_lighting_time) = l {
+                                    let mut hour_arr = [b'\0'; 2];
+                                    let mut minute_arr = [b'\0'; 2];
+                                    ret += lock.write(b" ").unwrap();
+                                    itoa::write(&mut hour_arr[..], candle_lighting_time.hour())
+                                        .unwrap();
+                                    let minute_write = itoa::write(
+                                        &mut minute_arr[..],
+                                        candle_lighting_time.minute(),
+                                    )
+                                    .unwrap();
+                                    ret += lock.write(&hour_arr).unwrap();
+                                    ret += lock.write(b":").unwrap();
+                                    if minute_write == 1 {
+                                        ret += lock.write(b"0").unwrap();
+                                    }
+                                    ret += lock.write(&minute_arr).unwrap();
+                                };
+                                ret
+                            }
                             Language::Hebrew => lock.write(". הדלקת נרות".as_bytes()).unwrap(),
                         };
                     }
@@ -335,6 +357,7 @@ impl Runnable for ListArgs {
                     &main_events,
                     &custom_events,
                     self.exact_days,
+                    &self.city,
                 )?;
                 part1.extend(daily_study_events.get_day_val(year, year + self.amnt_years - 1));
                 Ok(Return { list: part1 })
@@ -355,6 +378,7 @@ impl Runnable for ListArgs {
                     &main_events,
                     &custom_events,
                     self.exact_days,
+                    &self.city,
                 )?;
                 part1.extend(daily_study_events.get_day_val(that_year, last_year));
                 let mut part2: Vec<DayVal> = Vec::with_capacity((self.amnt_years as usize) * 100);
@@ -389,6 +413,7 @@ fn get_list(
     main_events: &Vec<TorahReadingType>,
     custom_events: &Vec<CustomHoliday>,
     exact_days: bool,
+    city: &Option<City>,
 ) -> Result<Vec<DayVal>, AppError> {
     let amnt_years = last_year - year;
     let mut part1: Vec<Vec<DayVal>> = Vec::with_capacity(amnt_years as usize);
@@ -411,15 +436,18 @@ fn get_list(
                         } else {
                             false
                         };
-                        let is_yom_tov = if let TorahReading::YomTov(yt) = x.name() {
-                            let should_light_candles = match yt {
+                        let (is_yom_tov, light_on_time) = if let TorahReading::YomTov(yt) = x.name()
+                        {
+                            let (should_light_candles, light_on_time) = match yt {
+                                heca_lib::prelude::YomTov::RoshHashanah2 => (true, false),
+
                                 heca_lib::prelude::YomTov::RoshHashanah1
-                                | heca_lib::prelude::YomTov::RoshHashanah2
                                 | heca_lib::prelude::YomTov::YomKippur
                                 | heca_lib::prelude::YomTov::Sukkos1
                                 | heca_lib::prelude::YomTov::ShminiAtzeres
                                 | heca_lib::prelude::YomTov::Pesach1
-                                | heca_lib::prelude::YomTov::Shavuos1 => true,
+                                | heca_lib::prelude::YomTov::Shavuos1 => (true, true),
+
                                 yt => match location {
                                     Location::Chul => {
                                         if yt == heca_lib::prelude::YomTov::Sukkos2
@@ -428,28 +456,63 @@ fn get_list(
                                             || yt == heca_lib::prelude::YomTov::Pesach8
                                             || yt == heca_lib::prelude::YomTov::Shavuos2
                                         {
-                                            true
+                                            (true, false)
                                         } else {
-                                            false
+                                            (false, false)
                                         }
                                     }
-                                    Location::Israel => false,
+                                    Location::Israel => (false, false),
                                 },
                             };
                             //also check for Shabbos Chol HaMoed
-                            should_light_candles || day.weekday() == Weekday::Fri
+                            if day.weekday() == Weekday::Fri {
+                                (true, true)
+                            } else if should_light_candles {
+                                if light_on_time {
+                                    (true, true)
+                                } else {
+                                    (true, false)
+                                }
+                            } else {
+                                (false, false)
+                            }
                         } else {
-                            false
+                            (false, false)
                         };
                         if is_shabbos || is_yom_tov {
+                            let candle_lighting = if let Some(city) = city {
+                                use zmanim::prelude::Zmanim;
+                                let date: NaiveDate = day.date().naive_local();
+                                if date.weekday() == Weekday::Sat || !light_on_time {
+                                    None
+                                } else {
+                                    if let Some(time) = zmanim::get(
+                                        &Zmanim::Sunset,
+                                        city.latitude,
+                                        city.longitude,
+                                        date,
+                                        &city.time_zone,
+                                    ) {
+                                        Some(
+                                            time - Duration::minutes(
+                                                city.candlelighting_to_sunset as i64 - 1,
+                                            ),
+                                        )
+                                    } else {
+                                        None
+                                    }
+                                }
+                            } else {
+                                None
+                            };
                             DayVal {
                                 day,
                                 name: Name::TorahReading(x.name()),
-                                candle_lighting: Some(0),
+                                candle_lighting: Some(candle_lighting),
                             }
                         } else {
                             DayVal {
-                                day: x.day().into(),
+                                day,
                                 name: Name::TorahReading(x.name()),
                                 candle_lighting: None,
                             }

@@ -1,3 +1,4 @@
+use crate::algorithms::candle_lighting::{City, CITIES};
 use crate::args::prelude::{str_to_location, Config};
 use crate::args::types::{
     AppError, Command, CustomHoliday, DailyStudy, Event, Language, ListArgs, MinorHoliday,
@@ -5,6 +6,7 @@ use crate::args::types::{
 };
 use clap::ArgMatches;
 use heca_lib::prelude::{Location, TorahReadingType};
+
 use std::env;
 use std::ops::Deref;
 
@@ -95,6 +97,54 @@ pub fn parse_options(
         Location::Chul
     };
 
+    let city = if let Some(city) = matches.value_of("City") {
+        Some(String::from(city))
+    } else if let Some(city) = env::var_os("HECA_CITY") {
+        Some(city.to_string_lossy().into_owned())
+    } else if let Some(city) = &config.default_city {
+        Some(city.clone())
+    } else {
+        None
+    };
+
+    let city: Option<City> = if let Some(city) = city {
+        let res = config
+            .cities
+            .as_ref()
+            .and_then(|config_city_vec| {
+                config_city_vec
+                    .iter()
+                    .find(|config_city| config_city.name == city)
+                    .and_then(|x| Some(x.clone()))
+            })
+            .and_then(|config_city| {
+                Some(City {
+                    name: config_city.name.into(),
+                    time_zone: config_city.time_zone.clone(),
+                    latitude: config_city.latitude,
+                    longitude: config_city.longitude,
+                    candlelighting_to_sunset: config_city.light_candles_before_shkiya,
+                })
+            })
+            .or_else(|| {
+                CITIES.iter().find(|x| city == x.name).and_then(|x| {
+                    Some(City {
+                        candlelighting_to_sunset: x.candlelighting_to_sunset.clone(),
+                        latitude: x.latitude.clone(),
+                        longitude: x.longitude.clone(),
+                        name: x.name.clone(),
+                        time_zone: x.time_zone.clone(),
+                    })
+                })
+            });
+        match res {
+            Some(res) => Some(res),
+            None => return Err(AppError::CityNotFound(city)),
+        }
+    } else {
+        None
+    };
+
     let events = matches
         .values_of("Events")
         .unwrap_or_else(|| panic!("{}, {}", file!(), line!()))
@@ -124,6 +174,7 @@ pub fn parse_options(
         })
         .collect::<Vec<Event>>();
     Ok(Command::List(ListArgs {
+        city,
         year,
         location,
         events,

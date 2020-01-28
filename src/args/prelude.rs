@@ -7,6 +7,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::ErrorKind;
 use std::num::NonZeroI8;
+use zmanim::prelude::tz::TimeZone;
 
 pub fn str_to_location(location: &str) -> Result<Location, AppError> {
     match location.to_lowercase().as_ref() {
@@ -21,6 +22,8 @@ pub struct Config {
     pub language: Option<Language>,
     pub location: Option<Location>,
     pub exact_days: Option<bool>,
+    pub default_city: Option<String>,
+    pub cities: Option<Vec<ConfigCity>>,
 }
 
 #[cfg(macos)]
@@ -60,6 +63,8 @@ impl Config {
         };
         let mut custom_days = vec![];
         let mut language = None;
+        let mut default_city = None;
+        let mut cities = None;
         let mut location = None;
         let mut exact_days = None;
         if let Some(ref mut file) = config_file {
@@ -87,6 +92,8 @@ impl Config {
                             language: c.language,
                             location: c.location,
                             exact_days: c.exact_days,
+                            default_city: c.default_city,
+                            cities: c.cities,
                         },
                         Err(_) => {
                             return Err(err.into());
@@ -94,7 +101,13 @@ impl Config {
                     }
                 }
             };
-            if let Some(loc) = &config.location {
+            if let Some(default_city_config) = config.default_city {
+                default_city = Some(default_city_config);
+            }
+            if let Some(cities_config) = config.cities {
+                cities = Some(cities_config);
+            }
+            if let Some(loc) = config.location {
                 location = Some(str_to_location(loc.as_ref())?);
             }
             if let Some(exact) = config.exact_days {
@@ -159,10 +172,12 @@ impl Config {
             }
         }
         Ok(Self {
+            default_city,
             language,
             custom_days,
             location,
             exact_days,
+            cities,
         })
     }
 }
@@ -238,7 +253,22 @@ struct ConfigFileV1 {
     location: Option<String>,
     #[serde(rename = "exact-days")]
     exact_days: Option<bool>,
+    #[serde(rename = "default-city")]
+    default_city: Option<String>,
+    cities: Option<Vec<ConfigCity>>,
 }
+
+#[derive(Deserialize, Clone)]
+pub struct ConfigCity {
+    pub name: String,
+    #[serde(rename = "timezone")]
+    pub time_zone: TimeZone,
+    pub latitude: f64,
+    pub longitude: f64,
+    #[serde(rename = "minutes")]
+    pub light_candles_before_shkiya: u8,
+}
+
 #[derive(Deserialize)]
 struct ConfigFile {
     days: Option<Vec<InnerDate>>,
@@ -246,6 +276,9 @@ struct ConfigFile {
     location: Option<String>,
     #[serde(rename = "exact-days")]
     exact_days: Option<bool>,
+    #[serde(rename = "default-city")]
+    default_city: Option<String>,
+    cities: Option<Vec<ConfigCity>>,
 }
 #[derive(Deserialize)]
 struct InnerDate {

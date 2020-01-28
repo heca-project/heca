@@ -1,0 +1,13 @@
+days = [
+  { date = "10 שבט", title = "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", json = "YudShvat" },
+  { date = "2 אדר", ifNotExists = ["2 אדרב"], title = "Second of Adar", json = "2Adar" },
+  { date = "1 אדרא", ifNotExists = ["1 אדר"], title = "First of Adar I", json = "1AdarI" },
+  { date = "3 אדרב", ifNotExists = ["3 אדר"], title = "Third of Adar II", json = "3AdarII" },
+  { date = "30 Kislev", ifNotExists = ["1 Teves","29 כסלו"], title = "30th of Kislev", json = "30Kislev"},
+  { date = "30 חשוון", ifNotExists =["29 חשוון", "1 כסלו"], title = "30th of Cheshvan", json = "30Cheshvan"}
+]
+
+cities = [
+  { name = "Helsinki", latitude=60.1699, longitude=24.9384, timezone="Europe/Helsinki", minutes=18 },
+  { name = "Cairo", latitude=30.044, longitude=31.2357, timezone="Africa/Cairo", minutes=18 }
+]
