@@ -6,8 +6,6 @@ days = [
   { date = "30 Kislev", ifNotExists = ["1 Teves","29 כסלו"], title = "30th of Kislev", json = "30Kislev"},
   { date = "30 חשוון", ifNotExists =["29 חשוון", "1 כסלו"], title = "30th of Cheshvan", json = "30Cheshvan"}
 ]
-
-cities = [
-  { name = "Helsinki", latitude=60.1699, longitude=24.9384, timezone="Europe/Helsinki", minutes=18 },
-  { name = "Cairo", latitude=30.044, longitude=31.2357, timezone="Africa/Cairo", minutes=18 }
-]
+exact-days = true
+default-city="Home"
+cities = [ { name= "Home", timezone = "America/Chicago", latitude = 39.8416678, longitude = -96.5197389, minutes = 18 } ]

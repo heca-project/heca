@@ -62,29 +62,23 @@ impl Return {
                         .unwrap();
                     if let Some(l) = d.candle_lighting {
                         res += match args.language {
-                            Language::English => {
-                                let mut ret = lock.write(b". Candle lighting").unwrap();
-                                if let Some(candle_lighting_time) = l {
-                                    let mut hour_arr = [b'\0'; 2];
-                                    let mut minute_arr = [b'\0'; 2];
-                                    ret += lock.write(b" ").unwrap();
-                                    itoa::write(&mut hour_arr[..], candle_lighting_time.hour())
-                                        .unwrap();
-                                    let minute_write = itoa::write(
-                                        &mut minute_arr[..],
-                                        candle_lighting_time.minute(),
-                                    )
-                                    .unwrap();
-                                    ret += lock.write(&hour_arr).unwrap();
-                                    ret += lock.write(b":").unwrap();
-                                    if minute_write == 1 {
-                                        ret += lock.write(b"0").unwrap();
-                                    }
-                                    ret += lock.write(&minute_arr).unwrap();
-                                };
-                                ret
-                            }
+                            Language::English => lock.write(b". Candle lighting").unwrap(),
                             Language::Hebrew => lock.write(". הדלקת נרות".as_bytes()).unwrap(),
+                        };
+                        if let Some(candle_lighting_time) = l {
+                            let mut hour_arr = [b'\0'; 2];
+                            let mut minute_arr = [b'\0'; 2];
+                            res += lock.write(b" ").unwrap();
+                            itoa::write(&mut hour_arr[..], candle_lighting_time.hour()).unwrap();
+                            let minute_write =
+                                itoa::write(&mut minute_arr[..], candle_lighting_time.minute())
+                                    .unwrap();
+                            res += lock.write(&hour_arr).unwrap();
+                            res += lock.write(b":").unwrap();
+                            if minute_write == 1 {
+                                res += lock.write(b"0").unwrap();
+                            }
+                            res += lock.write(&minute_arr).unwrap();
                         };
                     }
                     Some(res)
@@ -431,22 +425,37 @@ fn get_list(
                     .into_iter()
                     .map(|x| {
                         let day: DateTime<Utc> = x.day().into();
-                        let is_shabbos = if let TorahReading::Shabbos(_) = x.name() {
-                            true
-                        } else {
-                            false
-                        };
-                        let (is_yom_tov, light_on_time) = if let TorahReading::YomTov(yt) = x.name()
-                        {
-                            let (should_light_candles, light_on_time) = match yt {
-                                heca_lib::prelude::YomTov::RoshHashanah2 => (true, false),
+                        let mut light_on_time = false;
+                        let mut is_shabbos = false;
+                        if let TorahReading::Shabbos(_) = x.name() {
+                            light_on_time = true;
+                            is_shabbos = true;
+                        }
+                        if day.weekday() == Weekday::Fri {
+                            light_on_time = true;
+                            is_shabbos = true;
+                        }
+                        let mut is_yom_tov = false;
+                        if let TorahReading::YomTov(yt) = x.name() {
+                            match yt {
+                                heca_lib::prelude::YomTov::RoshHashanah2 => {
+                                    is_yom_tov = true;
+                                }
 
                                 heca_lib::prelude::YomTov::RoshHashanah1
                                 | heca_lib::prelude::YomTov::YomKippur
                                 | heca_lib::prelude::YomTov::Sukkos1
                                 | heca_lib::prelude::YomTov::ShminiAtzeres
                                 | heca_lib::prelude::YomTov::Pesach1
-                                | heca_lib::prelude::YomTov::Shavuos1 => (true, true),
+                                | heca_lib::prelude::YomTov::Pesach7
+                                | heca_lib::prelude::YomTov::Shavuos1 => {
+                                    is_yom_tov = true;
+                                    if day.weekday() == Weekday::Sat {
+                                        light_on_time = false;
+                                    } else {
+                                        light_on_time = true;
+                                    }
+                                }
 
                                 yt => match location {
                                     Location::Chul => {
@@ -456,36 +465,22 @@ fn get_list(
                                             || yt == heca_lib::prelude::YomTov::Pesach8
                                             || yt == heca_lib::prelude::YomTov::Shavuos2
                                         {
-                                            (true, false)
+                                            is_yom_tov = true;
                                         } else {
-                                            (false, false)
+                                            is_yom_tov = false;
                                         }
                                     }
-                                    Location::Israel => (false, false),
+                                    Location::Israel => {
+                                        is_yom_tov = false;
+                                    }
                                 },
                             };
-                            //also check for Shabbos Chol HaMoed
-                            if day.weekday() == Weekday::Fri {
-                                (true, true)
-                            } else if should_light_candles {
-                                if light_on_time {
-                                    (true, true)
-                                } else {
-                                    (true, false)
-                                }
-                            } else {
-                                (false, false)
-                            }
-                        } else {
-                            (false, false)
                         };
                         if is_shabbos || is_yom_tov {
                             let candle_lighting = if let Some(city) = city {
                                 use zmanim::prelude::Zmanim;
                                 let date: NaiveDate = day.date().naive_local();
-                                if date.weekday() == Weekday::Sat || !light_on_time {
-                                    None
-                                } else {
+                                if light_on_time {
                                     if let Some(time) = zmanim::get(
                                         &Zmanim::Sunset,
                                         city.latitude,
@@ -501,6 +496,8 @@ fn get_list(
                                     } else {
                                         None
                                     }
+                                } else {
+                                    None
                                 }
                             } else {
                                 None
