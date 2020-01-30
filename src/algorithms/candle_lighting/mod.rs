@@ -4,10 +4,11 @@ use zmanim::prelude::tz::america::*;
 use zmanim::prelude::tz::asia::*;
 use zmanim::prelude::tz::australia::*;
 use zmanim::prelude::tz::europe::*;
+use zmanim::prelude::tz::pacific::*;
 use zmanim::prelude::tz::*;
 
 //based on https://en.wikipedia.org/wiki/Jewish_population_by_country
-pub const CITIES: [City; 50] = [
+pub const CITIES: [City; 163] = [
     City {
         name: Cow::Borrowed("NewYorkCity"),
         time_zone: TimeZone::America(America::NewYork),
@@ -229,7 +230,7 @@ pub const CITIES: [City; 50] = [
         name: Cow::Borrowed("Detroit"),
         time_zone: TimeZone::America(America::Detroit),
         latitude: 42.3314,
-        longitude: 83.0458,
+        longitude: -83.0458,
         candlelighting_to_sunset: 18,
     },
     City {
@@ -296,7 +297,7 @@ pub const CITIES: [City; 50] = [
         candlelighting_to_sunset: 18,
     },
     City {
-        name: Cow::Borrowed("Portland"),
+        name: Cow::Borrowed("PortlandOregon"),
         time_zone: TimeZone::America(America::LosAngeles),
         latitude: 45.5051,
         longitude: -122.6750,
@@ -353,38 +354,874 @@ pub const CITIES: [City; 50] = [
     },
     City {
         name: Cow::Borrowed("Hartford"),
-        time_zone: TimeZone::Europe(Europe::Moscow),
+        time_zone: TimeZone::America(America::NewYork),
         latitude: 41.7658,
         longitude: -72.6734,
         candlelighting_to_sunset: 18,
     },
-    /*
-    Vaughan,
-    NewHaven,
-    Cincinatti,
-    Vancouver,
-    Milwakki,
-    Columbus,
-    Manchester,
-    Berlin,
-    Tucson,
-    Rochester,
-    KiryasYoel,
-    Creteil
-    CoteStLuc,
-    Montevido,
-    Amsterdam,
-    KansasCity,
-    Orlando,
-    Teaneck,
-    Kiev,
-    Istambul,
-    Austin,
-    Strassburg,
-    Capetown,
-    Sarcelles,*/
+    City {
+        name: Cow::Borrowed("NewHaven"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.31027,
+        longitude: -72.9234,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Cincinnati"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 39.16835,
+        longitude: -84.48804,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Vancouver"),
+        time_zone: TimeZone::America(America::Vancouver),
+        latitude: 49.24843,
+        longitude: -123.10307,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Milwaukee"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 43.05251,
+        longitude: -87.95963,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Columbus"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 39.9612,
+        longitude: -82.9988,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Manchester"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 53.4808,
+        longitude: -2.2426,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Berlin"),
+        time_zone: TimeZone::Europe(Europe::Berlin),
+        latitude: 52.50135,
+        longitude: 13.40452,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Tucson"),
+        time_zone: TimeZone::America(America::Phoenix),
+        latitude: 32.24385,
+        longitude: -110.95039,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("RochesterNY"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 43.16732,
+        longitude: -77.61429,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("KiryasYoel"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.33861,
+        longitude: -74.16763,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Creteil"),
+        time_zone: TimeZone::Europe(Europe::Paris),
+        latitude: 48.78503,
+        longitude: 2.46129,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("CoteStLuc"),
+        time_zone: TimeZone::America(America::Montreal),
+        latitude: 45.47278,
+        longitude: -73.66843,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Montevideo"),
+        time_zone: TimeZone::America(America::Montevideo),
+        latitude: -34.82263,
+        longitude: -56.20274,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Amsterdam"),
+        time_zone: TimeZone::Europe(Europe::Amsterdam),
+        latitude: 52.36106,
+        longitude: 4.89414,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("KansasCity"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 39.09407,
+        longitude: -94.5864,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Orlando"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 28.5175,
+        longitude: -81.35939,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Teaneck"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 40.8913,
+        longitude: -74.01137,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Kiev"),
+        time_zone: TimeZone::Europe(Europe::Kiev),
+        latitude: 50.44579,
+        longitude: 30.51462,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Istanbul"),
+        time_zone: TimeZone::Europe(Europe::Istanbul),
+        latitude: 41.02908,
+        longitude: 28.98293,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Austin"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 30.30087,
+        longitude: -97.78262,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Strasbourg"),
+        time_zone: TimeZone::Europe(Europe::Paris),
+        latitude: 48.5734,
+        longitude: 7.7521,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("CapeTown"),
+        time_zone: TimeZone::Africa(Africa::Johannesburg),
+        latitude: -33.99282,
+        longitude: 18.46647,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Sarcelles"),
+        time_zone: TimeZone::Europe(Europe::Paris),
+        latitude: 48.99248,
+        longitude: 2.3803,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("PortoAlegre"),
+        time_zone: TimeZone::America(America::SaoPaulo),
+        latitude: -30.06442,
+        longitude: -51.17207,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Jacksonville"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 30.30561,
+        longitude: -81.64367,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Antwerp"),
+        time_zone: TimeZone::Europe(Europe::Brussels),
+        latitude: 51.2226,
+        longitude: 4.48972,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("PanamaCity"),
+        time_zone: TimeZone::America(America::Panama),
+        latitude: 9.02436,
+        longitude: -79.48583,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Providence"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.8240,
+        longitude: -71.4128,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Ottawa"),
+        time_zone: TimeZone::America(America::Toronto),
+        latitude: 45.35737,
+        longitude: -75.70725,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Winnipeg"),
+        time_zone: TimeZone::America(America::Winnipeg),
+        latitude: 49.88336,
+        longitude: -97.14545,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Rome"),
+        time_zone: TimeZone::Europe(Europe::Rome),
+        latitude: 41.87938,
+        longitude: 12.48759,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Buffalo"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 42.91023,
+        longitude: -78.8375,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("SanAntonio"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 29.4241,
+        longitude: -98.4936,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Livingston"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 40.7852,
+        longitude: -74.3282,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Richmond"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 37.52163,
+        longitude: -77.48086,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Albany"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 31.56241,
+        longitude: -84.15894,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Odessa"),
+        time_zone: TimeZone::Europe(Europe::Kiev),
+        latitude: 46.47176,
+        longitude: 30.72271,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Charlotte"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 35.19317,
+        longitude: -80.80483,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("NewOrleans"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 29.94928,
+        longitude: -90.13426,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Munich"),
+        time_zone: TimeZone::Europe(Europe::Berlin),
+        latitude: 48.14105,
+        longitude: 11.55676,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Beachwood"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.4645,
+        longitude: -81.5087,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Frankfurt"),
+        time_zone: TimeZone::Europe(Europe::Berlin),
+        latitude: 50.12581,
+        longitude: 8.65399,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Bury"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 53.5933,
+        longitude: 2.2966,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Kharkiv"),
+        time_zone: TimeZone::Europe(Europe::Kiev),
+        latitude: 49.98571,
+        longitude: 36.25167,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("DollardDesOrmeaux"),
+        time_zone: TimeZone::America(America::Montreal),
+        latitude: 45.4896,
+        longitude: -73.8206,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Indianapolis"),
+        time_zone: TimeZone::America(America::Indiana(Indiana::Indianapolis)),
+        latitude: 39.80195,
+        longitude: -86.11364,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Cordoba"),
+        time_zone: TimeZone::America(America::Argentina(Argentina::Cordoba)),
+        latitude: -31.40479,
+        longitude: -64.19579,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Stockholm"),
+        time_zone: TimeZone::Europe(Europe::Stockholm),
+        latitude: 59.33097,
+        longitude: 18.04856,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Nashville"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 36.14014,
+        longitude: -86.78389,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Louisville"),
+        time_zone: TimeZone::America(America::Kentucky(Kentucky::Louisville)),
+        latitude: 38.19551,
+        longitude: -85.70117,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("CaulfieldNorth"),
+        time_zone: TimeZone::Australia(Australia::Melbourne),
+        latitude: -37.8726,
+        longitude: 145.0247,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Calgary"),
+        time_zone: TimeZone::America(America::Edmonton),
+        latitude: 51.03916,
+        longitude: -114.07269,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Milan"),
+        time_zone: TimeZone::Europe(Europe::Rome),
+        latitude: 45.47653,
+        longitude: 9.17408,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Rosario"),
+        time_zone: TimeZone::America(America::Fortaleza),
+        latitude: -2.94076,
+        longitude: -44.24356,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Leeds"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 53.8008,
+        longitude: -1.5491,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Vienna"),
+        time_zone: TimeZone::Europe(Europe::Vienna),
+        latitude: 48.20762,
+        longitude: 16.36364,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("ChapelHill"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 35.87815,
+        longitude: -79.07689,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Raleigh"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 35.82688,
+        longitude: -78.62346,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Zurich"),
+        time_zone: TimeZone::Europe(Europe::Zurich),
+        latitude: 47.3776,
+        longitude: 8.54009,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Edmonton"),
+        time_zone: TimeZone::America(America::Edmonton),
+        latitude: 53.52487,
+        longitude: -113.51286,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Birmingham"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 33.57294,
+        longitude: -86.78056,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Perth"),
+        time_zone: TimeZone::Australia(Australia::Perth),
+        latitude: -31.9505,
+        longitude: 115.8605,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("HampsteadCA"),
+        time_zone: TimeZone::America(America::Montreal),
+        latitude: 45.4814,
+        longitude: -73.6484,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("MercerIsland"),
+        time_zone: TimeZone::America(America::LosAngeles),
+        latitude: 45.5707,
+        longitude: -122.2221,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("HongKong"),
+        time_zone: TimeZone::Asia(Asia::HongKong),
+        latitude: 22.25424,
+        longitude: 114.13624,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("ElPaso"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 31.79227,
+        longitude: -106.37255,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Madison"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 43.07026,
+        longitude: -89.39598,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("SantaFeArgentina"),
+        time_zone: TimeZone::America(America::Argentina(Argentina::Cordoba)),
+        latitude: -31.63914,
+        longitude: -60.71015,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Bushey"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 51.6467,
+        longitude: -0.3584,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Westmount"),
+        time_zone: TimeZone::America(America::Montreal),
+        latitude: 45.4867,
+        longitude: -73.5957,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("ClaufieldSouth"),
+        time_zone: TimeZone::Australia(Australia::Melbourne),
+        latitude: -37.8901,
+        longitude: 145.0260,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Bogota"),
+        time_zone: TimeZone::America(America::Bogota),
+        latitude: 4.7110,
+        longitude: -74.0721,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Dayton"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 39.74292,
+        longitude: -84.18875,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Borehamwood"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 51.6577,
+        longitude: -0.2723,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Toledo"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.65943,
+        longitude: -83.59193,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Glasgow"),
+        time_zone: TimeZone::Europe(Europe::London),
+        latitude: 55.85027,
+        longitude: -4.24314,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("QirmiziQeseba"),
+        time_zone: TimeZone::Asia(Asia::Baku),
+        latitude: 41.3738,
+        longitude: 48.5215,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("StKildaEast"),
+        time_zone: TimeZone::Australia(Australia::Melbourne),
+        latitude: -37.8626,
+        longitude: 145.0007,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Youngstown"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.13533,
+        longitude: -80.66922,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Prague"),
+        time_zone: TimeZone::Europe(Europe::Prague),
+        latitude: 50.07662,
+        longitude: 14.44433,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Greensboro"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 36.07665,
+        longitude: -79.82014,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("RoseBay"),
+        time_zone: TimeZone::Australia(Australia::Sydney),
+        latitude: -33.8754,
+        longitude: 151.2656,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Durban"),
+        time_zone: TimeZone::Africa(Africa::Johannesburg),
+        latitude: -29.8696,
+        longitude: 30.98157,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Athens"),
+        time_zone: TimeZone::Europe(Europe::Athens),
+        latitude: 37.99185,
+        longitude: 23.72585,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Bucharest"),
+        time_zone: TimeZone::Europe(Europe::Bucharest),
+        latitude: 44.43832,
+        longitude: 26.09491,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Brisbane"),
+        time_zone: TimeZone::Australia(Australia::Brisbane),
+        latitude: -27.4698,
+        longitude: 151.0251,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Curitiba"),
+        time_zone: TimeZone::America(America::SaoPaulo),
+        latitude: -25.46914,
+        longitude: -49.27437,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("BeloHorizonte"),
+        time_zone: TimeZone::America(America::SaoPaulo),
+        latitude: -19.88325,
+        longitude: -43.95416,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Izmir"),
+        time_zone: TimeZone::Europe(Europe::Istanbul),
+        latitude: 38.4413,
+        longitude: 27.14618,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Pretoria"),
+        time_zone: TimeZone::Africa(Africa::Johannesburg),
+        latitude: -25.74824,
+        longitude: 28.23159,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Dublin"),
+        time_zone: TimeZone::Europe(Europe::Dublin),
+        latitude: 53.32198,
+        longitude: -6.25326,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Recife"),
+        time_zone: TimeZone::America(America::Recife),
+        latitude: -8.07778,
+        longitude: -34.91696,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Helsinki"),
+        time_zone: TimeZone::Europe(Europe::Moscow),
+        latitude: 60.21667,
+        longitude: 24.96925,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("MontgomeryUS"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 32.35083,
+        longitude: -86.24848,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Brasilia"),
+        time_zone: TimeZone::America(America::SaoPaulo),
+        latitude: -15.82072,
+        longitude: -47.96381,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Florence"),
+        time_zone: TimeZone::Europe(Europe::Rome),
+        latitude: 43.77934,
+        longitude: 11.24656,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Casablanca"),
+        time_zone: TimeZone::Africa(Africa::Casablanca),
+        latitude: 33.58398,
+        longitude: -7.62462,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Asuncion"),
+        time_zone: TimeZone::America(America::Asuncion),
+        latitude: -25.30601,
+        longitude: -57.59881,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Sofia"),
+        time_zone: TimeZone::Europe(Europe::Sofia),
+        latitude: 42.68156,
+        longitude: 23.31667,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Guadalajara"),
+        time_zone: TimeZone::America(America::MexicoCity),
+        latitude: 20.67248,
+        longitude: -103.33758,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Bratislava"),
+        time_zone: TimeZone::Europe(Europe::Bratislava),
+        latitude: 48.16369,
+        longitude: 17.11894,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Resistencia"),
+        time_zone: TimeZone::America(America::Argentina(Argentina::Cordoba)),
+        latitude: -27.45314,
+        longitude: -58.99211,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Deal"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 40.2432,
+        longitude: -74.0007,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("MonterreyMexico"),
+        time_zone: TimeZone::America(America::Monterrey),
+        latitude: 25.70312,
+        longitude: -100.33797,
+        candlelighting_to_sunset: 18,
+    },
+    // Hebcal cities
+    City {
+        name: Cow::Borrowed("Eilat"),
+        time_zone: TimeZone::Asia(Asia::Jerusalem),
+        latitude: 29.5577,
+        longitude: 34.9519,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Gibraltar"),
+        time_zone: TimeZone::Europe(Europe::Gibraltar),
+        latitude: 36.1408,
+        longitude: 5.3536,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Honolulu"),
+        time_zone: TimeZone::Pacific(Pacific::Honolulu),
+        latitude: 21.3069,
+        longitude: -157.8583,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("LaPaz"),
+        time_zone: TimeZone::America(America::LaPaz),
+        latitude: -16.4897,
+        longitude: -68.1193,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Omaha"),
+        time_zone: TimeZone::America(America::Chicago),
+        latitude: 41.2565,
+        longitude: -95.9345,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Pawtucket"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 25.8787,
+        longitude: -71.3826,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Tiberias"),
+        time_zone: TimeZone::Asia(Asia::Jerusalem),
+        latitude: 32.7959,
+        longitude: 34.5310,
+        candlelighting_to_sunset: 30,
+    },
+    City {
+        name: Cow::Borrowed("WhitePlains"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 41.0340,
+        longitude: -73.7629,
+        candlelighting_to_sunset: 18,
+    },
+    City {
+        name: Cow::Borrowed("Worcester"),
+        time_zone: TimeZone::America(America::NewYork),
+        latitude: 42.2626,
+        longitude: -71.8023,
+        candlelighting_to_sunset: 18,
+    },
 ];
+#[test]
+fn ensure_cities_with_an_american_time_zone_are_in_western_hemisphere() {
+    let american_cities_in_eastern_hemisphere: Vec<_> = CITIES
+        .into_iter()
+        .filter(|x| {
+            let is_american_timezone = match x.time_zone {
+                TimeZone::America(_) => true,
+                _ => false,
+            };
+            is_american_timezone && x.longitude > 0.0
+        })
+        .collect();
+    if american_cities_in_eastern_hemisphere.len() > 0 {
+        panic!("{:?}", american_cities_in_eastern_hemisphere);
+    }
+}
 
+#[test]
+fn ensure_cities_with_an_australian_time_zone_are_in_eastern_and_western_hemisphere() {
+    let australian_cities_in_western_or_northern_hemisphere: Vec<_> = CITIES
+        .into_iter()
+        .filter(|x| {
+            let is_australian_timezone = match x.time_zone {
+                TimeZone::Australia(_) => true,
+                _ => false,
+            };
+            is_australian_timezone && (x.longitude < 0.0 || x.latitude > 0.0)
+        })
+        .collect();
+    if australian_cities_in_western_or_northern_hemisphere.len() > 0 {
+        panic!("{:?}", australian_cities_in_western_or_northern_hemisphere);
+    }
+}
+
+#[test]
+fn ensure_cities_with_a_european_time_zone_are_in_northern_hemisphere_and_mostly_eastern_hemisphere(
+) {
+    let european_cities_in_southern_hemisphere_and_too_far_west: Vec<_> = CITIES
+        .into_iter()
+        .filter(|x| {
+            let is_european_timezone = match x.time_zone {
+                TimeZone::Europe(_) => true,
+                _ => false,
+            };
+            is_european_timezone && (x.latitude < 0.0 || x.longitude < -25.0)
+        })
+        .collect();
+    if european_cities_in_southern_hemisphere_and_too_far_west.len() > 0 {
+        panic!(
+            "{:?}",
+            european_cities_in_southern_hemisphere_and_too_far_west
+        );
+    }
+}
+
+#[test]
+fn ensure_no_duplicate_cities() {
+    let city_names: Vec<String> = CITIES
+        .into_iter()
+        .map(|x| x.name.clone().into_owned())
+        .collect();
+    for city_name in &city_names {
+        if city_names.iter().filter(|x| x == &city_name).count() != 1 {
+            panic!("{} is a duplicate", city_name);
+        }
+    }
+    assert_eq!(city_names.len(), CITIES.len());
+}
+
+#[derive(Debug)]
 pub struct City {
     pub name: Cow<'static, str>,
     pub time_zone: TimeZone,

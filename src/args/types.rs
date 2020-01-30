@@ -739,7 +739,9 @@ impl fmt::Display for AppError {
                 e
             ),
             AppError::CityNotFound(e) => {
-                let list_of_city_names = CITIES
+                let mut cities_sorted: Vec<_> = CITIES.iter().collect();
+                cities_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+                let list_of_city_names = cities_sorted
                     .iter()
                     .map(|x| x.name.clone())
                     .fold(String::new(), |old, new| old + "\n" + &new);
