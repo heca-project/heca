@@ -7,6 +7,12 @@ use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use serde::ser::*;
 use serde::Serialize;
+use std::io::{BufWriter, StderrLock, StdoutLock, Write};
+
+use crate::algorithms::shabbos_mevarchim::ShabbosMevarchim;
+use crate::prelude::constants::{RAMBAM, YERUSHALMI};
+use std::collections::HashMap;
+use std::fmt;
 
 pub struct MainArgs {
     pub custom_days: Option<Vec<Name>>,
@@ -556,121 +562,201 @@ pub enum AppError {
 }
 
 use clap::ErrorKind;
-
-impl Serialize for AppError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("AppError", 2)?;
+impl AppError {
+    pub(crate) fn print_json(&self, lock: &mut BufWriter<StderrLock<'_>>) {
         match self {
             AppError::DateSyntaxError(err) => {
-                state.serialize_field("type", "DateSyntaxError")?;
-                state.serialize_field("error", err)?;
+                let out = format!(
+                    r#"{{"type":"DateSyntaxError","error":"{}"}}"#,
+                    string_to_json(err)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::TypeError(err) => {
-                state.serialize_field("type", "TypeError")?;
-                state.serialize_field("error", err)?;
+                let out = format!(
+                    r#"{{"type":"TypeError","error":"{}"}}"#,
+                    string_to_json(err)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::ReadError(err) => {
-                state.serialize_field("type", "ReadError")?;
-                state.serialize_field("error", err)?;
+                let out = format!(
+                    r#"{{"type":"ReadError","error":"{}"}}"#,
+                    string_to_json(err)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::SplitDateError => {
-                state.serialize_field("type", "SplitDateError")?;
+                lock.write(r#"{"type":"SplitDateError"}"#.as_bytes())
+                    .unwrap();
             }
             AppError::ConfigError(err) => {
-                state.serialize_field("type", "ConfigError")?;
-                state.serialize_field("error", err)?;
+                let out = format!(
+                    r#"{{"type":"ConfigError","error":"{}"}}"#,
+                    string_to_json(err)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::MonthNotParsed(month) => {
-                state.serialize_field("type", "MonthNotParsed")?;
-                state.serialize_field("error", month)?;
+                let out = format!(
+                    r#"{{"type":"MonthNotParsed","error":"{}"}}"#,
+                    string_to_json(month)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::CannotParseMonth(month) => {
-                state.serialize_field("type", "CannotParseMonth")?;
-                state.serialize_field("error", month)?;
+                let out = format!(
+                    r#"{{"type":"CannotParseMonth","error":"{}"}}"#,
+                    string_to_json(month)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::CannotParseDay(day) => {
-                state.serialize_field("type", "CannotParseDay")?;
-                state.serialize_field("error", day)?;
+                let out = format!(
+                    r#"{{"type":"CannotParseDay","error":"{}"}}"#,
+                    string_to_json(day)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::CannotParseYear(day) => {
-                state.serialize_field("type", "CannotParseYear")?;
-                state.serialize_field("error", day)?;
+                let out = format!(
+                    r#"{{"type":"CannotParseYear","error":"{}"}}"#,
+                    string_to_json(day)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::InvalidGregorianDate(year, month, day) => {
-                state.serialize_field("type", "InvalidGregorianDay")?;
-                state.serialize_field("error", &format!("{}/{}/{}", year, month, day))?;
+                let out = format!(
+                    r#"{{"type":"InvalidGregorianDay","error":"{}"}}"#,
+                    &format!("{}/{}/{}", year, month, day)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::YearIsNotANumber(year) => {
-                state.serialize_field("type", "YearIsNotANumber")?;
-                state.serialize_field("error", year)?;
+                let out = format!(
+                    r#"{{"type":"YearIsNotANumber","error":"{}"}}"#,
+                    string_to_json(year)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::DayIsNotAValidNumber(day) => {
-                state.serialize_field("type", "DayIsNotAValidNumber")?;
-                state.serialize_field("error", day)?;
+                let out = format!(
+                    r#"{{"type":"DayIsNotAValidNumber","error":"{}"}}"#,
+                    string_to_json(day)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::ArgUndefinedError(ce) => {
-                state.serialize_field("type", "ArgUndefinedError")?;
-                state.serialize_field("error", ce)?;
+                let out = format!(
+                    r#"{{"type":"ArgUndefinedError","error":"{}"}}"#,
+                    string_to_json(ce)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::ConversionError(ce) => {
-                state.serialize_field("type", "ConversionError")?;
-                state.serialize_field("error", ce)?;
+                let out = format!(
+                    r#"{{"type":"ConversionError","error":{}}}"#,
+                    match ce {
+                        ConversionError::IsNotLeapYear => String::from(r#""IsNotLeapYear""#),
+                        ConversionError::IsLeapYear => String::from(r#""IsLeapYear""#),
+                        ConversionError::YearTooSmall => String::from(r#""YearTooSmall""#),
+                        ConversionError::TooManyDaysInMonth(days) =>
+                            format!(r#"{{"TooManyDaysInMonth":{}}}"#, days),
+                    }
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
             AppError::ArgError(err) => match err.kind {
-                ErrorKind::InvalidValue => state.serialize_field("type", "InvalidValue")?,
-                ErrorKind::UnknownArgument => state.serialize_field("type", "UnknownArgument")?,
+                ErrorKind::InvalidValue => {
+                    lock.write(r#"{"type":"InvalidValue"}"#.as_bytes()).unwrap();
+                }
+                ErrorKind::UnknownArgument => {
+                    lock.write(r#"{"type":"UnknownArgument"}"#.as_bytes())
+                        .unwrap();
+                }
                 ErrorKind::InvalidSubcommand => {
-                    state.serialize_field("type", "InvalidSubcommand")?
+                    lock.write(r#"{"type":"InvalidSubcommand"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::UnrecognizedSubcommand => {
-                    state.serialize_field("type", "UnrecognizedSubcommand")?
+                    lock.write(r#"{"type":"UnrecognizedSubcommand"}"#.as_bytes())
+                        .unwrap();
                 }
-                ErrorKind::EmptyValue => state.serialize_field("type", "EmptyValue")?,
-                ErrorKind::ValueValidation => state.serialize_field("type", "ValueValidation")?,
-                ErrorKind::TooManyValues => state.serialize_field("type", "TooManyValues")?,
-                ErrorKind::TooFewValues => state.serialize_field("type", "TooFewValues")?,
+                ErrorKind::EmptyValue => {
+                    lock.write(r#"{"type":"EmptyValue"}"#.as_bytes()).unwrap();
+                }
+                ErrorKind::ValueValidation => {
+                    lock.write(r#"{"type": "ValueValidation"}"#.as_bytes())
+                        .unwrap();
+                }
+                ErrorKind::TooManyValues => {
+                    lock.write(r#"{"type": "TooManyValues"}"#.as_bytes())
+                        .unwrap();
+                }
+                ErrorKind::TooFewValues => {
+                    lock.write(r#"{"type": "TooFewValues"}"#.as_bytes())
+                        .unwrap();
+                }
                 ErrorKind::WrongNumberOfValues => {
-                    state.serialize_field("type", "WrongNumberOfValues")?
+                    lock.write(r#"{"type": "WrongNumberOfValues"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::ArgumentConflict => {
-                    state.serialize_field("type", "WrongNumberOfValues")?
+                    lock.write(r#"{"type": "ArgumentConflict"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::MissingRequiredArgument => {
-                    state.serialize_field("type", "MissingRequiredArgument")?
+                    lock.write(r#"{"type": "MissingRequiredArgument"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::MissingSubcommand => {
-                    state.serialize_field("type", "MissingSubcommand")?
+                    lock.write(r#"{"type": "MissingSubcommand"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::MissingArgumentOrSubcommand => {
-                    state.serialize_field("type", "MissingArgumentOrSubcommand")?
+                    lock.write(r#"{"type": "MissingArgumentOrSubcommand"}"#.as_bytes())
+                        .unwrap();
                 }
                 ErrorKind::UnexpectedMultipleUsage => {
-                    state.serialize_field("type", "UnexpectedMultipleUsage")?
+                    lock.write(r#"{"type": "UnexpectedMultipleUsage"}"#.as_bytes())
+                        .unwrap();
                 }
-                ErrorKind::InvalidUtf8 => state.serialize_field("type", "InvalidUtf8")?,
-                ErrorKind::HelpDisplayed => state.serialize_field("type", "HelpDisplayed")?,
-                ErrorKind::VersionDisplayed => state.serialize_field("type", "VersionDisplayed")?,
-                ErrorKind::ArgumentNotFound => state.serialize_field("type", "ArgumentNotFound")?,
-                ErrorKind::Io => state.serialize_field("type", "Io")?,
-                ErrorKind::Format => state.serialize_field("type", "Format")?,
+                ErrorKind::InvalidUtf8 => {
+                    lock.write(r#"{"type": "InvalidUtf8"}"#.as_bytes()).unwrap();
+                }
+                ErrorKind::HelpDisplayed => {
+                    lock.write(r#"{"type": "HelpDisplayed"}"#.as_bytes())
+                        .unwrap();
+                }
+                ErrorKind::VersionDisplayed => {
+                    lock.write(r#"{"type": "VersionDisplayed"}"#.as_bytes())
+                        .unwrap();
+                }
+                ErrorKind::ArgumentNotFound => {
+                    lock.write(r#"{"type": "ArgumentNotFound"}"#.as_bytes())
+                        .unwrap();
+                }
+                ErrorKind::Io => {
+                    lock.write(r#"{"type": "Io"}"#.as_bytes()).unwrap();
+                }
+                ErrorKind::Format => {
+                    lock.write(r#"{"type": "Format"}"#.as_bytes()).unwrap();
+                }
             },
             AppError::LocationError(e) => {
-                state.serialize_field("type", "LocationError")?;
-                state.serialize_field("error", e)?;
+                let out = format!(
+                    r#"{{"type": "LocationError", "error": "{}"}}"#,
+                    string_to_json(e)
+                );
+                lock.write(out.as_bytes()).unwrap();
             }
         };
-        state.end()
     }
 }
 
-use crate::algorithms::shabbos_mevarchim::ShabbosMevarchim;
-use crate::prelude::constants::{RAMBAM, YERUSHALMI};
-use std::collections::HashMap;
-use std::fmt;
-use std::io::{BufWriter, StdoutLock, Write};
+fn string_to_json(s: &str) -> String {
+    s.replace('"', "\\\"")
+}
 
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

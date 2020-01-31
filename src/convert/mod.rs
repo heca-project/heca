@@ -8,7 +8,7 @@ use heca_lib::HebrewDate;
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 use std::convert::TryInto;
-
+use std::io::{BufWriter, StdoutLock};
 #[derive(Debug)]
 pub struct Return {
     pub day: Either<[chrono::DateTime<Utc>; 2], [HebrewDate; 2]>,
@@ -104,7 +104,7 @@ impl Return {
 }
 
 impl Runnable for ConvertArgs {
-    fn run(&self, args: &MainArgs) -> Result<(), AppError> {
+    fn run(&self, args: &MainArgs, lock: &mut BufWriter<StdoutLock<'_>>) -> Result<(), AppError> {
         let ret = match self.date {
             ConvertType::Gregorian(date) => Return {
                 orig_day: Either::Right(date.and_hms(0, 0, 1)),

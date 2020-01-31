@@ -17,9 +17,9 @@ use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
 use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
-use std::io::stdout;
 use std::io::BufWriter;
 use std::io::Write;
+use std::io::{stdout, StdoutLock};
 
 #[derive(Debug, Serialize)]
 #[serde(transparent)]
@@ -28,9 +28,11 @@ pub struct Return {
 }
 
 impl Return {
-    fn pretty_print(&self, args: &MainArgs) -> Result<(), AppError> {
-        let stdout = stdout();
-        let mut lock = BufWriter::with_capacity(1024 * 1024, stdout.lock());
+    fn pretty_print(
+        &self,
+        args: &MainArgs,
+        mut lock: &mut BufWriter<StdoutLock<'_>>,
+    ) -> Result<(), AppError> {
         self.list.iter().for_each(|d| {
             let ret = d.day;
             let year = ret.year();
@@ -97,10 +99,14 @@ impl Return {
 }
 
 impl Return {
-    fn print(&self, args: &MainArgs) -> Result<(), AppError> {
+    fn print(
+        &self,
+        args: &MainArgs,
+        mut lock: &mut BufWriter<StdoutLock<'_>>,
+    ) -> Result<(), AppError> {
         match args.output_type {
             OutputType::JSON => self.json_print(),
-            OutputType::Pretty | OutputType::Regular => self.pretty_print(args),
+            OutputType::Pretty | OutputType::Regular => self.pretty_print(args, &mut lock),
         }
     }
 }
@@ -274,7 +280,11 @@ impl GetDayVal for DailyStudyEvents {
 }
 
 impl Runnable for ListArgs {
-    fn run(&self, args: &MainArgs) -> Result<(), AppError> {
+    fn run(
+        &self,
+        args: &MainArgs,
+        mut lock: &mut BufWriter<StdoutLock<'_>>,
+    ) -> Result<(), AppError> {
         let main_events = self
             .events
             .iter()
@@ -331,8 +341,8 @@ impl Runnable for ListArgs {
                 let last_jan_1 = Utc
                     .ymd((year + self.amnt_years + 1) as i32, 1, 1)
                     .and_hms(18, 0, 0);
-                let that_year = HebrewDate::try_from(orig_jan_1).unwrap().year();
-                let last_year = HebrewDate::try_from(last_jan_1).unwrap().year();
+                let that_year = HebrewDate::try_from(orig_jan_1)?.year();
+                let last_year = HebrewDate::try_from(last_jan_1)?.year();
                 let mut part1 = get_list(
                     that_year,
                     last_year,
@@ -362,7 +372,7 @@ impl Runnable for ListArgs {
         if !self.no_sort {
             result1.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
         }
-        result1.print(args)?;
+        result1.print(args, &mut lock)?;
         Ok(())
     }
 }
