@@ -1,5 +1,7 @@
+use crate::algorithms::candle_lighting::CITIES;
 use crate::algorithms::chabad_holidays::ChabadHoliday;
 use crate::algorithms::israeli_holidays::IsraeliHoliday;
+
 use std::num::NonZeroI8;
 
 use chrono::prelude::*;
@@ -51,6 +53,7 @@ pub struct ListArgs {
     pub amnt_years: u64,
     pub no_sort: bool,
     pub exact_days: bool,
+    pub city: Option<City>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -101,6 +104,7 @@ pub enum YearType {
 pub struct DayVal {
     pub day: chrono::DateTime<Utc>,
     pub name: Name,
+    pub candle_lighting: Option<Option<DateTime<FixedOffset>>>,
 }
 
 impl Serialize for DayVal {
@@ -116,6 +120,12 @@ impl Serialize for DayVal {
                 TorahReading::YomTov(yt) => {
                     state.serialize_field("type", "YomTov")?;
                     state.serialize_field("name", yt)?;
+                    if let Some(candle_lighting_time) = self.candle_lighting {
+                        match candle_lighting_time {
+                            Some(t) => state.serialize_field("candleLighting", &t.to_rfc3339())?,
+                            None => state.serialize_field("candleLighting", "undefined")?,
+                        };
+                    }
                 }
                 TorahReading::Chol(chol) => {
                     state.serialize_field("type", "Chol")?;
@@ -124,6 +134,12 @@ impl Serialize for DayVal {
                 TorahReading::Shabbos(shabbos) => {
                     state.serialize_field("type", "Shabbos")?;
                     state.serialize_field("name", shabbos)?;
+                    if let Some(candle_lighting_time) = self.candle_lighting {
+                        match candle_lighting_time {
+                            Some(t) => state.serialize_field("candleLighting", &t.to_rfc3339())?,
+                            None => state.serialize_field("candleLighting", "undefined")?,
+                        };
+                    }
                 }
                 TorahReading::SpecialParsha(special_parsha) => {
                     state.serialize_field("type", "YomTov")?;
@@ -553,6 +569,7 @@ pub enum AppError {
     ConfigError(String),
     ReadError(String),
     TypeError(String),
+    CityNotFound(String),
 }
 
 use clap::ErrorKind;
@@ -661,11 +678,16 @@ impl Serialize for AppError {
                 state.serialize_field("type", "LocationError")?;
                 state.serialize_field("error", e)?;
             }
+            AppError::CityNotFound(e) => {
+                state.serialize_field("type", "CityNotFoundError")?;
+                state.serialize_field("error", e)?;
+            }
         };
         state.end()
     }
 }
 
+use crate::algorithms::candle_lighting::City;
 use crate::algorithms::shabbos_mevarchim::ShabbosMevarchim;
 use crate::prelude::constants::{RAMBAM, YERUSHALMI};
 use std::collections::HashMap;
@@ -716,6 +738,19 @@ impl fmt::Display for AppError {
                 "{} is not a valid location. Must be either \"Chul\" or \"Israel\"",
                 e
             ),
+            AppError::CityNotFound(e) => {
+                let mut cities_sorted: Vec<_> = CITIES.iter().collect();
+                cities_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+                let list_of_city_names = cities_sorted
+                    .iter()
+                    .map(|x| x.name.clone())
+                    .fold(String::new(), |old, new| old + "\n" + &new);
+                write!(
+                    f,
+                    "Could not find city {}. Possible options are: {}",
+                    e, list_of_city_names
+                )
+            }
         }
     }
 }

@@ -27,6 +27,7 @@ fn get_yom_haaliyah(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::YomHaAliyah),
+            candle_lighting: None,
         })
     }
 }
@@ -42,6 +43,7 @@ fn get_yom_yerushalayim(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::YomYerushalayim),
+            candle_lighting: None,
         })
     }
 }
@@ -57,6 +59,7 @@ fn get_sigd(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::Sigd),
+            candle_lighting: None,
         })
     }
 }
@@ -89,6 +92,7 @@ fn get_yom_hashoah(year: &HebrewYear, exact_days: bool) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::IsraeliHoliday(IsraeliHoliday::YomHaShoah),
+            candle_lighting: None,
         })
     }
 }
@@ -127,6 +131,7 @@ fn get_yom_haatzmaut_and_yom_hazikaron(year: &HebrewYear, exact_days: bool) -> V
             .try_into()
             .unwrap(),
         name: Name::IsraeliHoliday(IsraeliHoliday::YomHaZikaron),
+        candle_lighting: None,
     };
     let yom_haatzmaut = DayVal {
         day: year
@@ -135,6 +140,7 @@ fn get_yom_haatzmaut_and_yom_hazikaron(year: &HebrewYear, exact_days: bool) -> V
             .try_into()
             .unwrap(),
         name: Name::IsraeliHoliday(IsraeliHoliday::YomHaAtzmaut),
+        candle_lighting: None,
     };
     vec![yom_hazikaron, yom_haatzmaut]
 }

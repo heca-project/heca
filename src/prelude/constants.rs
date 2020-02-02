@@ -15,6 +15,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ErevYomKippur),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -22,6 +23,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ErevSukkos),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -29,6 +31,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ErevPesach),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -36,6 +39,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::PesachSheni),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -43,6 +47,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::LagBaOmer),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -50,6 +55,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ErevShavuos),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -57,6 +63,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ErevRoshHashanah),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -64,6 +71,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::FifteenShvat),
+            candle_lighting: None,
         },
         DayVal {
             day: year
@@ -71,6 +79,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::FifteenAv),
+            candle_lighting: None,
         },
     ];
 
@@ -81,6 +90,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::PurimKattan),
+            candle_lighting: None,
         });
         holidays.push(DayVal {
             day: year
@@ -88,6 +98,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
                 .unwrap()
                 .into(),
             name: Name::MinorDays(MinorDays::ShushanPurimKattan),
+            candle_lighting: None,
         });
     }
     let first_day_of_pesach: DateTime<Utc> = year
@@ -108,6 +119,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosHaGadol),
+        candle_lighting: None,
     });
 
     let day_of_taanis_bechoros = if first_day_of_pesach == Weekday::Sat {
@@ -125,6 +137,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::TaanisBechoros),
+        candle_lighting: None,
     });
 
     let day_of_tisha_beav: DateTime<Utc> = year
@@ -147,6 +160,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosChazon),
+        candle_lighting: None,
     });
 
     holidays.push(DayVal {
@@ -158,6 +172,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosNachamu),
+        candle_lighting: None,
     });
 
     let day_of_rh: DateTime<Utc> = year
@@ -194,6 +209,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::LeilSlichos),
+        candle_lighting: None,
     });
     holidays.push(DayVal {
         day: year
@@ -204,6 +220,7 @@ pub fn get_minor_holidays(year: &HebrewYear) -> Vec<DayVal> {
             .unwrap()
             .into(),
         name: Name::MinorDays(MinorDays::ShabbosShuva),
+        candle_lighting: None,
     });
 
     holidays
