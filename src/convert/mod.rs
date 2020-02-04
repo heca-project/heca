@@ -1,10 +1,11 @@
 use crate::args::types::{AppError, ConvertArgs, ConvertType, Language, MainArgs, OutputType};
+use crate::prelude::hebrew_month_to_string;
 use crate::prelude::print;
+use crate::prelude::write_i64;
 use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
 use either::Either;
-use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
 use std::convert::TryInto;
 use std::io::{BufWriter, StdoutLock, Write};
@@ -98,32 +99,6 @@ impl Return {
         };
         Ok(())
     }
-}
-
-fn hebrew_month_to_string(input: HebrewMonth) -> &'static str {
-    use heca_lib::prelude::HebrewMonth::*;
-    match input {
-        Tishrei => "Tishrei",
-        Cheshvan => "Cheshvan",
-        Kislev => "Kislev",
-        Teves => "Teves",
-        Shvat => "Shvat",
-        Adar => "Adar",
-        Adar1 => "Adar1",
-        Adar2 => "Adar2",
-        Nissan => "Nissan",
-        Iyar => "Iyar",
-        Sivan => "Sivan",
-        Tammuz => "Tammuz",
-        Av => "Av",
-        Elul => "Elul",
-    }
-}
-
-fn write_i64(input: i64, lock: &mut BufWriter<StdoutLock<'_>>) {
-    let mut arr = [b'\0'; 20];
-    let count = itoa::write(&mut arr[..], input).unwrap();
-    lock.write(&arr[..count]).unwrap();
 }
 
 impl Return {
