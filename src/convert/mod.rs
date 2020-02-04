@@ -4,39 +4,14 @@ use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
 use either::Either;
+use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
-use serde::ser::SerializeSeq;
-use serde::{Serialize, Serializer};
 use std::convert::TryInto;
-use std::io::{BufWriter, StdoutLock};
+use std::io::{BufWriter, StdoutLock, Write};
 #[derive(Debug)]
 pub struct Return {
     pub day: Either<[chrono::DateTime<Utc>; 2], [HebrewDate; 2]>,
     pub orig_day: Either<HebrewDate, chrono::DateTime<Utc>>,
-}
-
-impl Serialize for Return {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self.day {
-            Either::Left(val) => serialize_array(val, serializer),
-            Either::Right(val) => serialize_array(val, serializer),
-        }
-    }
-}
-
-fn serialize_array<S, A>(cv: [A; 2], serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-    A: Serialize,
-{
-    let mut seq = serializer.serialize_seq(Some(2))?;
-    for e in &cv {
-        seq.serialize_element(e)?;
-    }
-    seq.end()
 }
 
 impl Return {
@@ -85,19 +60,76 @@ impl Return {
         };
         Ok(())
     }
-    fn json_print(&self) -> Result<(), AppError> {
+    fn json_print(&self, lock: &mut BufWriter<StdoutLock<'_>>) -> Result<(), AppError> {
         match &self.day {
-            Either::Right(r) => println!("{}", serde_json::to_string(&r).unwrap()),
-            Either::Left(r) => println!("{}", serde_json::to_string(&r).unwrap()),
+            Either::Right(r) => {
+                lock.write(b"[").unwrap();
+                lock.write(r#"{"day":"#.as_bytes()).unwrap();
+                write_i64(r[0].day().get().into(), lock);
+                lock.write(r#","#.as_bytes()).unwrap();
+                lock.write(r#""month":""#.as_bytes()).unwrap();
+                lock.write(hebrew_month_to_string(r[0].month()).as_bytes())
+                    .unwrap();
+                lock.write(r#"","#.as_bytes()).unwrap();
+                lock.write(r#""year":"#.as_bytes()).unwrap();
+                write_i64(r[0].year().try_into().unwrap(), lock);
+                lock.write(r#"},{"#.as_bytes()).unwrap();
+                lock.write(r#""day":"#.as_bytes()).unwrap();
+                write_i64(r[1].day().get().into(), lock);
+                lock.write(r#","#.as_bytes()).unwrap();
+                lock.write(r#""month":""#.as_bytes()).unwrap();
+                lock.write(hebrew_month_to_string(r[1].month()).as_bytes())
+                    .unwrap();
+                lock.write(r#"","#.as_bytes()).unwrap();
+                lock.write(r#""year":"#.as_bytes()).unwrap();
+                write_i64(r[1].year().try_into().unwrap(), lock);
+                lock.write(r#"}"#.as_bytes()).unwrap();
+                lock.write(b"]").unwrap();
+            }
+            Either::Left(r) => {
+                lock.write(b"[\"").unwrap();
+                lock.write(r[0].to_rfc3339_opts(SecondsFormat::Secs, true).as_bytes())
+                    .unwrap();
+                lock.write(r#"",""#.as_bytes()).unwrap();
+                lock.write(r[1].to_rfc3339_opts(SecondsFormat::Secs, true).as_bytes())
+                    .unwrap();
+                lock.write(b"\"]").unwrap();
+            }
         };
         Ok(())
     }
 }
 
+fn hebrew_month_to_string(input: HebrewMonth) -> &'static str {
+    use heca_lib::prelude::HebrewMonth::*;
+    match input {
+        Tishrei => "Tishrei",
+        Cheshvan => "Cheshvan",
+        Kislev => "Kislev",
+        Teves => "Teves",
+        Shvat => "Shvat",
+        Adar => "Adar",
+        Adar1 => "Adar1",
+        Adar2 => "Adar2",
+        Nissan => "Nissan",
+        Iyar => "Iyar",
+        Sivan => "Sivan",
+        Tammuz => "Tammuz",
+        Av => "Av",
+        Elul => "Elul",
+    }
+}
+
+fn write_i64(input: i64, lock: &mut BufWriter<StdoutLock<'_>>) {
+    let mut arr = [b'\0'; 20];
+    let count = itoa::write(&mut arr[..], input).unwrap();
+    lock.write(&arr[..count]).unwrap();
+}
+
 impl Return {
-    fn print(&self, args: &MainArgs) -> Result<(), AppError> {
+    fn print(&self, args: &MainArgs, lock: &mut BufWriter<StdoutLock<'_>>) -> Result<(), AppError> {
         match args.output_type {
-            OutputType::JSON => self.json_print(),
+            OutputType::JSON => self.json_print(lock),
             OutputType::Pretty | OutputType::Regular => self.pretty_print(args),
         }
     }
@@ -122,7 +154,7 @@ impl Runnable for ConvertArgs {
             },
         };
 
-        ret.print(args)?;
+        ret.print(args, lock)?;
         Ok(())
     }
 }

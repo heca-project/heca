@@ -1,6 +1,6 @@
 [package]
 name = "heca"
-version = "1.4.4"
+version = "1.5.0"
 authors = ["picked name <ipickedaname@mail.com>"]
 edition = '2018'
 repository = "https://github.com/heca-project/heca"
@@ -24,6 +24,7 @@ serde = "1.0"
 serde_json = "1.0"
 toml = "0.5"
 cpuprofiler = "0.0.4"
+zmanim = "0.0.7"
 
 [profile.release]
 lto = true

@@ -26,6 +26,7 @@ fn get_yud_kislev(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::ChabadHoliday(ChabadHoliday::YudKislev),
+            candle_lighting: None,
         })
     }
 }
@@ -41,6 +42,7 @@ fn get_yud_tes_kislev(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::ChabadHoliday(ChabadHoliday::YudTesKislev),
+            candle_lighting: None,
         })
     }
 }
@@ -56,6 +58,7 @@ fn get_chof_kislev(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::ChabadHoliday(ChabadHoliday::ChofKislev),
+            candle_lighting: None,
         })
     }
 }
@@ -71,6 +74,7 @@ fn get_yud_beis_tammuz(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::ChabadHoliday(ChabadHoliday::YudBeisTammuz),
+            candle_lighting: None,
         })
     }
 }
@@ -86,6 +90,7 @@ fn get_yud_gimmel_tammuz(year: &HebrewYear) -> Option<DayVal> {
                 .try_into()
                 .unwrap(),
             name: Name::ChabadHoliday(ChabadHoliday::YudGimmelTammuz),
+            candle_lighting: None,
         })
     }
 }

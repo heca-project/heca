@@ -7,6 +7,14 @@ Hebrew calendar written in rust. It converts from Hebrew to Gregorian and back a
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/heca-project/heca.svg)](https://isitmaintained.com/project/heca-project/heca "Percentage of issues still open")
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Features:
+
+* Converts Hebrew to Gregorian calendar and back,
+* Lists Shabbos (Parsha) and Holidays, with candle lighting times (**THEY MAY NOT BE PRECISE** and only work when one doesn't have to account for Havdala),
+* Shows a daily study calendar,
+* Outputs JSON
+* FAST 
+
 ## Installation
 
 ### Direct
@@ -69,8 +77,8 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
    Can also be configured through setting `HECA_NOSORT=1`
 2. `--years <AmountYears>`: Generate events for n years. Defaults to 1.
 3. `--show <Events>`: What events to list. Possible values are:
-     1. `yom-tov` - lists the main Yom Tovs - Rosh Hashana, Yom Kippur, Pesach, Shavuos and Sukkos.
-     2. `shabbos` - lists the weekly Torah portion.
+     1. `yom-tov` - lists the main Yom Tovs - Rosh Hashana, Yom Kippur, Pesach, Shavuos and Sukkos. Also shows candle lighting.
+     2. `shabbos` - lists the weekly Torah portion. Also shows candle lighting.
      3. `special-parshas` - lists the four special Torah portions read in the winter.
      4. `chol` - Shows weekdays that have special Torah readings - includes Shushan Purim.
      5. `minor-holidays` - Lag BaOmer, Pesach Sheni, and Erev Yom Tov.
@@ -83,6 +91,7 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
      12. `israeli-holidays` - lists the Israeli holidays that hebcal displays (Yom HaAliyah, Sigd, Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, and Yom Yerushalayim).
      13. `chabad-holidays` - lists the days when Chabad doesn't say Tachanun (10 Kislev, 19/20 Kislev, and 12/13 Tammuz).
      14. `shabbos-mevarchim` - lists the Shabbos Mevorchim of the upcoming month. It also outputs the time of the molad (new moon).
+    
 
      The default is `yom-tov`.
 4. `--location`: Selects if you're looking for an Israeli calendar or Chu"l calendar. Options are "Chul" or "Israel". It defaults to Chul unless the language is Hebrew, in which case it defaults to Israel. Can also be configured through `HECA_LOCATION`.
@@ -90,10 +99,13 @@ Since the Jewish day starts at night-time, unlike most calendars, the days liste
  
     Can also be configured through `HECA_YEAR_TYPE`.
     
-6. `--exact-days`: There's an [argument](https://www.halachipedia.com/index.php?title=Yom_HaAtzmaut#cite_ref-6) between the Rabbanut, and Rabbis Aharon Soloveitchik and Hershel Schachter. The Rabbanut says that if these days fall out around Shabbos, we should move them so that it won't lead to people breaking Shabbos, 
-                   while Rabbis Soloveitchik and Hershel Schachter said that one in America, one should always celebrate it on the given day. This option overrides the default Psak of the Rabbanut.
+6. `--exact-days`: There's an [argument](https://www.halachipedia.com/index.php?title=Yom_HaAtzmaut#cite_ref-6) between the Rabbanut, and Rabbis Aharon Soloveitchik and Hershel Schachter. The Rabbanut says that if these days fall out around Shabbos, we should move them so that it won't lead to people breaking Shabbos, while Rabbis Soloveitchik and Hershel Schachter said that one in America, one should always celebrate it on the given day. This option overrides the default Psak of the Rabbanut.
                     
       Can also be configured through `HECA_EXACT_DAYS`.    
+    
+7. `--city`: If you want _rough_ candle lighting estimates, you can pass the city name (if you misspell its argument, you'll get a list of built-in cities).
+      
+      Can also be configured through `HECA_CITY`.
 
 ## Config file
 
@@ -111,6 +123,9 @@ The config is a TOML file, with several options:
 2. `language` - The default language (options: `en_US` or `he_IL`).
 3. `location` - The default location (options: `Chul` or `Israel`).
 4. `exact-days` - See above in the arguments section. (option: `true` or `false`).
+5. `default-city` - The city to calculate candle lighting times.
+6. `cities` - An array of objects containing: `name`, `timezone` (in `tzdata` format), `latitude`, `longitude`, and `minutes` before sunset.
+
 
 ### Examples:
 ```
@@ -132,6 +147,8 @@ days = [
 ]
 language = "en_US"
 exact-days = true
+default-city="Home"
+cities = [ { name= "Home", timezone = "America/Chicago", latitude = 39.8416678, longitude = -96.5197389, minutes = 18 } ]
 ```
 
 
@@ -228,6 +245,21 @@ $ ./target/release/heca --print=json list --show=shabbos-mevarchim 1020 --years 
 ```
 
 We'll have to wait for a _while_ for the Molad to fall out exactly on midnight.
+
+### When does one light candles on the first Shabbos of the year in Tel Aviv?
+```
+$ ./target/release/heca --print=json list 5780 --show=shabbos --city=TelAvivYafo | jq -r '.[] | .candleLighting' | head -n1
+
+2019-10-04T18:06:01+03:00
+```
+### When does one light candles on the first Shabbos of the year in Jerusalem?
+```
+$ ./target/release/heca --print=json list 5780 --show=shabbos --city=TelAvivYafo | jq -r '.[] | .candleLighting' | head -n1
+
+2019-10-04T17:42:25+03:00
+```
+
+The difference (6:06 - 5:42) could be because Jerusalem lights candles about 20 minutes before everyone else. But don't forget that this calculator is not precise, so make sure to consult your local calendar if you plan on lighting candles close to the time.
 
 ## Benchmarks
 

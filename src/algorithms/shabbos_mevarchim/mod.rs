@@ -108,6 +108,7 @@ pub fn get(year: &HebrewYear) -> Vec<DayVal> {
                 minute: molad_day.minute(),
                 chalakim: molad.get_chalakim(),
             }),
+            candle_lighting: None,
         });
     }
     v
