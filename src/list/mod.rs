@@ -1,14 +1,21 @@
+use crate::algorithms::custom_holidays::CustomHoliday;
+use crate::algorithms::daily_study::daf_yomi::constants::*;
 use crate::algorithms::{chabad_holidays, israeli_holidays, shabbos_mevarchim};
+use crate::prelude::MyToString;
 
-use crate::algorithms::candle_lighting::City;
-use crate::args::types::{
-    AppError, CustomHoliday, Daf, DailyStudy, DailyStudyOutput, DayVal, Event, Language, ListArgs,
-    MainArgs, MinorHoliday, Name, OutputType, RambamChapter, RambamChapters, RambamThreeChapter,
-    YearType, YerushalmiYomi,
+use crate::algorithms::{
+    candle_lighting::City,
+    daily_study::{
+        daf_yomi::Daf,
+        rambam::{RambamChapter, RambamChapters, RambamThreeChapter},
+        yerushalmi::YerushalmiYomi,
+        DailyStudy, DailyStudyOutput,
+    },
+    minor_days::types::MinorHoliday,
 };
-use crate::prelude::constants::{get_minor_holidays, GEMARAS_FIRST_CYCLE, GEMARAS_SECOND_CYCLE};
-use crate::prelude::get_omer::get_omer;
-use crate::prelude::print;
+use crate::args::types::{
+    AppError, DayVal, Event, Language, ListArgs, MainArgs, Name, OutputType, YearType,
+};
 use crate::Runnable;
 use chrono::prelude::*;
 use chrono::Duration;
@@ -16,14 +23,12 @@ use heca_lib::prelude::Chol::NineAv;
 use heca_lib::prelude::*;
 use heca_lib::{HebrewDate, HebrewYear};
 use rayon::prelude::*;
-use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
 use std::io::BufWriter;
 use std::io::StdoutLock;
 use std::io::Write;
 
-#[derive(Debug, Serialize)]
-#[serde(transparent)]
+#[derive(Debug)]
 pub struct Return {
     list: Vec<DayVal>,
 }
@@ -60,7 +65,7 @@ impl Return {
             match name {
                 Name::TorahReading(name) => {
                     let mut res = lock
-                        .write(print::torah_reading(name, args.language).as_bytes())
+                        .write(name.to_string(args.language).as_bytes())
                         .unwrap();
                     if let Some(l) = d.candle_lighting {
                         res += match args.language {
@@ -85,9 +90,7 @@ impl Return {
                     }
                     Some(res)
                 }
-                Name::MinorDays(day) => lock
-                    .write(print::minor_holidays(day, args.language).as_bytes())
-                    .ok(),
+                Name::MinorDays(day) => lock.write(day.to_string(args.language).as_bytes()).ok(),
                 Name::CustomHoliday(custom_holiday) => {
                     lock.write(custom_holiday.printable.as_bytes()).ok()
                 }
@@ -117,20 +120,32 @@ impl Return {
         });
         Ok(())
     }
-    fn json_print(&self) -> Result<(), AppError> {
-        println!("{}", serde_json::to_string(&self).unwrap());
+    fn json_print<'a, 'b>(&self, lock: &'a mut BufWriter<StdoutLock<'b>>) -> Result<(), AppError> {
+        lock.write(b"[").unwrap();
+        let mut iterator = self.list.iter().peekable();
+        loop {
+            if let Some(day_val) = iterator.next() {
+                day_val.json_print(lock);
+            } else {
+                break;
+            }
+            if !iterator.peek().is_none() {
+                lock.write(b",").unwrap();
+            }
+        }
+        lock.write(b"]").unwrap();
         Ok(())
     }
 }
 
 impl Return {
-    fn print(
+    fn print<'a, 'b>(
         &self,
         args: &MainArgs,
-        mut lock: &mut BufWriter<StdoutLock<'_>>,
+        mut lock: &'a mut BufWriter<StdoutLock<'b>>,
     ) -> Result<(), AppError> {
         match args.output_type {
-            OutputType::JSON => self.json_print(),
+            OutputType::JSON => self.json_print(lock),
             OutputType::Pretty | OutputType::Regular => self.pretty_print(args, &mut lock),
         }
     }
@@ -167,28 +182,26 @@ impl GetDayVal for DailyStudyEvents {
                         let first_day_of_second_cycle = Utc.ymd(1975, 6, 23).and_hms(18, 0, 0);
                         if i >= first_day_of_second_cycle {
                             let diff = i - first_day_of_second_cycle;
-                            let d = DayVal {
+                            return_val.push(DayVal {
                                 day: i,
                                 name: Name::DailyStudy(DailyStudyOutput::Daf(Daf::from_days(
                                     (diff.num_days() % 2711).try_into().unwrap(),
                                     &GEMARAS_SECOND_CYCLE,
                                 ))),
                                 candle_lighting: None,
-                            };
-                            return_val.push(d);
+                            });
                         } else {
                             let first_day_of_first_cycle = Utc.ymd(1923, 9, 10).and_hms(18, 0, 0);
                             if i >= first_day_of_first_cycle {
                                 let diff = i - first_day_of_first_cycle;
-                                let d = DayVal {
+                                return_val.push(DayVal {
                                     day: i,
                                     candle_lighting: None,
                                     name: Name::DailyStudy(DailyStudyOutput::Daf(Daf::from_days(
                                         (diff.num_days() % 2702).try_into().unwrap(),
                                         &GEMARAS_FIRST_CYCLE,
                                     ))),
-                                };
-                                return_val.push(d);
+                                });
                             }
                         }
                     }
@@ -198,7 +211,7 @@ impl GetDayVal for DailyStudyEvents {
                         if i >= first_day {
                             match chapters {
                                 RambamChapters::One => {
-                                    let d = DayVal {
+                                    return_val.push(DayVal {
                                         candle_lighting: None,
                                         day: i,
                                         name: Name::DailyStudy(
@@ -208,11 +221,10 @@ impl GetDayVal for DailyStudyEvents {
                                                 ),
                                             ),
                                         ),
-                                    };
-                                    return_val.push(d);
+                                    });
                                 }
                                 RambamChapters::Three => {
-                                    let d = DayVal {
+                                    return_val.push(DayVal {
                                         candle_lighting: None,
                                         day: i,
                                         name: Name::DailyStudy(
@@ -224,8 +236,7 @@ impl GetDayVal for DailyStudyEvents {
                                                 ),
                                             ),
                                         ),
-                                    };
-                                    return_val.push(d);
+                                    });
                                 }
                             }
                         }
@@ -281,7 +292,7 @@ impl GetDayVal for DailyStudyEvents {
                                     amnt_years + amnt_tisha_beav_this_year
                                 };
                                 if diff_days.num_days() > 0 {
-                                    let d = DayVal {
+                                    return_val.push(DayVal {
                                         day: i,
                                         name: Name::DailyStudy(DailyStudyOutput::YerushalmiYomi(
                                             YerushalmiYomi::from_days(
@@ -294,8 +305,7 @@ impl GetDayVal for DailyStudyEvents {
                                             ),
                                         )),
                                         candle_lighting: None,
-                                    };
-                                    return_val.push(d);
+                                    });
                                 }
                             }
                         }
@@ -310,10 +320,10 @@ impl GetDayVal for DailyStudyEvents {
 }
 
 impl Runnable for ListArgs {
-    fn run(
+    fn run<'a, 'b>(
         &self,
         args: &MainArgs,
-        mut lock: &mut BufWriter<StdoutLock<'_>>,
+        lock: &'a mut BufWriter<StdoutLock<'b>>,
     ) -> Result<(), AppError> {
         let main_events = self
             .events
@@ -404,7 +414,7 @@ impl Runnable for ListArgs {
         if !self.no_sort {
             result1.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
         }
-        result1.print(args, &mut lock)?;
+        result1.print(args, lock)?;
         Ok(())
     }
 }
@@ -528,7 +538,7 @@ fn get_list(
             );
 
             if events.contains(&Event::MinorHoliday(MinorHoliday::Omer)) {
-                ret.extend_from_slice(&get_omer(&year));
+                ret.extend_from_slice(&crate::algorithms::minor_days::constants::get_omer(&year));
             }
             if events.contains(&Event::IsraeliHolidays) {
                 ret.extend_from_slice(&israeli_holidays::get(&year, exact_days));
@@ -540,7 +550,7 @@ fn get_list(
                 ret.extend_from_slice(&shabbos_mevarchim::get(&year));
             }
             if events.contains(&Event::MinorHoliday(MinorHoliday::Minor)) {
-                ret.extend(get_minor_holidays(&year));
+                ret.extend(crate::algorithms::minor_days::get(&year));
             }
             custom_events.iter().for_each(|x| {
                 if let Ok(day) = year.get_hebrew_date(x.date.month, x.date.day) {

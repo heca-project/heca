@@ -1,5 +1,6 @@
 days = [
   { date = "10 שבט", title = "Yud Shvat (The Yom Hilula of the Previous Lubavitcher Rebbe)", json = "YudShvat" },
+  { date = "7 אדר", title = "Moshe Rabbeinu's Yahrtzeit", json = "MosheRabbeinu\"sYahrtzei" },
   { date = "2 אדר", ifNotExists = ["2 אדרב"], title = "Second of Adar", json = "2Adar" },
   { date = "1 אדרא", ifNotExists = ["1 אדר"], title = "First of Adar I", json = "1AdarI" },
   { date = "3 אדרב", ifNotExists = ["3 אדר"], title = "Third of Adar II", json = "3AdarII" },

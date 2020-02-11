@@ -1,9 +1,9 @@
 use crate::algorithms::candle_lighting::{City, CITIES};
+use crate::algorithms::custom_holidays::CustomHoliday;
+use crate::algorithms::daily_study::{rambam::RambamChapters, DailyStudy};
+use crate::algorithms::minor_days::types::*;
 use crate::args::prelude::{str_to_location, Config};
-use crate::args::types::{
-    AppError, Command, CustomHoliday, DailyStudy, Event, Language, ListArgs, MinorHoliday,
-    RambamChapters, YearType,
-};
+use crate::args::types::{AppError, Command, Event, Language, ListArgs, YearType};
 use clap::ArgMatches;
 use heca_lib::prelude::{Location, TorahReadingType};
 
@@ -73,12 +73,10 @@ pub fn parse_options(
 
     let exact_days = if matches.occurrences_of("ExactDays") > 0 {
         true
+    } else if let Some(exact) = config.exact_days {
+        exact
     } else {
-        if let Some(exact) = config.exact_days {
-            exact
-        } else {
-            false
-        }
+        false
     };
 
     let location = if let Some(location) = matches.value_of("Location") {

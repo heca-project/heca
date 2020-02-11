@@ -804,6 +804,45 @@ fn custom_day_check_of_edge_cases_and_avoid_crash() {
 }
 
 #[test]
+fn check_avoid_crash() {
+    let options = [
+        "yom-tov",
+        "shabbos",
+        "special-parshas",
+        "chol",
+        "minor-holidays",
+        "omer",
+        "custom-holidays",
+        "daf-yomi",
+        "yerushalmi-yomi",
+        "rambam-3-chapters",
+        "rambam-1-chapter",
+        "israeli-holidays",
+        "chabad-holidays",
+        "shabbos-mevarchim",
+    ];
+    for option in options.iter() {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.arg("--language")
+            .arg("en_US")
+            .arg("--config")
+            .arg("./tests/edge_cases_config.toml")
+            .arg("--print")
+            .arg("json")
+            .arg("list")
+            .arg("--years")
+            .arg("10")
+            .arg("5750")
+            .arg("--show")
+            .arg(option);
+        assert_eq!(
+            &String::from_utf8(cmd.output().unwrap().stderr).unwrap(),
+            ""
+        );
+    }
+}
+
+#[test]
 fn check_shabbos_hagadol_always_is_shabbos() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("--language")

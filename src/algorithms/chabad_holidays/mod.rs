@@ -1,4 +1,5 @@
 use crate::args::types::{DayVal, Language, Name};
+use crate::prelude::{Json, JsonPrinter};
 use heca_lib::prelude::HebrewMonth;
 use heca_lib::HebrewYear;
 use std::convert::TryInto;
@@ -127,5 +128,19 @@ impl ChabadHoliday {
             },
         };
         Some(p)
+    }
+}
+
+impl JsonPrinter for ChabadHoliday {
+    fn json_print<'a, 'b>(&self, json: &mut Json<'_, '_>) {
+        json.print_map_unchecked("type", "ChabadHoliday");
+        json.next();
+        match self {
+            ChabadHoliday::YudKislev => json.print_map_unchecked("name", "YudKislev"),
+            ChabadHoliday::YudTesKislev => json.print_map_unchecked("name", "YudTesKislev"),
+            ChabadHoliday::ChofKislev => json.print_map_unchecked("name", "ChofKislev"),
+            ChabadHoliday::YudBeisTammuz => json.print_map_unchecked("name", "YudBeisTammuz"),
+            ChabadHoliday::YudGimmelTammuz => json.print_map_unchecked("name", "YudGimmelTammuz"),
+        };
     }
 }

@@ -1,5 +1,8 @@
-use crate::args::types::{AppError, CustomHoliday, DayMonth, Language};
+use crate::algorithms::custom_holidays::CustomHoliday;
+use crate::algorithms::custom_holidays::DayMonth;
+use crate::args::types::{AppError, Language};
 use crate::args::DATE_TOKEN;
+use crate::prelude::string_to_json;
 use heca_lib::prelude::{HebrewMonth, Location};
 use serde::Deserialize;
 use std::convert::TryInto;
@@ -127,7 +130,7 @@ impl Config {
                 for e in days {
                     let date = e.date;
                     let printable = e.title;
-                    let json = e.json;
+                    let json = string_to_json(&e.json);
                     let if_not_exists: Option<Result<Vec<DayMonth>, AppError>> =
                         e.if_not_exists.and_then(|e| {
                             e.into_iter()

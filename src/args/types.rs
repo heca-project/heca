@@ -1,20 +1,21 @@
 use crate::algorithms::candle_lighting::CITIES;
 use crate::algorithms::chabad_holidays::ChabadHoliday;
+use crate::algorithms::custom_holidays::CustomHoliday;
+use crate::algorithms::daily_study::{DailyStudy, DailyStudyOutput};
 use crate::algorithms::israeli_holidays::IsraeliHoliday;
-
-use std::num::NonZeroI8;
+use crate::algorithms::minor_days::types::MinorDays;
+use crate::algorithms::minor_days::types::MinorHoliday;
+use crate::algorithms::torah_reading::json_print;
+use crate::prelude::JsonPrinter;
+use crate::prelude::{string_to_json, Json};
 
 use chrono::prelude::*;
 use heca_lib::prelude::*;
 use heca_lib::HebrewDate;
-use serde::ser::*;
-use serde::Serialize;
 use std::io::{BufWriter, StderrLock, StdoutLock, Write};
 
 use crate::algorithms::candle_lighting::City;
 use crate::algorithms::shabbos_mevarchim::ShabbosMevarchim;
-use crate::prelude::constants::{RAMBAM, YERUSHALMI};
-use std::collections::HashMap;
 use std::fmt;
 
 pub struct MainArgs {
@@ -74,33 +75,6 @@ pub enum Event {
     ShabbosMevarchim,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct CustomHoliday {
-    pub printable: String,
-    pub json: String,
-    pub date: DayMonth,
-    pub if_not_exists: Option<Vec<DayMonth>>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum DailyStudy {
-    DafYomi,
-    Rambam(RambamChapters),
-    YerushalmiYomi,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum RambamChapters {
-    Three,
-    One,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DayMonth {
-    pub month: HebrewMonth,
-    pub day: NonZeroI8,
-}
-
 #[derive(Eq, PartialEq)]
 pub enum YearType {
     Gregorian(u64),
@@ -114,356 +88,38 @@ pub struct DayVal {
     pub candle_lighting: Option<Option<DateTime<FixedOffset>>>,
 }
 
-impl Serialize for DayVal {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+impl DayVal {
+    pub(crate) fn json_print<'a, 'b>(&self, lock: &'a mut BufWriter<StdoutLock<'b>>) {
         use crate::types::*;
-        let mut state = serializer.serialize_struct("Day", 2)?;
-        state.serialize_field("day", &self.day)?;
+        let mut json = Json::new(lock);
+        json.start();
+        json.print_map_unchecked("day", &self.day.to_rfc3339_opts(SecondsFormat::Secs, true));
+        json.next();
+
         match &self.name {
-            Name::TorahReading(val) => match val {
-                TorahReading::YomTov(yt) => {
-                    state.serialize_field("type", "YomTov")?;
-                    state.serialize_field("name", yt)?;
-                    if let Some(candle_lighting_time) = self.candle_lighting {
-                        match candle_lighting_time {
-                            Some(t) => state.serialize_field("candleLighting", &t.to_rfc3339())?,
-                            None => state.serialize_field("candleLighting", "undefined")?,
-                        };
-                    }
-                }
-                TorahReading::Chol(chol) => {
-                    state.serialize_field("type", "Chol")?;
-                    state.serialize_field("name", chol)?;
-                }
-                TorahReading::Shabbos(shabbos) => {
-                    state.serialize_field("type", "Shabbos")?;
-                    state.serialize_field("name", shabbos)?;
-                    if let Some(candle_lighting_time) = self.candle_lighting {
-                        match candle_lighting_time {
-                            Some(t) => state.serialize_field("candleLighting", &t.to_rfc3339())?,
-                            None => state.serialize_field("candleLighting", "undefined")?,
-                        };
-                    }
-                }
-                TorahReading::SpecialParsha(special_parsha) => {
-                    state.serialize_field("type", "YomTov")?;
-                    state.serialize_field("name", special_parsha)?;
-                }
-            },
+            Name::TorahReading(tr) => {
+                json_print(tr, &self, &mut json);
+            }
             Name::MinorDays(days) => {
-                state.serialize_field("type", "MinorDays")?;
-                state.serialize_field("name", days)?;
+                days.json_print(&mut json);
             }
             Name::CustomHoliday(custom_holiday) => {
-                state.serialize_field("type", "CustomHoliday")?;
-                state.serialize_field("name", &custom_holiday.json)?;
+                custom_holiday.json_print(&mut json);
             }
             Name::IsraeliHoliday(holiday) => {
-                state.serialize_field("type", "IsraeliHoliday")?;
-                match holiday {
-                    IsraeliHoliday::YomHaAtzmaut => {
-                        state.serialize_field("name", "YomHaAtzmaut")?
-                    }
-                    IsraeliHoliday::YomHaZikaron => {
-                        state.serialize_field("name", "YomHaZikaron")?
-                    }
-                    IsraeliHoliday::YomYerushalayim => {
-                        state.serialize_field("name", "YomYerushalayim")?
-                    }
-                    IsraeliHoliday::YomHaShoah => state.serialize_field("name", "YomHaShoah")?,
-                    IsraeliHoliday::YomHaAliyah => state.serialize_field("name", "YomHaAliyah")?,
-                    IsraeliHoliday::Sigd => state.serialize_field("name", "Sigd")?,
-                }
+                holiday.json_print(&mut json);
             }
             Name::ChabadHoliday(holiday) => {
-                state.serialize_field("type", "ChabadHoliday")?;
-                match holiday {
-                    ChabadHoliday::YudKislev => state.serialize_field("name", "YudKislev")?,
-                    ChabadHoliday::YudTesKislev => state.serialize_field("name", "YudTesKislev")?,
-                    ChabadHoliday::ChofKislev => state.serialize_field("name", "ChofKislev")?,
-                    ChabadHoliday::YudBeisTammuz => {
-                        state.serialize_field("name", "YudBeisTammuz")?
-                    }
-                    ChabadHoliday::YudGimmelTammuz => {
-                        state.serialize_field("name", "YudGimmelTammuz")?
-                    }
-                }
+                holiday.json_print(&mut json);
             }
             Name::DailyStudy(daily_study) => {
-                match daily_study {
-                    DailyStudyOutput::Daf(daf) => {
-                        let mut m = HashMap::new();
-                        m.insert("masechta", daf.masechta_json.to_string());
-                        m.insert("daf", daf.daf.to_string());
-                        state.serialize_field("type", "DafYomi")?;
-                        state.serialize_field("topic", &daf)?;
-                    }
-                    DailyStudyOutput::RambamThreeChapters(halacha) => {
-                        state.serialize_field("type", "Rambam3Chapters")?;
-                        let v = vec![&halacha.ch1, &halacha.ch2, &halacha.ch3];
-                        state.serialize_field("topic", &v)?;
-                    }
-                    DailyStudyOutput::RambamOneChapters(halacha) => {
-                        state.serialize_field("type", "Rambam1Chapter")?;
-                        state.serialize_field("topic", &halacha)?;
-                    }
-                    DailyStudyOutput::YerushalmiYomi(yerushalmi_yomi) => {
-                        state.serialize_field("type", "Yerushalmi")?;
-                        state.serialize_field("topic", &yerushalmi_yomi)?;
-                    }
-                };
+                daily_study.json_print(&mut json);
             }
             Name::ShabbosMevarchim(shabbos_mevarchim) => {
-                state.serialize_field("type", "ShabbosMevarchim")?;
-                state.serialize_field("month", &shabbos_mevarchim.hebrew_month)?;
-                state.serialize_field("molad", &shabbos_mevarchim)?;
+                shabbos_mevarchim.json_print(&mut json);
             }
         };
-        state.end()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum DailyStudyOutput {
-    Daf(Daf),
-    RambamThreeChapters(RambamThreeChapter),
-    RambamOneChapters(RambamChapter),
-    YerushalmiYomi(YerushalmiYomi),
-}
-
-#[derive(Debug, Clone)]
-pub struct RambamThreeChapter {
-    ch1: RambamChapter,
-    ch2: RambamChapter,
-    ch3: RambamChapter,
-}
-
-impl RambamThreeChapter {
-    pub fn from_days(day: u16) -> Self {
-        let day_1 = day * 3;
-        let day_2 = day * 3 + 1;
-        let day_3 = day * 3 + 2;
-        let ch1 = RambamChapter::from_days(day_1);
-        let ch2 = RambamChapter::from_days(day_2);
-        let ch3 = RambamChapter::from_days(day_3);
-        Self { ch1, ch2, ch3 }
-    }
-
-    pub fn pretty_print(
-        &self,
-        lock: &mut BufWriter<StdoutLock<'_>>,
-        language: Language,
-    ) -> Option<usize> {
-        let mut sum = self.ch1.pretty_print(lock, language)?;
-        sum += lock.write(b" - ").ok()?;
-        sum += self.ch3.pretty_print(lock, language)?;
-        Some(sum)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct RambamChapter {
-    halacha_english: &'static str,
-    halacha_json: &'static str,
-    halacha_hebrew: &'static str,
-    chapter: u8,
-}
-
-impl Serialize for RambamChapter {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use crate::types::*;
-        let mut state = serializer.serialize_struct("Day", 2)?;
-        state.serialize_field("halacha", &self.halacha_json)?;
-        state.serialize_field("chapter", &self.chapter)?;
-        state.end()
-    }
-}
-
-impl RambamChapter {
-    pub fn from_days(day: u16) -> Self {
-        let mut day = day;
-        let mut index = 0;
-        let mut halacha_english;
-        let mut halacha_json;
-        let mut halacha_hebrew;
-
-        let chapter = loop {
-            halacha_english = RAMBAM[index].0;
-            halacha_hebrew = RAMBAM[index].1;
-            halacha_json = RAMBAM[index].2;
-
-            if day < (RAMBAM[index].3 as u16) {
-                break day as u8 + 1;
-            } else {
-                day -= RAMBAM[index].3 as u16;
-                index += 1;
-            }
-        };
-        Self {
-            halacha_english,
-            halacha_json,
-            halacha_hebrew,
-            chapter,
-        }
-    }
-
-    pub fn pretty_print(
-        &self,
-        lock: &mut BufWriter<StdoutLock<'_>>,
-        language: Language,
-    ) -> Option<usize> {
-        let mut p = if language == Language::English {
-            lock.write(self.halacha_english.as_bytes()).ok()?
-        } else {
-            lock.write(self.halacha_hebrew.as_bytes()).ok()?
-        };
-        p += lock.write(b" ").ok()?;
-        let mut daf_arr = [b'\0'; 3];
-        let count_y = itoa::write(&mut daf_arr[..], self.chapter).unwrap();
-        p += lock.write(&daf_arr[..count_y]).ok()?;
-        Some(p)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct YerushalmiYomi {
-    masechta_english: &'static str,
-    masechta_json: &'static str,
-    masechta_hebrew: &'static str,
-    daf: u8,
-}
-
-impl YerushalmiYomi {
-    pub fn from_days(day: u16) -> Self {
-        let mut day = day;
-        let mut index = 0;
-        let mut masechta_english;
-        let mut masechta_json;
-        let mut masechta_hebrew;
-
-        let daf = loop {
-            masechta_english = YERUSHALMI[index].0;
-            masechta_hebrew = YERUSHALMI[index].1;
-            masechta_json = YERUSHALMI[index].2;
-
-            if day < (YERUSHALMI[index].3 as u16) {
-                break day as u8;
-            } else {
-                day -= YERUSHALMI[index].3 as u16;
-                index += 1;
-            }
-        };
-        Self {
-            masechta_english,
-            masechta_json,
-            masechta_hebrew,
-            daf,
-        }
-    }
-    pub fn pretty_print(
-        &self,
-        lock: &mut BufWriter<StdoutLock<'_>>,
-        language: Language,
-    ) -> Option<usize> {
-        let mut p = if language == Language::English {
-            lock.write(self.masechta_english.as_bytes()).ok()?
-        } else {
-            lock.write(self.masechta_hebrew.as_bytes()).ok()?
-        };
-        p += lock.write(b" ").ok()?;
-        let mut daf_arr = [b'\0'; 3];
-        let count_y = itoa::write(&mut daf_arr[..], self.daf + 1).unwrap();
-        p += lock.write(&daf_arr[..count_y]).ok()?;
-        Some(p)
-    }
-}
-
-impl Serialize for YerushalmiYomi {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use crate::types::*;
-        let mut state = serializer.serialize_struct("Day", 2)?;
-        state.serialize_field("masechta", &self.masechta_json)?;
-        state.serialize_field("daf", &(self.daf + 1))?;
-        state.end()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Daf {
-    masechta_english: &'static str,
-    masechta_json: &'static str,
-    masechta_hebrew: &'static str,
-    daf: u8,
-}
-
-impl Serialize for Daf {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use crate::types::*;
-        let mut state = serializer.serialize_struct("day", 2)?;
-        state.serialize_field("masechta", &self.masechta_json)?;
-        state.serialize_field("daf", &(self.daf + 2))?;
-        state.end()
-    }
-}
-
-impl Daf {
-    pub fn from_days(
-        day: u16,
-        gemaras: &[(&'static str, &'static str, &'static str, u8); 37],
-    ) -> Self {
-        let mut day = day;
-        let mut index = 0;
-        let mut masechta_english;
-        let mut masechta_json;
-        let mut masechta_hebrew;
-
-        let daf = loop {
-            masechta_english = gemaras[index].0;
-            masechta_hebrew = gemaras[index].1;
-            masechta_json = gemaras[index].2;
-
-            if day < (gemaras[index].3 as u16 - 1) {
-                break day as u8;
-            } else {
-                day -= gemaras[index].3 as u16 - 1;
-                index += 1;
-            }
-        };
-        Self {
-            masechta_english,
-            masechta_json,
-            masechta_hebrew,
-            daf,
-        }
-    }
-
-    pub fn pretty_print(
-        &self,
-        lock: &mut BufWriter<StdoutLock<'_>>,
-        language: Language,
-    ) -> Option<usize> {
-        let mut p = if language == Language::English {
-            lock.write(self.masechta_english.as_bytes()).ok()?
-        } else {
-            lock.write(self.masechta_hebrew.as_bytes()).ok()?
-        };
-        p += lock.write(b" ").ok()?;
-        let mut daf_arr = [b'\0'; 3];
-        let count_y = itoa::write(&mut daf_arr[..], self.daf + 2).unwrap();
-        p += lock.write(&daf_arr[..count_y]).ok()?;
-        Some(p)
+        json.end();
     }
 }
 
@@ -476,82 +132,6 @@ pub enum Name {
     IsraeliHoliday(IsraeliHoliday),
     ChabadHoliday(ChabadHoliday),
     ShabbosMevarchim(ShabbosMevarchim),
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub enum MinorDays {
-    Omer1,
-    Omer2,
-    Omer3,
-    Omer4,
-    Omer5,
-    Omer6,
-    Omer7,
-    Omer8,
-    Omer9,
-    Omer10,
-    Omer11,
-    Omer12,
-    Omer13,
-    Omer14,
-    Omer15,
-    Omer16,
-    Omer17,
-    Omer18,
-    Omer19,
-    Omer20,
-    Omer21,
-    Omer22,
-    Omer23,
-    Omer24,
-    Omer25,
-    Omer26,
-    Omer27,
-    Omer28,
-    Omer29,
-    Omer30,
-    Omer31,
-    Omer32,
-    Omer33,
-    Omer34,
-    Omer35,
-    Omer36,
-    Omer37,
-    Omer38,
-    Omer39,
-    Omer40,
-    Omer41,
-    Omer42,
-    Omer43,
-    Omer44,
-    Omer45,
-    Omer46,
-    Omer47,
-    Omer48,
-    Omer49,
-    ErevYomKippur,
-    ErevSukkos,
-    ErevPesach,
-    PesachSheni,
-    LagBaOmer,
-    ErevShavuos,
-    ErevRoshHashanah,
-    FifteenShvat,
-    FifteenAv,
-    PurimKattan,
-    ShushanPurimKattan,
-    ShabbosHaGadol,
-    TaanisBechoros,
-    ShabbosChazon,
-    ShabbosNachamu,
-    LeilSlichos,
-    ShabbosShuva,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
-pub enum MinorHoliday {
-    Omer,
-    Minor,
 }
 
 type Month = u32;
@@ -581,7 +161,7 @@ pub enum AppError {
 
 use clap::ErrorKind;
 impl AppError {
-    pub(crate) fn print_json(&self, lock: &mut BufWriter<StderrLock<'_>>) {
+    pub(crate) fn json_print(&self, lock: &mut BufWriter<StderrLock<'_>>) {
         match self {
             AppError::DateSyntaxError(err) => {
                 let out = format!(
@@ -777,10 +357,6 @@ impl AppError {
             }
         };
     }
-}
-
-fn string_to_json(s: &str) -> String {
-    s.replace('"', "\\\"")
 }
 
 impl fmt::Display for AppError {

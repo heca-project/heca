@@ -1,10 +1,9 @@
 use crate::args::types::{DayVal, Language, Name};
-use crate::prelude::{hebrew_month_english, hebrew_month_hebrew};
+use crate::prelude::JsonPrinter;
+use crate::prelude::{hebrew_month_english, hebrew_month_hebrew, Json};
 use chrono::{DateTime, Datelike, Duration, Timelike, Utc, Weekday};
 use heca_lib::prelude::HebrewMonth;
 use heca_lib::{HebrewDate, HebrewYear};
-use serde::ser::*;
-use serde::{Serialize, Serializer};
 use std::convert::TryInto;
 use std::io::{BufWriter, StdoutLock, Write};
 use std::num::NonZeroI8;
@@ -124,7 +123,7 @@ pub struct ShabbosMevarchim {
     pub minute: u32,
     pub chalakim: u16,
 }
-
+/*
 impl Serialize for ShabbosMevarchim {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -150,7 +149,7 @@ impl Serialize for ShabbosMevarchim {
         state.end()
     }
 }
-
+*/
 impl ShabbosMevarchim {
     pub fn pretty_print(
         &self,
@@ -251,5 +250,54 @@ impl ShabbosMevarchim {
             }
         };
         Some(p)
+    }
+}
+
+impl JsonPrinter for ShabbosMevarchim {
+    fn json_print(&self, json: &mut Json<'_, '_>) {
+        json.print_map_unchecked("type", "ShabbosMevarchim");
+        json.next();
+        json.print_map_unchecked(
+            "month",
+            match self.hebrew_month {
+                HebrewMonth::Tishrei => "Tishrei",
+                HebrewMonth::Cheshvan => "Cheshvan",
+                HebrewMonth::Kislev => "Kislev",
+                HebrewMonth::Teves => "Teves",
+                HebrewMonth::Shvat => "Shvat",
+                HebrewMonth::Adar => "Adar",
+                HebrewMonth::Adar1 => "Adar1",
+                HebrewMonth::Adar2 => "Adar2",
+                HebrewMonth::Nissan => "Nissan",
+                HebrewMonth::Iyar => "Iyar",
+                HebrewMonth::Sivan => "Sivan",
+                HebrewMonth::Tammuz => "Tammuz",
+                HebrewMonth::Av => "Av",
+                HebrewMonth::Elul => "Elul",
+            },
+        );
+        json.next();
+        json.start_new_map("molad");
+        json.print_map_u8("month", self.gregorian_month.try_into().unwrap());
+        json.next();
+        json.print_map_unchecked(
+            "weekday",
+            match self.gregorian_dow {
+                Weekday::Sun => "Sunday",
+                Weekday::Mon => "Monday",
+                Weekday::Tue => "Tuesday",
+                Weekday::Wed => "Wednesday",
+                Weekday::Thu => "Thursday",
+                Weekday::Fri => "Friday",
+                Weekday::Sat => "Shabbos",
+            },
+        );
+        json.next();
+        json.print_map_u8("hour", self.hour.try_into().unwrap());
+        json.next();
+        json.print_map_u8("minute", self.minute.try_into().unwrap());
+        json.next();
+        json.print_map_u8("chalakim", self.chalakim.try_into().unwrap());
+        json.end();
     }
 }

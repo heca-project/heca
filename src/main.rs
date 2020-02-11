@@ -13,8 +13,6 @@ use std::io::Write;
 use std::io::{stderr, stdout, StdoutLock};
 
 fn main() {
-    start_benchmark();
-
     let stdout = stdout();
     let stderr = stderr();
     let mut lock_stdout = BufWriter::with_capacity(1024 * 1024, stdout.lock());
@@ -23,36 +21,16 @@ fn main() {
     let output_type = output_type();
     if let Err(err) = app(std::env::args(), output_type, &mut lock_stdout) {
         if output_type == OutputType::JSON {
-            err.print_json(&mut lock_stderr);
+            err.json_print(&mut lock_stderr);
             lock_stderr.write(b"\n").unwrap();
             lock_stderr.flush().unwrap();
         } else {
-            eprintln!("{}", err);
+            lock_stderr.write(format!("{}", err).as_bytes()).unwrap();
         }
-        stop_benchmark();
         std::process::exit(1);
     }
     lock_stderr.flush().unwrap();
     lock_stdout.flush().unwrap();
-
-    stop_benchmark();
-}
-
-#[cfg(not(feature = "profile"))]
-fn start_benchmark() {}
-
-#[cfg(not(feature = "profile"))]
-fn stop_benchmark() {}
-#[cfg(feature = "profile")]
-fn start_benchmark() {
-    use cpuprofiler::*;
-    PROFILER.lock().unwrap().start("/tmp/heca.profile").unwrap();
-}
-
-#[cfg(feature = "profile")]
-fn stop_benchmark() {
-    use cpuprofiler::*;
-    PROFILER.lock().unwrap().stop().unwrap();
 }
 
 fn output_type() -> OutputType {
@@ -83,10 +61,10 @@ fn output_type() -> OutputType {
     OutputType::Pretty
 }
 
-fn app<I, T>(
+fn app<'a, 'b, I, T>(
     args: I,
     output_type: OutputType,
-    mut lock: &mut BufWriter<StdoutLock<'_>>,
+    lock: &'a mut BufWriter<StdoutLock<'b>>,
 ) -> Result<(), AppError>
 where
     I: IntoIterator<Item = T>,
@@ -95,8 +73,8 @@ where
     let args = args::build_args(args, output_type)?;
 
     match args.command {
-        Command::List(ref sub_args) => sub_args.run(&args, &mut lock)?,
-        Command::Convert(ref sub_args) => sub_args.run(&args, &mut lock)?,
+        Command::List(ref sub_args) => sub_args.run(&args, lock)?,
+        Command::Convert(ref sub_args) => sub_args.run(&args, lock)?,
     };
 
     Ok(())

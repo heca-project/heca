@@ -1,4 +1,6 @@
 use crate::args::types::{DayVal, Language, Name};
+use crate::prelude::Json;
+use crate::prelude::JsonPrinter;
 
 use heca_lib::prelude::{HebrewMonth, MonthSchedule};
 use heca_lib::HebrewYear;
@@ -180,5 +182,20 @@ impl IsraeliHoliday {
             },
         };
         Some(p)
+    }
+}
+
+impl JsonPrinter for IsraeliHoliday {
+    fn json_print(&self, json: &mut Json<'_, '_>) {
+        json.print_map_unchecked("type", "IsraeliHoliday");
+        json.next();
+        match self {
+            IsraeliHoliday::YomHaAtzmaut => json.print_map_unchecked("name", "YomHaAtzmaut"),
+            IsraeliHoliday::YomHaZikaron => json.print_map_unchecked("name", "YomHaZikaron"),
+            IsraeliHoliday::YomYerushalayim => json.print_map_unchecked("name", "YomYerushalayim"),
+            IsraeliHoliday::YomHaShoah => json.print_map_unchecked("name", "YomHaShoah"),
+            IsraeliHoliday::YomHaAliyah => json.print_map_unchecked("name", "YomHaAliyah"),
+            IsraeliHoliday::Sigd => json.print_map_unchecked("name", "Sigd"),
+        }
     }
 }
