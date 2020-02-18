@@ -16,47 +16,63 @@ pub struct Return {
 }
 
 impl Return {
-    fn pretty_print(&self, args: &MainArgs) -> Result<(), AppError> {
+    fn pretty_print(
+        &self,
+        args: &MainArgs,
+        lock: &mut BufWriter<StdoutLock<'_>>,
+    ) -> Result<(), AppError> {
         match args.language {
             Language::English => match self.orig_day {
-                Either::Right(r) => println!(
-                    "{}: From {} {} {} to {} {} {}.",
-                    r.format("%A %B %-d %Y"),
-                    self.day.right().unwrap()[0].day(),
-                    print::hebrew_month_english(self.day.right().unwrap()[0].month()),
-                    self.day.right().unwrap()[0].year(),
-                    self.day.right().unwrap()[1].day(),
-                    print::hebrew_month_english(self.day.right().unwrap()[1].month()),
-                    self.day.right().unwrap()[1].year(),
-                ),
-                Either::Left(l) => println!(
-                    "{} {} {} -> From sunset {} to sunset {}.",
-                    l.day(),
-                    print::hebrew_month_english(l.month()),
-                    l.year(),
-                    self.day.left().unwrap()[0].format("%A %B %-d %Y"),
-                    self.day.left().unwrap()[1].format("%A %B %-d %Y"),
-                ),
+                Either::Right(r) => {
+                    let output = format!(
+                        "{}: From {} {} {} to {} {} {}.\n",
+                        r.format("%A %B %-d %Y"),
+                        self.day.right().unwrap()[0].day(),
+                        print::hebrew_month_english(self.day.right().unwrap()[0].month()),
+                        self.day.right().unwrap()[0].year(),
+                        self.day.right().unwrap()[1].day(),
+                        print::hebrew_month_english(self.day.right().unwrap()[1].month()),
+                        self.day.right().unwrap()[1].year(),
+                    );
+                    lock.write(output.as_bytes()).unwrap();
+                }
+                Either::Left(l) => {
+                    let output = format!(
+                        "{} {} {} -> From sunset {} to sunset {}.\n",
+                        l.day(),
+                        print::hebrew_month_english(l.month()),
+                        l.year(),
+                        self.day.left().unwrap()[0].format("%A %B %-d %Y"),
+                        self.day.left().unwrap()[1].format("%A %B %-d %Y"),
+                    );
+                    lock.write(output.as_bytes()).unwrap();
+                }
             },
             Language::Hebrew => match self.orig_day {
-                Either::Right(r) => println!(
-                    "{}: {} {} {} - {} {} {}.",
-                    r.format("%A %B %-d %Y"),
-                    self.day.right().unwrap()[0].day(),
-                    print::hebrew_month_hebrew(self.day.right().unwrap()[0].month()),
-                    self.day.right().unwrap()[0].year(),
-                    self.day.right().unwrap()[1].day(),
-                    print::hebrew_month_hebrew(self.day.right().unwrap()[1].month()),
-                    self.day.right().unwrap()[1].year(),
-                ),
-                Either::Left(l) => println!(
-                    "{} {} {}: {} - {}.",
-                    l.day(),
-                    print::hebrew_month_hebrew(l.month()),
-                    l.year(),
-                    self.day.left().unwrap()[0].format("%A %B %-d %Y"),
-                    self.day.left().unwrap()[1].format("%A %B %-d %Y"),
-                ),
+                Either::Right(r) => {
+                    let output = format!(
+                        "{}: {} {} {} - {} {} {}.\n",
+                        r.format("%A %B %-d %Y"),
+                        self.day.right().unwrap()[0].day(),
+                        print::hebrew_month_hebrew(self.day.right().unwrap()[0].month()),
+                        self.day.right().unwrap()[0].year(),
+                        self.day.right().unwrap()[1].day(),
+                        print::hebrew_month_hebrew(self.day.right().unwrap()[1].month()),
+                        self.day.right().unwrap()[1].year(),
+                    );
+                    lock.write(output.as_bytes()).unwrap();
+                }
+                Either::Left(l) => {
+                    let output = format!(
+                        "{} {} {}: {} - {}.\n",
+                        l.day(),
+                        print::hebrew_month_hebrew(l.month()),
+                        l.year(),
+                        self.day.left().unwrap()[0].format("%A %B %-d %Y"),
+                        self.day.left().unwrap()[1].format("%A %B %-d %Y"),
+                    );
+                    lock.write(output.as_bytes()).unwrap();
+                }
             },
         };
         Ok(())
@@ -105,7 +121,7 @@ impl Return {
     fn print(&self, args: &MainArgs, lock: &mut BufWriter<StdoutLock<'_>>) -> Result<(), AppError> {
         match args.output_type {
             OutputType::JSON => self.json_print(lock),
-            OutputType::Pretty | OutputType::Regular => self.pretty_print(args),
+            OutputType::Pretty | OutputType::Regular => self.pretty_print(args, lock),
         }
     }
 }

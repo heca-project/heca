@@ -410,11 +410,11 @@ impl Runnable for ListArgs {
                 Ok(Return { list: part2 })
             }
         };
-        let mut result1 = result?;
+        let mut result = result?;
         if !self.no_sort {
-            result1.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
+            result.list.par_sort_unstable_by(|a, b| a.day.cmp(&b.day));
         }
-        result1.print(args, lock)?;
+        result.print(args, lock)?;
         Ok(())
     }
 }

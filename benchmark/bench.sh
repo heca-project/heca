@@ -29,6 +29,18 @@ for i in $( ps -e | awk ' { print $1 }' ); do
 	sudo taskset -acp 0 $i 2>/dev/null >/dev/null
 done
 
+final_val=0
+for i in `seq 1 5`; do
+	full_val=$( { time taskset -ac 1-3 /tmp/heca/release/heca list 4 --years 17000 --show yom-tov,minor-holidays,chol,special-parshas,israeli-holidays --no-sort >/dev/null ; } 2>&1 )
+	final_val=$(awk "BEGIN {print $final_val+$full_val; exit}")
+done
+echo "heca-e| multithreaded   | unsorted   | $final_val"
+
+set +e
+for i in $( ps -e | awk ' { print $1 }' ); do
+	sudo taskset -acp 0 $i 2>/dev/null >/dev/null
+done
+
 set -e
 
 final_val=0
